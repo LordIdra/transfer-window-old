@@ -1,0 +1,9 @@
+[package]
+name = "transfer-window"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.23.0"
+glow = "0.12"
+nalgebra-glm = "0.18.0"
