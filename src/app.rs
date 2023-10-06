@@ -2,24 +2,21 @@ use std::sync::{Arc, Mutex};
 
 use eframe::{egui::{Context, CentralPanel, Slider, Ui}, epaint::{vec2, Rgba, PaintCallback}, Frame, CreationContext, egui_glow::CallbackFn};
 
-use crate::{object::Object, camera::Camera, renderer::Renderer};
+use crate::{object::Object, renderer::Renderer};
 
 pub struct App {
     name: String,
     age: i32,
-    camera: Arc<Camera>,
     renderer: Arc<Mutex<Renderer>>,
     objects: Vec<Object>,
 }
 
 impl App {
     pub fn new(creation_context: &CreationContext) -> Self {
-        let camera = Arc::new(Camera::new());
         Self {
             name: "oh no".to_string(), 
             age: 0,
-            camera: camera.clone(),
-            renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone(), camera))),
+            renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
             objects: vec![
                 Object::new(vec2(0.0, 0.0), 500.0, 500.0, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0)),
                 Object::new(vec2(200.0, 200.0), 50.0, 80.0, Rgba::from_rgba_unmultiplied(0.8, 0.3, 0.3, 1.0)),
@@ -63,6 +60,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
         CentralPanel::default().show(context, |ui| {
+            self.renderer.lock().unwrap().update(context);
             self.render_underlay(context, ui);
             self.render_ui(ui);
         });            

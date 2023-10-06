@@ -1,4 +1,4 @@
-use eframe::epaint::{Vec2, vec2, Rect};
+use eframe::{epaint::{Vec2, vec2, Rect}, egui::Context};
 use nalgebra_glm::{scale, Mat4, vec3, translate};
 
 pub struct Camera {
@@ -11,7 +11,16 @@ impl Camera {
         Self {
             world_translation: vec2(0.0, 0.0),
             zoom: 1.0, 
-        }        
+        }
+    }
+
+    pub fn update(&mut self, context: &Context) {
+        context.input(|input| {
+            if input.pointer.secondary_down() {
+                println!("{:?}", self.world_translation);
+                self.world_translation += vec2(-input.pointer.delta().x, input.pointer.delta().y);
+            }
+        });
     }
 
     fn get_screen_translation(&self, screen_size: Rect) -> Vec2 {
@@ -20,10 +29,10 @@ impl Camera {
 
     pub fn get_matrix(&self, screen_size: Rect) -> Mat4 {
         let matrix = Mat4::identity();
-        let matrix = scale(&matrix, &vec3(self.zoom * 2.0 / screen_size.width(), self.zoom * 2.0 / screen_size.height(), 1.0));
-        translate(&matrix, &vec3(
+        let matrix = translate(&matrix, &vec3(
             -self.get_screen_translation(screen_size).x,
             -self.get_screen_translation(screen_size).y,
-            0.0))
+            0.0));
+        scale(&matrix, &vec3(self.zoom * 2.0 / screen_size.width(), self.zoom * 2.0 / screen_size.height(), 1.0))
     }
 }
