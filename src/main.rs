@@ -2,6 +2,7 @@ use app::App;
 use eframe::{CreationContext, NativeOptions, Renderer, run_native};
 
 mod app;
+mod camera;
 mod object;
 mod renderer;
 
