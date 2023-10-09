@@ -16,17 +16,25 @@ pub struct App {
 impl App {
     pub fn new(creation_context: &CreationContext) -> Self {
         let camera = Arc::new(Mutex::new(Camera::new()));
-        let sun = Object::new(None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0));
-        let earth = Object::new(Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, 2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        let moon = Object::new(Some(earth.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        Self {
+        let mut app = Self {
             name: "oh no".to_string(), 
             age: 0,
             camera: camera.clone(),
             orbit_renderer:  Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone(), camera.clone()))),
             object_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone(), camera.clone()))),
-            objects: vec![sun, earth, moon],
-        }
+            objects: vec![],
+        };
+        app.init_objects();
+        app
+    }
+
+    fn init_objects(&mut self) {
+        let sun = Object::new(None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0));
+        let earth = Object::new(Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, 2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        let moon = Object::new(Some(earth.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+         self.objects.push(sun);
+         self.objects.push(earth);
+         self.objects.push(moon);
     }
 
     fn render_underlay(&self, context: &Context, ui: &Ui) {
