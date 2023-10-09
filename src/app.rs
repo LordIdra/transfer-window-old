@@ -1,16 +1,21 @@
-use std::{sync::{Arc, Mutex}, cell::RefCell, rc::Rc};
+use std::{sync::{Arc, Mutex}, cell::RefCell, rc::Rc, time::Instant};
 
-use eframe::{egui::{Context, CentralPanel, Slider, Ui}, epaint::{vec2, Rgba, PaintCallback}, Frame, CreationContext, egui_glow::CallbackFn};
+use eframe::{egui::{Context, CentralPanel, Slider, Ui}, epaint::{Rgba, PaintCallback}, Frame, CreationContext, egui_glow::CallbackFn};
+use nalgebra_glm::vec2;
 
 use crate::{object::Object, renderer::Renderer, camera::Camera};
+
+const TIME_STEP: f32 = 86400.0;
 
 pub struct App {
     name: String,
     age: i32,
+    time: f32,
     camera: Arc<Mutex<Camera>>,
     orbit_renderer: Arc<Mutex<Renderer>>,
     object_renderer: Arc<Mutex<Renderer>>,
     objects: Vec<Rc<RefCell<Object>>>,
+    last_frame: Instant,
 }
 
 impl App {
@@ -19,10 +24,12 @@ impl App {
         let mut app = Self {
             name: "oh no".to_string(), 
             age: 0,
+            time: 0.0,
             camera: camera.clone(),
             orbit_renderer:  Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone(), camera.clone()))),
             object_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone(), camera.clone()))),
             objects: vec![],
+            last_frame: Instant::now(),
         };
         app.init_objects();
         app
@@ -85,6 +92,10 @@ impl eframe::App for App {
             self.object_renderer.lock().unwrap().update(context);
             self.render_underlay(context, ui);
             self.render_ui(ui);
+            let delta_time = (Instant::now() - self.last_frame).as_secs_f32();
+            self.time += TIME_STEP * delta_time;
+            self.objects.iter().for_each(|object| object.borrow_mut().update(self.time));
+            self.last_frame = Instant::now();
         });            
     }
 }

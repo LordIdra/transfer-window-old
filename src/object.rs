@@ -1,6 +1,7 @@
 use std::{f32::consts::PI, cell::RefCell, rc::Rc};
 
-use eframe::epaint::{Rgba, Vec2, vec2};
+use eframe::epaint::Rgba;
+use nalgebra_glm::{Vec2, vec2};
 
 use self::path::Path;
 
@@ -63,5 +64,11 @@ impl Object {
 
     pub fn get_orbit_vertices(&self, zoom: f32) -> Vec<f32> {
         self.path.get_orbit_vertices(zoom)
+    }
+
+    pub fn update(&mut self, delta_simulated_time: f32) {
+        self.path.update(delta_simulated_time);
+        self.path.get_current_position().map(|position| self.position = position);
+        // TODO update velocity
     }
 }

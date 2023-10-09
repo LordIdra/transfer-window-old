@@ -1,4 +1,4 @@
-use eframe::epaint::Vec2;
+use nalgebra_glm::Vec2;
 
 pub struct OrbitPoint {
     pub absolute_position: Vec2,

@@ -1,7 +1,7 @@
 use std::{rc::Rc, cell::RefCell, f32::consts::PI};
 
-use eframe::epaint::{Vec2, vec2, Rgba};
-use nalgebra_glm::Vec3;
+use eframe::epaint::Rgba;
+use nalgebra_glm::{Vec3, Vec2, vec2, vec3};
 
 use super::{Object, SCALE_FACTOR, orbit_point::OrbitPoint};
 
@@ -14,8 +14,11 @@ pub struct Conic {
     parent: Rc<RefCell<Object>>,
     color: Vec3,
     semi_major_axis: f32,
+    semi_minor_axis: f32,
     eccentricity: f32,
     argument_of_periapsis: f32,
+    areal_velocity: f32,
+    current_angle: f32,
 }
 
 impl Conic {
@@ -25,30 +28,32 @@ impl Conic {
         let reduced_mass = GRAVITATIONAL_CONSTANT * parent.borrow().mass;
         let semi_major_axis = Self::semi_major_axis(position, velocity, reduced_mass);
         let eccentricity = Self::eccentricity(position, velocity, reduced_mass, semi_major_axis);
+        let semi_minor_axis = semi_major_axis * (1.0 - eccentricity.powi(2)).sqrt();
         let argument_of_periapsis = Self::argument_of_periapsis(position, velocity, reduced_mass, eccentricity);
-        println!("{} {:?} {}", semi_major_axis, eccentricity, argument_of_periapsis);
-        Self { parent, color, semi_major_axis, eccentricity, argument_of_periapsis }
+        let areal_velocity = 0.5 * vec3(position.x, position.y, 0.0).cross(&vec3(velocity.x, velocity.y, 0.0)).magnitude();
+        let current_angle = position.angle(&vec2(1.0, 0.0));
+        Self { parent, color, semi_major_axis, semi_minor_axis, eccentricity, argument_of_periapsis, areal_velocity, current_angle }
     }
     
     fn semi_major_axis(displacement: Vec2, velocity: Vec2, reduced_mass: f32) -> f32 {
-        ((2.0 / displacement.length()) - (velocity.length().powi(2) / reduced_mass)).powi(-1)
+        ((2.0 / displacement.magnitude()) - (velocity.magnitude().powi(2) / reduced_mass)).powi(-1)
     }
 
     fn transverse_velocity(position: Vec2, velocity: Vec2) -> f32 {
         // Component of velocity perpendicular to the displacement
-        let perpendicular_to_displacement = vec2(position.y, position.x).normalized();
-        let cos = perpendicular_to_displacement.dot(velocity) / (perpendicular_to_displacement.length() * velocity.length()).abs();
-        velocity.length() * cos
+        let perpendicular_to_displacement = vec2(position.y, position.x).normalize();
+        let cos = perpendicular_to_displacement.dot(&velocity) / (perpendicular_to_displacement.magnitude() * velocity.magnitude()).abs();
+        velocity.magnitude() * cos
     }
 
     fn eccentricity(position: Vec2, velocity: Vec2, reduced_mass: f32, semi_major_axis: f32) -> f32 {
         let transverse_velocity = Self::transverse_velocity(position, velocity);
-        (1.0 - ((position.length_sq() * transverse_velocity.powi(2)) / (reduced_mass * semi_major_axis))).sqrt()
+        (1.0 - ((position.magnitude_squared() * transverse_velocity.powi(2)) / (reduced_mass * semi_major_axis))).sqrt()
     }
 
     fn argument_of_periapsis(position: Vec2, velocity: Vec2, reduced_mass: f32, eccentricity: f32) -> f32 {
         let transverse_velocity = Self::transverse_velocity(position, velocity);
-        position.angle() - ((((position.length() * transverse_velocity.powi(2)) / (reduced_mass)) - 1.0) / eccentricity).acos()
+        position.angle(&vec2(1.0, 0.0)) - ((((position.magnitude() * transverse_velocity.powi(2)) / (reduced_mass)) - 1.0) / eccentricity).acos()
     }
 
     fn get_displacement(&self, angle: f32) -> Vec2 {
@@ -67,7 +72,7 @@ impl Conic {
         let mut orbit_points = vec![];
         for i in 0..ORBIT_POINTS {
             let relative_point_position = self.get_scaled_displacement((i as f32 / ORBIT_POINTS as f32) * 2.0 * PI);
-            orbit_points.push(OrbitPoint::new(absolute_parent_position + relative_point_position, relative_point_position.normalized()));
+            orbit_points.push(OrbitPoint::new(absolute_parent_position + relative_point_position, relative_point_position.normalize()));
         }
         orbit_points
     }
@@ -93,7 +98,7 @@ impl Conic {
     }
 
     pub fn get_scaled_displacement(&self, angle: f32) -> Vec2 {
-        self.get_displacement(angle) * SCALE_FACTOR
+        self.get_displacement(angle - self.argument_of_periapsis) * SCALE_FACTOR
     }
 
     pub fn get_absolute_parent_position(&self) -> Vec2 {
@@ -117,5 +122,26 @@ impl Conic {
         }
         
         vertices
+    }
+
+    fn angle_from_swept_area(&self, area: f32) -> f32 {
+        // Assumes we start at current_angle
+        f32::atan(
+            ((self.semi_minor_axis / self.semi_major_axis) * f32::tan((2.0 * area) / (self.semi_major_axis * self.semi_minor_axis)))
+            + f32::atan((self.semi_major_axis / self.semi_minor_axis) * f32::tan(self.current_angle))
+        )
+    }
+
+    pub fn delta_time_to_angle(&self, time: f32) -> f32 {
+        let delta_area = time * self.areal_velocity;
+        self.angle_from_swept_area(delta_area)
+    }
+
+    pub fn get_current_position(&self) -> Vec2 {
+        self.get_displacement(self.current_angle)
+    }
+
+    pub fn update(&mut self, delta_simulated_time: f32) {
+        self.current_angle = self.delta_time_to_angle(delta_simulated_time);
     }
 }

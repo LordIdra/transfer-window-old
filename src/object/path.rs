@@ -1,7 +1,6 @@
 use std::{rc::Rc, cell::RefCell};
 
-use eframe::epaint::{Vec2, vec2};
-use nalgebra_glm::vec3;
+use nalgebra_glm::{vec3, Vec2, vec2};
 
 use super::{conic::Conic, Object};
 
@@ -35,5 +34,13 @@ impl Path {
             vertices.extend(conic.get_orbit_vertices(zoom));
         }
         vertices
+    }
+
+    pub fn get_current_position(&self) -> Option<Vec2> {
+        self.conics.first().map(|conic| conic.get_current_position())
+    }
+
+    pub fn update(&mut self, delta_simulated_time: f32) {
+        self.conics.first_mut().map(|conic| conic.update(delta_simulated_time));
     }
 }
