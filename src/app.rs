@@ -5,7 +5,7 @@ use nalgebra_glm::vec2;
 
 use crate::{object::Object, renderer::Renderer, camera::Camera};
 
-const TIME_STEP: f32 = 86400.0;
+const TIME_STEP: f32 = 100000.0;
 
 pub struct App {
     name: String,
@@ -92,9 +92,9 @@ impl eframe::App for App {
             self.object_renderer.lock().unwrap().update(context);
             self.render_underlay(context, ui);
             self.render_ui(ui);
-            let delta_time = (Instant::now() - self.last_frame).as_secs_f32();
-            self.time += TIME_STEP * delta_time;
-            self.objects.iter().for_each(|object| object.borrow_mut().update(self.time));
+            let delta_time = (Instant::now() - self.last_frame).as_secs_f32() * TIME_STEP;
+            self.time += delta_time;
+            self.objects.iter().for_each(|object| object.borrow_mut().update(delta_time));
             self.last_frame = Instant::now();
         });            
     }

@@ -1,7 +1,7 @@
 use std::{rc::Rc, cell::RefCell, f32::consts::PI};
 
 use eframe::epaint::Rgba;
-use nalgebra_glm::{Vec3, Vec2, vec2, vec3};
+use nalgebra_glm::{Vec3, Vec2, vec2};
 
 use super::{Object, SCALE_FACTOR, orbit_point::OrbitPoint};
 
@@ -16,9 +16,10 @@ pub struct Conic {
     semi_major_axis: f32,
     semi_minor_axis: f32,
     eccentricity: f32,
+    period: f32,
     argument_of_periapsis: f32,
-    areal_velocity: f32,
-    current_angle: f32,
+    current_angle_since_periapsis: f32,
+    current_time_since_periapsis: f32,
 }
 
 impl Conic {
@@ -30,9 +31,10 @@ impl Conic {
         let eccentricity = Self::eccentricity(position, velocity, reduced_mass, semi_major_axis);
         let semi_minor_axis = semi_major_axis * (1.0 - eccentricity.powi(2)).sqrt();
         let argument_of_periapsis = Self::argument_of_periapsis(position, velocity, reduced_mass, eccentricity);
-        let areal_velocity = 0.5 * vec3(position.x, position.y, 0.0).cross(&vec3(velocity.x, velocity.y, 0.0)).magnitude();
-        let current_angle = position.angle(&vec2(1.0, 0.0));
-        Self { parent, color, semi_major_axis, semi_minor_axis, eccentricity, argument_of_periapsis, areal_velocity, current_angle }
+        let current_angle_since_periapsis = f32::atan2(position.y, position.x);
+        let period = Self::period(reduced_mass, semi_major_axis);
+        let current_time_since_periapsis = Self::time_since_periapsis_from_angle_since_periapsis(eccentricity, period, current_angle_since_periapsis + PI * 3.0 / 2.0);
+        Self { parent, color, semi_major_axis, semi_minor_axis, eccentricity, period, argument_of_periapsis, current_angle_since_periapsis, current_time_since_periapsis }
     }
     
     fn semi_major_axis(displacement: Vec2, velocity: Vec2, reduced_mass: f32) -> f32 {
@@ -54,6 +56,10 @@ impl Conic {
     fn argument_of_periapsis(position: Vec2, velocity: Vec2, reduced_mass: f32, eccentricity: f32) -> f32 {
         let transverse_velocity = Self::transverse_velocity(position, velocity);
         position.angle(&vec2(1.0, 0.0)) - ((((position.magnitude() * transverse_velocity.powi(2)) / (reduced_mass)) - 1.0) / eccentricity).acos()
+    }
+
+    fn period(reduced_mass: f32, semi_major_axis: f32) -> f32 {
+        2.0 * PI * f32::sqrt(semi_major_axis.powi(3) / reduced_mass)
     }
 
     fn get_displacement(&self, angle: f32) -> Vec2 {
@@ -97,6 +103,19 @@ impl Conic {
         Object::add_triangle(vertices, v2, v3, v4, rgba);
     }
 
+    fn time_since_periapsis_from_angle_since_periapsis(eccentricity: f32, period: f32, theta: f32) -> f32 {
+        let mut eccentric_anomaly = 2.0 * f32::atan(f32::sqrt((1.0 - eccentricity) / (1.0 + eccentricity)) * f32::tan(theta / 2.0));
+        // stop time from being negative
+        if eccentric_anomaly < 0.0 {
+            eccentric_anomaly += 2.0 * PI;
+        }
+
+        let mean_anomaly = eccentric_anomaly - eccentricity * f32::sin(eccentric_anomaly);
+        let time = mean_anomaly * period / (2.0 * PI);
+        println!("{} {}", f32::tan(theta / 2.0), time / (60.0 * 60.0 * 24.0));
+        time
+    }
+
     pub fn get_scaled_displacement(&self, angle: f32) -> Vec2 {
         self.get_displacement(angle - self.argument_of_periapsis) * SCALE_FACTOR
     }
@@ -124,24 +143,11 @@ impl Conic {
         vertices
     }
 
-    fn angle_from_swept_area(&self, area: f32) -> f32 {
-        // Assumes we start at current_angle
-        f32::atan(
-            ((self.semi_minor_axis / self.semi_major_axis) * f32::tan((2.0 * area) / (self.semi_major_axis * self.semi_minor_axis)))
-            + f32::atan((self.semi_major_axis / self.semi_minor_axis) * f32::tan(self.current_angle))
-        )
-    }
-
-    pub fn delta_time_to_angle(&self, time: f32) -> f32 {
-        let delta_area = time * self.areal_velocity;
-        self.angle_from_swept_area(delta_area)
-    }
-
     pub fn get_current_position(&self) -> Vec2 {
-        self.get_displacement(self.current_angle)
+        self.get_displacement(self.current_angle_since_periapsis)
     }
 
-    pub fn update(&mut self, delta_simulated_time: f32) {
-        self.current_angle = self.delta_time_to_angle(delta_simulated_time);
+    pub fn update(&mut self, delta_time: f32) {
+        //self.current_angle_from_periapsis += self.delta_time_to_angle(delta_time);
     }
 }
