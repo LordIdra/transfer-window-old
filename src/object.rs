@@ -7,7 +7,9 @@ use self::path::Path;
 
 mod conic;
 mod orbit_point;
+mod visual_orbit_point;
 mod path;
+mod scary_maths;
 
 const SCALE_FACTOR: f32 = 1.0 / 100000.0;
 
@@ -68,7 +70,7 @@ impl Object {
 
     pub fn update(&mut self, delta_time: f32) {
         self.path.update(delta_time);
-        self.path.get_current_position().map(|position| self.position = position);
+        self.path.get_unscaled_position().map(|position| self.position = position);
         // TODO update velocity
     }
 }

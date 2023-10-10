@@ -36,8 +36,8 @@ impl Path {
         vertices
     }
 
-    pub fn get_current_position(&self) -> Option<Vec2> {
-        self.conics.first().map(|conic| conic.get_current_position())
+    pub fn get_unscaled_position(&self) -> Option<Vec2> {
+        self.conics.first().map(|conic| conic.get_unscaled_position())
     }
 
     pub fn update(&mut self, delta_time: f32) {
