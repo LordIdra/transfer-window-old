@@ -33,7 +33,7 @@ impl Conic {
         let argument_of_periapsis = Self::argument_of_periapsis(position, velocity, reduced_mass, eccentricity);
         let current_angle_since_periapsis = f32::atan2(position.y, position.x);
         let period = Self::period(reduced_mass, semi_major_axis);
-        let current_time_since_periapsis = Self::time_since_periapsis_from_angle_since_periapsis(eccentricity, period, current_angle_since_periapsis + PI * 3.0 / 2.0);
+        let current_time_since_periapsis = Self::time_since_periapsis_from_angle_since_periapsis(eccentricity, period, current_angle_since_periapsis + PI * 5.0 / 2.0);
         Self { parent, color, semi_major_axis, semi_minor_axis, eccentricity, period, argument_of_periapsis, current_angle_since_periapsis, current_time_since_periapsis }
     }
     
@@ -104,6 +104,8 @@ impl Conic {
     }
 
     fn time_since_periapsis_from_angle_since_periapsis(eccentricity: f32, period: f32, theta: f32) -> f32 {
+        let new_theta = theta % (2.0 * PI);
+        let mut time = period * (theta - new_theta) / (2.0 * PI);
         let mut eccentric_anomaly = 2.0 * f32::atan(f32::sqrt((1.0 - eccentricity) / (1.0 + eccentricity)) * f32::tan(theta / 2.0));
         // stop time from being negative
         if eccentric_anomaly < 0.0 {
@@ -111,9 +113,13 @@ impl Conic {
         }
 
         let mean_anomaly = eccentric_anomaly - eccentricity * f32::sin(eccentric_anomaly);
-        let time = mean_anomaly * period / (2.0 * PI);
+        time += mean_anomaly * period / (2.0 * PI);
         println!("{} {}", f32::tan(theta / 2.0), time / (60.0 * 60.0 * 24.0));
         time
+    }
+
+    fn angle_since_periapsis_from_time_since_periapsis() -> f32 {
+
     }
 
     pub fn get_scaled_displacement(&self, angle: f32) -> Vec2 {
