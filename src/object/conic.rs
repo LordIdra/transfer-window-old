@@ -34,8 +34,7 @@ impl Conic {
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
         let current_orbit_point = OrbitPoint::new(semi_major_axis, eccentricity, period, argument_of_periapsis, direction, position);
         let start_angle = current_orbit_point.get_angle_since_periapsis();
-        let end_angle = PI * 1.5;
-        let remaining_angle = end_angle - start_angle;
+        let remaining_angle = PI * 1.0;
         Self { parent, color, semi_major_axis, eccentricity, period, argument_of_periapsis, remaining_angle, direction, current_orbit_point }
     }
 
@@ -46,11 +45,18 @@ impl Conic {
     }
 
     fn get_visual_orbit_points(&self) -> Vec<VisualOrbitPoint> {
-        // Call for a complete ellipse (ie remaining angle >= 2pi)
         let absolute_parent_position = self.get_absolute_parent_position() * SCALE_FACTOR;
         let mut visual_orbit_points = vec![];
+        let angle_to_rotate_through = f32::min(2.0 * PI, self.remaining_angle);
         for i in 0..ORBIT_POINTS {
-            let relative_point_position = self.get_scaled_position((i as f32 / ORBIT_POINTS as f32) * 2.0 * PI);
+            let mut angle = self.current_orbit_point.get_angle_since_periapsis();
+            if let OrbitDirection::Clockwise = self.direction {
+                angle += (i as f32 / ORBIT_POINTS as f32) * angle_to_rotate_through
+            } else {
+                angle -= (i as f32 / ORBIT_POINTS as f32) * angle_to_rotate_through
+            }
+
+            let relative_point_position = self.get_scaled_position(angle);
             visual_orbit_points.push(VisualOrbitPoint::new(absolute_parent_position + relative_point_position, relative_point_position.normalize()));
         }
         visual_orbit_points
@@ -76,8 +82,10 @@ impl Conic {
         Object::add_triangle(vertices, v2, v3, v4, rgba);
     }
 
-    fn orbit_vertices_from_points(&self, points: Vec<VisualOrbitPoint>) -> Vec<f32> {
+    fn complete_orbit_vertices_from_points(&self, points: Vec<VisualOrbitPoint>, zoom: f32) -> Vec<f32> {
+        // Visualises an entire ellipse without any gaps
         let mut previous_point = points.last().unwrap();
+        let mut vertices = vec![];
         for new_point in &points {
             // Loop to create glow effect
             for i in 0..10 {
@@ -85,6 +93,23 @@ impl Conic {
             }
             previous_point = new_point;
         }
+        vertices
+    }
+
+    fn incomplete_orbit_vertices_from_points(&self, points: Vec<VisualOrbitPoint>, zoom: f32) -> Vec<f32> {
+        // Visualises an ellipse between two angles
+        let mut previous_point = None;
+        let mut vertices = vec![];
+        for new_point in &points {
+            // Loop to create glow effect
+            if let Some(previous_point) = previous_point {
+                for i in 0..10 {
+                    self.add_orbit_line(&mut vertices, previous_point, new_point, zoom, i);
+                }
+            }
+            previous_point = Some(new_point);
+        }
+        vertices
     }
 
     pub fn get_scaled_position(&self, angle_since_periapsis: f32) -> Vec2 {
@@ -102,7 +127,11 @@ impl Conic {
 
     pub fn get_orbit_vertices(&self, zoom: f32) -> Vec<f32> {
         let points = self.get_visual_orbit_points();
-        self.orbit_vertices_from_points(points)
+        if self.remaining_angle > 2.0 * PI {
+            self.complete_orbit_vertices_from_points(points, zoom)
+        } else {
+            self.incomplete_orbit_vertices_from_points(points, zoom)
+        }
     }
 
     pub fn get_unscaled_position(&self) -> Vec2 {
