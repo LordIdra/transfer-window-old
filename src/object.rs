@@ -66,8 +66,8 @@ impl Object {
         self.path.get_orbit_vertices(zoom)
     }
 
-    pub fn update(&mut self, delta_simulated_time: f32) {
-        self.path.update(delta_simulated_time);
+    pub fn update(&mut self, delta_time: f32) {
+        self.path.update(delta_time);
         self.path.get_current_position().map(|position| self.position = position);
         // TODO update velocity
     }

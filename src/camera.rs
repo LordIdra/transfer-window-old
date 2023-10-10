@@ -12,7 +12,7 @@ impl Camera {
     pub fn new() -> Self {
         Self {
             world_translation: DVec2::new(0.0, 0.0),
-            zoom: 1.0, 
+            zoom: 0.0002, 
         }
     }
 

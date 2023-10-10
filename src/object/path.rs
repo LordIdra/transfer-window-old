@@ -40,7 +40,7 @@ impl Path {
         self.conics.first().map(|conic| conic.get_current_position())
     }
 
-    pub fn update(&mut self, delta_simulated_time: f32) {
-        self.conics.first_mut().map(|conic| conic.update(delta_simulated_time));
+    pub fn update(&mut self, delta_time: f32) {
+        self.conics.first_mut().map(|conic| conic.update(delta_time));
     }
 }
