@@ -14,12 +14,10 @@ pub struct Conic {
     parent: Rc<RefCell<Object>>,
     color: Vec3,
     semi_major_axis: f32,
-    semi_minor_axis: f32,
     eccentricity: f32,
     period: f32,
     argument_of_periapsis: f32,
-    start_angle: f32,
-    end_angle: f32,
+    remaining_angle: f32,
     direction: OrbitDirection,
     current_orbit_point: OrbitPoint,
 }
@@ -31,14 +29,14 @@ impl Conic {
         let reduced_mass = GRAVITATIONAL_CONSTANT * parent.borrow().mass;
         let semi_major_axis = scary_maths::semi_major_axis(position, velocity, reduced_mass);
         let eccentricity = scary_maths::eccentricity(position, velocity, reduced_mass, semi_major_axis);
-        let semi_minor_axis = scary_maths::semi_minor_axis(semi_major_axis, eccentricity);
         let argument_of_periapsis = scary_maths::argument_of_periapsis(position, velocity, reduced_mass, eccentricity);
         let period = scary_maths::period(reduced_mass, semi_major_axis);
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
         let current_orbit_point = OrbitPoint::new(semi_major_axis, eccentricity, period, argument_of_periapsis, direction, position);
         let start_angle = current_orbit_point.get_angle_since_periapsis();
-        let end_angle = f32::MAX;
-        Self { parent, color, semi_major_axis, semi_minor_axis, eccentricity, period, argument_of_periapsis, start_angle, end_angle, direction, current_orbit_point }
+        let end_angle = PI * 1.5;
+        let remaining_angle = end_angle - start_angle;
+        Self { parent, color, semi_major_axis, eccentricity, period, argument_of_periapsis, remaining_angle, direction, current_orbit_point }
     }
 
     fn max_color(&self) -> Rgba {
@@ -48,6 +46,7 @@ impl Conic {
     }
 
     fn get_visual_orbit_points(&self) -> Vec<VisualOrbitPoint> {
+        // Call for a complete ellipse (ie remaining angle >= 2pi)
         let absolute_parent_position = self.get_absolute_parent_position() * SCALE_FACTOR;
         let mut visual_orbit_points = vec![];
         for i in 0..ORBIT_POINTS {
@@ -77,6 +76,17 @@ impl Conic {
         Object::add_triangle(vertices, v2, v3, v4, rgba);
     }
 
+    fn orbit_vertices_from_points(&self, points: Vec<VisualOrbitPoint>) -> Vec<f32> {
+        let mut previous_point = points.last().unwrap();
+        for new_point in &points {
+            // Loop to create glow effect
+            for i in 0..10 {
+                self.add_orbit_line(&mut vertices, previous_point, new_point, zoom, i);
+            }
+            previous_point = new_point;
+        }
+    }
+
     pub fn get_scaled_position(&self, angle_since_periapsis: f32) -> Vec2 {
         scary_maths::position(self.argument_of_periapsis, self.semi_major_axis, self.eccentricity, angle_since_periapsis) * SCALE_FACTOR
     }
@@ -89,19 +99,10 @@ impl Conic {
         self.semi_major_axis * (mass / self.parent.borrow().mass).powf(2.0 / 5.0)
     }
 
+
     pub fn get_orbit_vertices(&self, zoom: f32) -> Vec<f32> {
-        let mut vertices = vec![];
         let points = self.get_visual_orbit_points();
-        let mut previous_point = points.last().unwrap();
-        for new_point in &points {
-            // Loop to create glow effect
-            for i in 0..10 {
-                self.add_orbit_line(&mut vertices, previous_point, new_point, zoom, i);
-            }
-            previous_point = new_point;
-        }
-        
-        vertices
+        self.orbit_vertices_from_points(points)
     }
 
     pub fn get_unscaled_position(&self) -> Vec2 {

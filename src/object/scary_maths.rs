@@ -16,10 +16,6 @@ pub fn eccentricity(position: Vec2, velocity: Vec2, reduced_mass: f32, semi_majo
     (1.0 - ((position.magnitude_squared() * transverse_velocity(position, velocity).powi(2)) / (reduced_mass * semi_major_axis))).sqrt()
 }
 
-pub fn semi_minor_axis(semi_major_axis: f32, eccentricity: f32) -> f32 {
-    semi_major_axis * (1.0 - eccentricity.powi(2)).sqrt()
-}
-
 pub fn argument_of_periapsis(position: Vec2, velocity: Vec2, reduced_mass: f32, eccentricity: f32) -> f32 {
     f32::atan2(position.y, position.x) - (((position.magnitude() * transverse_velocity(position, velocity).powi(2) / reduced_mass) - 1.0) / eccentricity).acos()
 }
