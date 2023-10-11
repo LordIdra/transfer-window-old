@@ -24,8 +24,6 @@ pub struct Conic {
 
 impl Conic {
     pub fn new(parent: Rc<RefCell<Object>>, color: Vec3, position: Vec2, velocity: Vec2) -> Self {
-        // https://phys.libretexts.org/Bookshelves/Astronomy__Cosmology/Celestial_Mechanics_(Tatum)/09%3A_The_Two_Body_Problem_in_Two_Dimensions/9.08%3A_Orbital_Elements_and_Velocity_Vector#mjx-eqn-9.5.31
-        // Lots of the formulae come from here ^
         let reduced_mass = GRAVITATIONAL_CONSTANT * parent.borrow().mass;
         let semi_major_axis = scary_maths::semi_major_axis(position, velocity, reduced_mass);
         let eccentricity = scary_maths::eccentricity(position, velocity, reduced_mass, semi_major_axis);

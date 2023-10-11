@@ -4,11 +4,11 @@ use nalgebra_glm::{vec3, Vec2, vec2};
 
 use super::{conic::Conic, Object};
 
-pub struct Path {
+pub struct Trajectory {
     conics: Vec<Conic>,
 }
 
-impl Path {
+impl Trajectory {
     pub fn new(parent: Option<Rc<RefCell<Object>>>, position: Vec2, velocity: Vec2) -> Self {
         let mut conics = vec![];
         if let Some(parent) = parent {

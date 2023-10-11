@@ -3,30 +3,36 @@ use std::{f32::consts::PI, cell::RefCell, rc::Rc};
 use eframe::epaint::Rgba;
 use nalgebra_glm::{Vec2, vec2};
 
-use self::path::Path;
+use self::trajectory::Trajectory;
 
 mod conic;
+mod trajectory_integrator;
 mod orbit_point;
 mod visual_orbit_point;
-mod path;
+mod trajectory;
 mod scary_maths;
 
+const SIGNIFICANT_MASS_THRESHOLD:f32 = 1.0e8; // Objects above this mass are modelled as having an SOI
 const SCALE_FACTOR: f32 = 1.0 / 100000.0;
 
 pub struct Object {
-    path: Path,
+    path: Trajectory,
     position: Vec2,
     velocity: Vec2,
     mass: f32,
     radius: f32,
     color: Rgba,
-    sphere_of_influence: f32,
+    sphere_of_influence: Option<f32>,
 }
 
 impl Object {
     pub fn new(parent: Option<Rc<RefCell<Object>>>, position: Vec2, velocity: Vec2, mass: f32, radius: f32, color: Rgba) -> Rc<RefCell<Self>> {
-        let path = Path::new(parent, position, velocity);
-        let sphere_of_influence = Self::calculate_sphere_of_influence(&path, mass);
+        let path = Trajectory::new(parent, position, velocity);
+        let sphere_of_influence = if mass > SIGNIFICANT_MASS_THRESHOLD {
+            Some(Self::calculate_sphere_of_influence(&path, mass))
+        } else {
+            None
+        };
         Rc::new(RefCell::new(Self { path, position, velocity, mass, radius, color, sphere_of_influence }))
     }
 
@@ -36,7 +42,7 @@ impl Object {
         vertices.append(&mut vec![v3.x, v3.y, color.r(), color.g(), color.b(), color.a()]);
     }
 
-    fn calculate_sphere_of_influence(path: &Path, mass: f32) -> f32 {
+    fn calculate_sphere_of_influence(path: &Trajectory, mass: f32) -> f32 {
         // https://en.wikipedia.org/wiki/Sphere_of_influence_(astrodynamics)
         if let Some(conic) = path.get_current_conic() {
             conic.get_sphere_of_influence(mass)

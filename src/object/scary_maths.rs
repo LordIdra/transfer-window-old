@@ -2,6 +2,9 @@ use std::f32::consts::PI;
 
 use nalgebra_glm::{Vec2, vec2};
 
+// https://phys.libretexts.org/Bookshelves/Astronomy__Cosmology/Celestial_Mechanics_(Tatum)/09%3A_The_Two_Body_Problem_in_Two_Dimensions/9.08%3A_Orbital_Elements_and_Velocity_Vector#mjx-eqn-9.5.31
+// Lots of the formulae come from here ^
+
 #[derive(Clone, Copy)]
 pub enum OrbitDirection {
     Clockwise,
