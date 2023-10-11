@@ -40,7 +40,13 @@ impl Trajectory {
         self.conics.first().map(|conic| conic.get_unscaled_position())
     }
 
+    pub fn get_velocity(&self) -> Option<Vec2> {
+        self.conics.first().map(|conic| conic.get_velocity())
+    }
+
     pub fn update(&mut self, delta_time: f32) {
-        self.conics.first_mut().map(|conic| conic.update(delta_time));
+        if let Some(conic) = self.conics.first_mut() { 
+            conic.update(delta_time) 
+        }
     }
 }

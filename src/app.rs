@@ -37,19 +37,19 @@ impl App {
 
     fn init_objects(&mut self) {
         let sun = Object::new(None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0));
-        //let earth1 = Object::new(Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, 1.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        let earth1 = Object::new(Some(sun.clone()), vec2(-1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
         //let earth2 = Object::new(Some(sun.clone()), vec2(-1.521e11, 0.0), vec2(0.0, 1.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        let planet = Object::new(Some(sun.clone()), vec2(1.0e11, 1.0e11), vec2(0.0, 1.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        //let moon1 = Object::new(Some(earth1.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        //let planet = Object::new(Some(sun.clone()), vec2(1.0e11, 1.0e11), vec2(0.0, 1.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        let moon1 = Object::new(Some(earth1.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
         //let moon2 = Object::new(Some(earth2.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        let moon3 = Object::new(Some(planet.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e7, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        //let moon3 = Object::new(Some(planet.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e7, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
         self.objects.push(sun);
-        //self.objects.push(earth1);
+        self.objects.push(earth1);
         //self.objects.push(earth2);
-        self.objects.push(planet);
-        //self.objects.push(moon1);
+        //self.objects.push(planet);
+        self.objects.push(moon1);
         //self.objects.push(moon2);
-        self.objects.push(moon3);
+        //self.objects.push(moon3);
     }
 
     fn render_underlay(&self, context: &Context, ui: &Ui) {

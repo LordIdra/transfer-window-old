@@ -6,17 +6,18 @@ use nalgebra_glm::{Vec2, vec2};
 use self::trajectory::Trajectory;
 
 mod conic;
+mod orbit_description;
 mod trajectory_integrator;
 mod orbit_point;
 mod visual_orbit_point;
 mod trajectory;
-mod scary_maths;
+mod orbit_direction;
 
 const SIGNIFICANT_MASS_THRESHOLD:f32 = 1.0e8; // Objects above this mass are modelled as having an SOI
 const SCALE_FACTOR: f32 = 1.0 / 100000.0;
 
 pub struct Object {
-    path: Trajectory,
+    trajectory: Trajectory,
     position: Vec2,
     velocity: Vec2,
     mass: f32,
@@ -33,7 +34,7 @@ impl Object {
         } else {
             None
         };
-        Rc::new(RefCell::new(Self { path, position, velocity, mass, radius, color, sphere_of_influence }))
+        Rc::new(RefCell::new(Self { trajectory: path, position, velocity, mass, radius, color, sphere_of_influence }))
     }
 
     fn add_triangle(vertices: &mut Vec<f32>, v1: Vec2, v2: Vec2, v3: Vec2, color: Rgba) {
@@ -52,12 +53,12 @@ impl Object {
     }
 
     pub fn get_absolute_position(&self) -> Vec2 {
-        self.path.get_current_absolute_parent_position() + self.position
+        self.trajectory.get_current_absolute_parent_position() + self.position
     }
 
     pub fn get_object_vertices(&self) -> Vec<f32> {
         let scaled_radius = self.radius * SCALE_FACTOR;
-        let absolute_scaled_position = (self.path.get_current_absolute_parent_position() + self.position) * SCALE_FACTOR;
+        let absolute_scaled_position = (self.trajectory.get_current_absolute_parent_position() + self.position) * SCALE_FACTOR;
         let mut vertices = vec![];
         let sides = 100; // TODO make this depend on something else
         let mut previous_location = absolute_scaled_position + vec2(scaled_radius, 0.0);
@@ -71,12 +72,16 @@ impl Object {
     }
 
     pub fn get_orbit_vertices(&self, zoom: f32) -> Vec<f32> {
-        self.path.get_orbit_vertices(zoom)
+        self.trajectory.get_orbit_vertices(zoom)
     }
 
     pub fn update(&mut self, delta_time: f32) {
-        self.path.update(delta_time);
-        self.path.get_unscaled_position().map(|position| self.position = position);
-        // TODO update velocity
+        self.trajectory.update(delta_time);
+        if let Some(position) = self.trajectory.get_unscaled_position() {
+            self.position = position;
+        }
+        if let Some(velocity) = self.trajectory.get_velocity() {
+            self.velocity = velocity;
+        }
     }
 }
