@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use nalgebra_glm::Vec2;
 
 use super::orbit_description::EllipseDescription;
@@ -36,5 +38,37 @@ impl OrbitPoint {
 
     pub fn get_velocity(&self) -> Vec2 {
         self.velocity
+    }
+
+    pub fn compute_new_parent(&self, object: Rc<RefCell<Object>>, significant_mass_objects: &Vec<Rc<RefCell<Object>>>) -> Option<Rc<RefCell<Object>>> {
+        let mut new_parents = vec![];
+        for other_object in significant_mass_objects.iter() {
+            if other_object.as_ptr() == object.as_ptr() {
+                continue;
+            }
+            let distance_squared = (object.borrow().get_absolute_position() - other_object.borrow().get_absolute_position()).magnitude_squared();
+            // We can unwrap because we're only dealing with significant mass bodies
+            if distance_squared < object.borrow().sphere_of_influence_squared.unwrap() {
+                new_parents.push(object.clone());
+            }
+        }
+
+        if new_parents.is_empty() {
+            None
+        } else if new_parents.len() == 1 {
+            Some(new_parents.first().unwrap().clone())
+        } else {
+            let mut highest_acceleration = 0.0;
+            let mut parent_with_highest_acceleration = None;
+            for parent in new_parents {
+                let distance_squared = (parent.borrow().get_absolute_position() - object.borrow().get_absolute_position()).magnitude_squared();
+                let acceleration = GRAVITATIONAL_CONSTANT * parent.borrow().mass / distance_squared;
+                if acceleration > highest_acceleration {
+                    highest_acceleration = acceleration;
+                    parent_with_highest_acceleration = Some(parent);
+                }
+            }
+            parent_with_highest_acceleration
+        }
     }
 }

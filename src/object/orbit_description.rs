@@ -23,8 +23,13 @@ fn eccentricity(position: Vec2, velocity: Vec2, reduced_mass: f32, semi_major_ax
     (1.0 - ((position.magnitude_squared() * transverse_velocity(position, velocity).powi(2)) / (reduced_mass * semi_major_axis))).sqrt()
 }
 
-fn period(reduced_mass: f32, semi_major_axis: f32) -> f32 {
-    2.0 * PI * f32::sqrt(semi_major_axis.powi(3) / reduced_mass)
+fn period(reduced_mass: f32, semi_major_axis: f32) -> Option<f32> {
+    let period = 2.0 * PI * f32::sqrt(semi_major_axis.powi(3) / reduced_mass);
+    if period.is_nan() {
+        None // Hyperbola (eccentricity > 1)
+    } else {
+        Some(period)
+    }
 }
 
 fn argument_of_periapsis(position: Vec2, velocity: Vec2, reduced_mass: f32, eccentricity: f32) -> f32 {
@@ -57,7 +62,7 @@ pub struct EllipseDescription {
     reduced_mass: f32,
     semi_major_axis: f32,
     eccentricity: f32,
-    period: f32,
+    period: Option<f32>,
     argument_of_periapsis: f32,
     direction: OrbitDirection,
 }

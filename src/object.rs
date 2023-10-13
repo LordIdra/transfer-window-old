@@ -23,18 +23,18 @@ pub struct Object {
     mass: f32,
     radius: f32,
     color: Rgba,
-    sphere_of_influence: Option<f32>,
+    sphere_of_influence_squared: Option<f32>,
 }
 
 impl Object {
     pub fn new(parent: Option<Rc<RefCell<Object>>>, position: Vec2, velocity: Vec2, mass: f32, radius: f32, color: Rgba) -> Rc<RefCell<Self>> {
         let path = Trajectory::new(parent, position, velocity);
-        let sphere_of_influence = if mass > SIGNIFICANT_MASS_THRESHOLD {
-            Some(Self::calculate_sphere_of_influence(&path, mass))
+        let sphere_of_influence_squared = if mass > SIGNIFICANT_MASS_THRESHOLD {
+            Some(Self::calculate_sphere_of_influence(&path, mass).powi(2))
         } else {
             None
         };
-        Rc::new(RefCell::new(Self { trajectory: path, position, velocity, mass, radius, color, sphere_of_influence }))
+        Rc::new(RefCell::new(Self { trajectory: path, position, velocity, mass, radius, color, sphere_of_influence_squared }))
     }
 
     fn add_triangle(vertices: &mut Vec<f32>, v1: Vec2, v2: Vec2, v3: Vec2, color: Rgba) {
@@ -83,5 +83,19 @@ impl Object {
         if let Some(velocity) = self.trajectory.get_velocity() {
             self.velocity = velocity;
         }
+    }
+
+    pub fn update_for_trajectory_integration(&mut self, object: Rc<RefCell<Object>>, significant_mass_objects: &Vec<Rc<RefCell<Object>>>, delta_time: f32) {
+        self.trajectory.update_for_trajectory_integration(object, significant_mass_objects, delta_time);
+        if let Some(position) = self.trajectory.get_unscaled_position() {
+            self.position = position;
+        }
+        if let Some(velocity) = self.trajectory.get_velocity() {
+            self.velocity = velocity;
+        }
+    }
+
+    pub fn reset_all_conics(&mut self) {
+        self.trajectory.reset()
     }
 }

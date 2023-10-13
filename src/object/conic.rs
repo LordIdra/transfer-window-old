@@ -147,6 +147,10 @@ impl Conic {
         self.current_orbit_point = self.current_orbit_point.next(&self.orbit_description, delta_time);
     }
 
+    pub fn get_new_soi(&mut self, object: Rc<RefCell<Object>>, significant_mass_objects: &Vec<Rc<RefCell<Object>>>) -> Option<Rc<RefCell<Object>>> {
+        self.current_orbit_point.compute_new_parent(object, significant_mass_objects)
+    }
+
     pub fn reset(&mut self) {
         self.current_orbit_point = self.start_orbit_point.clone();
     }
