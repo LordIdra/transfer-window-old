@@ -3,7 +3,10 @@ use std::{rc::Rc, cell::RefCell, f32::consts::PI};
 use eframe::epaint::Rgba;
 use nalgebra_glm::{Vec3, Vec2};
 
-use super::{Object, SCALE_FACTOR, visual_orbit_point::VisualOrbitPoint, orbit_point::OrbitPoint, orbit_direction::OrbitDirection, orbit_description::OrbitDescription};
+use super::{Object, SCALE_FACTOR, visual_orbit_point::VisualOrbitPoint, orbit_point::OrbitPoint, orbit_direction::OrbitDirection, orbit_description::EllipseDescription};
+
+mod ellipse;
+mod hyperbola;
 
 const ORBIT_POINTS: usize = 256;
 const ORBIT_PATH_MAX_ALPHA: f32 = 1.0;
@@ -12,7 +15,7 @@ const ORBIT_PATH_RADIUS_DELTA: f32 = 0.6;
 pub struct Conic {
     parent: Rc<RefCell<Object>>,
     color: Vec3,
-    orbit_description: OrbitDescription,
+    orbit_description: EllipseDescription,
     start_orbit_point: OrbitPoint,
     end_orbit_point: Option<OrbitPoint>, // if none, the simulation has not yet found an end point for this conic section
     current_orbit_point: OrbitPoint,
@@ -20,10 +23,11 @@ pub struct Conic {
 
 impl Conic {
     pub fn new(parent: Rc<RefCell<Object>>, color: Vec3, position: Vec2, velocity: Vec2) -> Self {
-        let orbit_description = OrbitDescription::new(parent.borrow().mass, position, velocity);
+        let orbit_description = EllipseDescription::new(parent.borrow().mass, position, velocity);
         let start_orbit_point = OrbitPoint::new(&orbit_description, position);
         let end_orbit_point = None;
         let current_orbit_point = start_orbit_point.clone();
+        println!("{:?}", orbit_description);
         Self { parent, color, orbit_description, start_orbit_point, end_orbit_point, current_orbit_point }
     }
 

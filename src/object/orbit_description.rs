@@ -28,7 +28,11 @@ fn period(reduced_mass: f32, semi_major_axis: f32) -> f32 {
 }
 
 fn argument_of_periapsis(position: Vec2, velocity: Vec2, reduced_mass: f32, eccentricity: f32) -> f32 {
-    f32::atan2(position.y, position.x) - (((position.magnitude() * transverse_velocity(position, velocity).powi(2) / reduced_mass) - 1.0) / eccentricity).acos()
+    let mut x = ((position.magnitude() * transverse_velocity(position, velocity).powi(2) / reduced_mass) - 1.0) / eccentricity;
+    // Make sure x is between -1 and 1; sometimes it will go slightly out of bounds due to floating point errors
+    x = f32::min(x, 1.0);
+    x = f32::max(x, -1.0);
+    f32::atan2(position.y, position.x) - x.acos()
 }
 
 fn solve_kepler_equation(eccentricity: f32, mean_anomaly: f32) -> f32 {
@@ -39,8 +43,17 @@ fn solve_kepler_equation(eccentricity: f32, mean_anomaly: f32) -> f32 {
     eccentric_anomaly
 }
 
-// Describes all the static parmeters of an orbit, but says nothing about the current state of the object in the orbit
-pub struct OrbitDescription {
+pub trait ConicDescription {
+    fn new(mass: f32, position: Vec2, velocity: Vec2) -> Box<dyn ConicDescription> {
+        let reduced_mass = GRAVITATIONAL_CONSTANT * mass;
+        let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
+        let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
+    }
+}
+
+// Describes all the static parmeters of an elliptic orbit, but says nothing about the current state of the object in the orbit
+#[derive(Debug)]
+pub struct EllipseDescription {
     reduced_mass: f32,
     semi_major_axis: f32,
     eccentricity: f32,
@@ -49,7 +62,7 @@ pub struct OrbitDescription {
     direction: OrbitDirection,
 }
 
-impl OrbitDescription {
+impl EllipseDescription {
     pub fn new(mass: f32, position: Vec2, velocity: Vec2) -> Self {
         let reduced_mass = GRAVITATIONAL_CONSTANT * mass;
         let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
@@ -57,7 +70,7 @@ impl OrbitDescription {
         let period = period(reduced_mass, semi_major_axis);
         let argument_of_periapsis = argument_of_periapsis(position, velocity, reduced_mass, eccentricity);
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
-        OrbitDescription { reduced_mass, semi_major_axis, eccentricity, period, argument_of_periapsis, direction }
+        EllipseDescription { reduced_mass, semi_major_axis, eccentricity, period, argument_of_periapsis, direction }
     }
 
     pub fn get_angle_since_periapsis(&self, position: Vec2) -> f32 {

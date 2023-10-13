@@ -1,6 +1,6 @@
 use nalgebra_glm::Vec2;
 
-use super::orbit_description::OrbitDescription;
+use super::orbit_description::EllipseDescription;
 
 #[derive(Clone)]
 pub struct OrbitPoint {
@@ -11,14 +11,14 @@ pub struct OrbitPoint {
 }
 
 impl OrbitPoint {
-    pub fn new(orbit_description: &OrbitDescription, position: Vec2) -> Self {
+    pub fn new(orbit_description: &EllipseDescription, position: Vec2) -> Self {
         let angle_since_periapsis = orbit_description.get_angle_since_periapsis(position);
         let time_since_periapsis = orbit_description.get_time_since_periapsis_from_angle_since_periapsis(angle_since_periapsis);
         let velocity = orbit_description.get_velocity(position, angle_since_periapsis);
         Self { angle_since_periapsis, time_since_periapsis, position, velocity }
     }
 
-    pub fn next(&self, orbit_description: &OrbitDescription, delta_time: f32) -> Self {
+    pub fn next(&self, orbit_description: &EllipseDescription, delta_time: f32) -> Self {
         let time_since_periapsis = self.time_since_periapsis + delta_time;
         let angle_since_periapsis = orbit_description.get_angle_since_periapsis_from_time_since_periapsis(time_since_periapsis);
         let position = orbit_description.get_position(angle_since_periapsis);
