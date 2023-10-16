@@ -57,16 +57,16 @@ impl Object {
         self.get_absolute_parent_position() + *self.position.lock().unwrap()
     }
 
-    pub fn get_absolute_parent_velocity(&self) -> DVec2 {
+    pub fn get_absolute_parent_velocity(&self, time: f64) -> DVec2 {
         if let Some(parent) = &*self.parent.lock().unwrap() {
-            parent.get_absolute_velocity()
+            parent.get_absolute_velocity(time)
         } else {
             vec2(0.0, 0.0)
         }
     }
 
-    pub fn get_absolute_velocity(&self) -> DVec2 {
-        self.get_absolute_parent_velocity() + *self.velocity.lock().unwrap()
+    pub fn get_absolute_velocity(&self, time: f64) -> DVec2 {
+        self.get_absolute_parent_velocity(time) + *self.velocity.lock().unwrap()
     }
 
     pub fn get_absolute_scaled_position(&self) -> DVec2 {
@@ -102,8 +102,8 @@ impl Object {
         }
     }
 
-    pub fn update_for_trajectory_integration(&self, significant_mass_objects: &[Arc<Object>], delta_time: f64) {
-        self.trajectory.lock().unwrap().update_for_trajectory_integration(self, significant_mass_objects, delta_time);
+    pub fn update_for_trajectory_integration(&self, significant_mass_objects: &[Arc<Object>], delta_time: f64, time: f64) {
+        self.trajectory.lock().unwrap().update_for_trajectory_integration(self, significant_mass_objects, delta_time, time);
         if let Some(position) = self.trajectory.lock().unwrap().get_final_unscaled_position() {
             *self.position.lock().unwrap() = position;
         }

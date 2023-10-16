@@ -84,4 +84,11 @@ impl OrbitPoint {
             get_object_inducing_highest_acceleration(object, within_soi)
         }
     }
+
+    pub fn debug(&self) {
+        println!("asp {}", self.angle_since_periapsis);
+        println!("tsp {}", self.time_since_periapsis);
+        println!("pos {:?}", self.position);
+        println!("vel {:?}", self.velocity);
+    }
 }

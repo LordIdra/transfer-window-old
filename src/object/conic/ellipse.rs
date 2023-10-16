@@ -79,7 +79,12 @@ impl Conic for Ellipse {
         self.direction
     }
 
-    fn debug1(&self) -> f64 {
-        self.argument_of_periapsis
+    fn debug(&self) {
+        println!("rm {}", self.reduced_mass);
+        println!("sma {}", self.semi_major_axis);
+        println!("ecc {}", self.eccentricity);
+        println!("dir {:?}", self.direction);
+        println!("aop {}", self.period);
+        println!("aop {}", self.argument_of_periapsis);
     }
 }

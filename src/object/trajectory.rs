@@ -13,7 +13,7 @@ impl Trajectory {
     pub fn new(parent: Option<Arc<Object>>, position: DVec2, velocity: DVec2) -> Self {
         let mut orbits = VecDeque::new();
         if let Some(parent) = parent {
-            orbits.push_back(Orbit::new(parent, vec3(0.0, 0.6, 1.0), position, velocity))
+            orbits.push_back(Orbit::new(parent, vec3(0.0, 0.6, 1.0), position, velocity));
         }
         Self { orbits }
     }
@@ -61,14 +61,11 @@ impl Trajectory {
             orbit.update(delta_time);
             if orbit.is_finished() {
                 self.orbits.pop_front();
-                println!("start {:?}", self.orbits.front().unwrap().debug1());
-                println!("end {:?}", self.orbits.front().unwrap().debug2());
-                println!("argument of periapsis {}", self.orbits.front().unwrap().debug3());
             }
         }
     }
 
-    pub fn update_for_trajectory_integration(&mut self, object: &Object, significant_mass_objects: &[Arc<Object>], delta_time: f64) {
+    pub fn update_for_trajectory_integration(&mut self, object: &Object, significant_mass_objects: &[Arc<Object>], delta_time: f64, time: f64) {
         // Act on the last orbit, since we're extending a trajectory
         if let Some(orbit) = self.orbits.back_mut() { 
             orbit.update(delta_time);
@@ -77,9 +74,14 @@ impl Trajectory {
                     orbit.end();
                     // Switch frames of reference
                     let new_position = object.get_absolute_position() - new_parent.get_absolute_position();
-                    let new_velocity = object.get_absolute_velocity() - new_parent.get_absolute_velocity();
-                    println!("{} {} {}", new_parent.name, new_position, new_velocity);
-                    self.orbits.push_back(Orbit::new(new_parent, vec3(1.0, 0.0, 0.0), new_position, new_velocity));
+                    let new_velocity = object.get_absolute_velocity(time) - new_parent.get_absolute_velocity(time);
+                    let new_orbit = Orbit::new(new_parent.clone(), vec3(1.0, 0.0, 0.0), new_position, new_velocity);
+                    println!("{} {}", new_parent.name, time);
+                    println!("pos in {:?}", new_position);
+                    println!("vel in {:?}", new_velocity);
+                    new_orbit.debug();
+                    println!("");
+                    self.orbits.push_back(new_orbit);
                 }
             }
         }

@@ -160,15 +160,8 @@ impl Orbit {
         }
     }
 
-    pub fn debug1(&self) -> OrbitPoint {
-        self.start_orbit_point.clone()
-    }
-
-    pub fn debug2(&self) -> OrbitPoint {
-        self.end_orbit_point.as_ref().unwrap().clone()
-    }
-
-    pub fn debug3(&self) -> f64 {
-        self.conic.debug1()
+    pub fn debug(&self) {
+        self.conic.debug();
+        self.start_orbit_point.debug();
     }
 }

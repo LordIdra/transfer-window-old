@@ -81,5 +81,5 @@ pub trait Conic: Debug + Send {
     fn get_velocity(&self, position: DVec2, mean_anomaly: f64) -> DVec2;
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64;
     fn get_direction(&self) -> OrbitDirection;
-    fn debug1(&self) -> f64;
+    fn debug(&self);
 }

@@ -64,7 +64,12 @@ impl Conic for Hyperbola {
     }
     
     fn get_velocity(&self, position: DVec2, true_anomaly: f64) -> DVec2 {
+        // THIS FUNCTION IS WHERE THIS STUPID BUG STEMS FROM
+        // TODO 
+        // DANGER
+        // VELOCITY DIRECTION IS NOT BEING COMPUTED CORRECTLY. MAGNITUDE IS CORRECT
         let speed = position.magnitude() * f64::sqrt(self.reduced_mass / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
+        println!("spd{}", speed);
         let mut velocity_unit = vec2(-position.y, position.x).normalize();
         if let OrbitDirection::Anticlockwise = self.direction {
             velocity_unit *= -1.0;
@@ -80,7 +85,12 @@ impl Conic for Hyperbola {
         self.direction
     }
 
-    fn debug1(&self) -> f64 {
-        self.argument_of_periapsis
+    fn debug(&self) {
+        println!("rm {}", self.reduced_mass);
+        println!("sma {}", self.semi_major_axis);
+        println!("ecc {}", self.eccentricity);
+        println!("dir {:?}", self.direction);
+        println!("aop {}", self.argument_of_periapsis);
+        println!("sam {}", self.specific_angular_momentum);
     }
 }

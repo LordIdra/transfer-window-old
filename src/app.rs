@@ -37,17 +37,26 @@ impl App {
 
     fn init_objects(&mut self) {
         let sun = Object::new("sun".to_string(), None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0));
-        let earth = Object::new("earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, 2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        //let earth = Object::new("earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, 500.0), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        let earth = Object::new("earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, -2000.0), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
         //let planet = Object::new("planet".to_string(), Some(sun.clone()), vec2(-1.521e11, 0.0), vec2(0.0, 2.909e4), 5.9722e25, 6.378e7, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
         let moon = Object::new("moon".to_string(), Some(earth.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        let spacecraft = Object::new("spacecraft".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(-0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
-        self.camera.lock().unwrap().follow(spacecraft.clone());
+        let spacecraft1 = Object::new("spacecraft1".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(-0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
+        //let spacecraft2 = Object::new("spacecraft2".to_string(), Some(moon.clone()), vec2(-49286929.74569702, -45453097.38960475), vec2(828.8125, 131.115), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.3, 0.3, 1.0, 1.0));
+        self.camera.lock().unwrap().follow(spacecraft1.clone());
         self.objects.push(sun);
         self.objects.push(earth);
         //self.objects.push(planet);
         self.objects.push(moon);
-        self.objects.push(spacecraft);
+        self.objects.push(spacecraft1);
+        //self.objects.push(spacecraft2);
         do_full_trajectory_integration(&self.objects);
+
+        // spacecraft -185.8, 2.37
+        // moon -1016 -52
+
+        // spacecraft -185.4 0.005
+        // moon -1014 -131
     }
 
     fn render_underlay(&self, context: &Context, ui: &Ui) {

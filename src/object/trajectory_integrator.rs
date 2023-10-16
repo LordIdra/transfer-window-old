@@ -12,9 +12,9 @@ fn get_significant_mass_objects(objects: &[Arc<Object>]) -> Vec<Arc<Object>> {
         .collect()
 }
 
-fn do_time_step(objects: &Vec<Arc<Object>>, significant_mass_objects: &[Arc<Object>]) {
+fn do_time_step(objects: &Vec<Arc<Object>>, significant_mass_objects: &[Arc<Object>], time: f64) {
     for object in objects {
-        object.update_for_trajectory_integration(significant_mass_objects, TIME_STEP);
+        object.update_for_trajectory_integration(significant_mass_objects, TIME_STEP, time);
     }
 }
 
@@ -23,8 +23,8 @@ fn do_time_step(objects: &Vec<Arc<Object>>, significant_mass_objects: &[Arc<Obje
 // A very expensive operation
 pub fn do_full_trajectory_integration(objects: &Vec<Arc<Object>>) {
     let significant_mass_objects = get_significant_mass_objects(objects);
-    for _ in 0..TIME_STEPS {
-        do_time_step(objects, &significant_mass_objects);
+    for i in 0..TIME_STEPS {
+        do_time_step(objects, &significant_mass_objects, i as f64 * TIME_STEP);
     }
 
     for object in objects {
