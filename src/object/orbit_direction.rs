@@ -1,8 +1,8 @@
-use nalgebra_glm::Vec2;
+use nalgebra_glm::DVec2;
 
-use super::orbit_description::transverse_velocity;
+use super::conic::transverse_velocity;
 
-pub const GRAVITATIONAL_CONSTANT: f32 = 6.674e-11;
+pub const GRAVITATIONAL_CONSTANT: f64 = 6.674e-11;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OrbitDirection {
@@ -11,7 +11,7 @@ pub enum OrbitDirection {
 }
 
 impl OrbitDirection {
-    pub fn from_position_and_velocity(position: Vec2, velocity: Vec2) -> Self {
+    pub fn from_position_and_velocity(position: DVec2, velocity: DVec2) -> Self {
         if transverse_velocity(position, velocity) > 0.0 {
             Self::Clockwise
         } else {

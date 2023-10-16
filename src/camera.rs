@@ -1,9 +1,14 @@
+use std::sync::Arc;
+
 use eframe::{epaint::Rect, egui::Context};
 use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3};
+
+use crate::object::Object;
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
 
 pub struct Camera {
+    following: Option<Arc<Object>>,
     world_translation: DVec2,
     zoom: f64,
 }
@@ -11,13 +16,18 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Self {
+            following: None,
             world_translation: DVec2::new(0.0, 0.0),
-            zoom: 0.0002, 
+            zoom: 0.0002,
         }
     }
 
     fn translate(&mut self, amount: DVec2) {
         self.world_translation += amount / self.zoom;
+    }
+
+    pub fn follow(&mut self, object: Arc<Object>) {
+        self.following = Some(object);
     }
 
     pub fn update(&mut self, context: &Context) {
@@ -36,6 +46,10 @@ impl Camera {
                 self.translate(mouse_position * delta_zoom);
                 self.zoom = new_zoom;
             }
+
+            if let Some(following) = &self.following {
+                self.world_translation = following.get_absolute_scaled_position();
+            }
         });
     }
 
@@ -51,7 +65,7 @@ impl Camera {
         )
     }
 
-    pub fn get_zoom(&self) -> f32 {
-        self.zoom as f32
+    pub fn get_zoom(&self) -> f64 {
+        self.zoom
     }
 }

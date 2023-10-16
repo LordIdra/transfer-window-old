@@ -1,20 +1,20 @@
-use std::{sync::{Arc, Mutex}, cell::RefCell, rc::Rc, time::Instant};
+use std::{sync::{Arc, Mutex}, time::Instant};
 
 use eframe::{egui::{Context, CentralPanel, Slider, Ui}, epaint::{Rgba, PaintCallback}, Frame, CreationContext, egui_glow::CallbackFn};
 use nalgebra_glm::vec2;
 
-use crate::{object::Object, renderer::Renderer, camera::Camera};
+use crate::{object::{Object, trajectory_integrator::do_full_trajectory_integration}, renderer::Renderer, camera::Camera};
 
-const TIME_STEP: f32 = 86400.0 * 365.0 / 20.0;
+const TIME_STEP: f64 = 86400.0 * 365.0 / 1000.0;
 
 pub struct App {
     name: String,
     age: i32,
-    time: f32,
+    time: f64,
     camera: Arc<Mutex<Camera>>,
     orbit_renderer: Arc<Mutex<Renderer>>,
     object_renderer: Arc<Mutex<Renderer>>,
-    objects: Vec<Rc<RefCell<Object>>>,
+    objects: Vec<Arc<Object>>,
     last_frame: Instant,
 }
 
@@ -36,32 +36,30 @@ impl App {
     }
 
     fn init_objects(&mut self) {
-        let sun = Object::new(None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0));
-        let earth1 = Object::new(Some(sun.clone()), vec2(-1.521e11, 0.0), vec2(0.0, -4.129e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        //let earth2 = Object::new(Some(sun.clone()), vec2(-1.521e11, 0.0), vec2(0.0, 1.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        //let planet = Object::new(Some(sun.clone()), vec2(1.0e11, 1.0e11), vec2(0.0, 1.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        let moon1 = Object::new(Some(earth1.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        //let moon2 = Object::new(Some(earth2.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        //let moon3 = Object::new(Some(planet.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e7, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        let sun = Object::new("sun".to_string(), None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0));
+        let earth = Object::new("earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, 2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        //let planet = Object::new("planet".to_string(), Some(sun.clone()), vec2(-1.521e11, 0.0), vec2(0.0, 2.909e4), 5.9722e25, 6.378e7, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        let moon = Object::new("moon".to_string(), Some(earth.clone()), vec2(3.633e8, 0.0), vec2(0.0, -1.082e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        let spacecraft = Object::new("spacecraft".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(-0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
+        self.camera.lock().unwrap().follow(spacecraft.clone());
         self.objects.push(sun);
-        self.objects.push(earth1);
-        //self.objects.push(earth2);
+        self.objects.push(earth);
         //self.objects.push(planet);
-        self.objects.push(moon1);
-        //self.objects.push(moon2);
-        //self.objects.push(moon3);
+        self.objects.push(moon);
+        self.objects.push(spacecraft);
+        do_full_trajectory_integration(&self.objects);
     }
 
     fn render_underlay(&self, context: &Context, ui: &Ui) {
         let mut object_vertices = vec![];
         for object in &self.objects {
-            object_vertices.extend(object.borrow().get_object_vertices());
+            object_vertices.extend(object.get_object_vertices());
         }
         self.object_renderer.lock().unwrap().set_vertices(object_vertices);
 
         let mut orbit_vertices = vec![];
         for object in &self.objects {
-            orbit_vertices.extend(object.borrow().get_orbit_vertices(self.camera.lock().unwrap().get_zoom()));
+            orbit_vertices.extend(object.get_orbit_vertices(self.camera.lock().unwrap().get_zoom()));
         }
         self.orbit_renderer.lock().unwrap().set_vertices(orbit_vertices);
 
@@ -100,9 +98,9 @@ impl eframe::App for App {
             self.object_renderer.lock().unwrap().update(context);
             self.render_underlay(context, ui);
             self.render_ui(ui);
-            let delta_time = (Instant::now() - self.last_frame).as_secs_f32() * TIME_STEP;
+            let delta_time = (Instant::now() - self.last_frame).as_secs_f64() * TIME_STEP;
             self.time += delta_time;
-            self.objects.iter().for_each(|object| object.borrow_mut().update(delta_time));
+            self.objects.iter().for_each(|object| object.update(delta_time));
             self.last_frame = Instant::now();
         });            
     }

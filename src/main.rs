@@ -5,6 +5,7 @@ mod app;
 mod camera;
 mod object;
 mod renderer;
+mod util;
 
 fn create_app(creation_context: &CreationContext<'_>) -> Box<dyn eframe::App> {
     Box::new(App::new(creation_context))
