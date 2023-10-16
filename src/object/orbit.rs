@@ -153,7 +153,7 @@ impl Orbit {
     }
 
     pub fn is_finished(&self) -> bool {
-        if let OrbitDirection::Clockwise = self.conic.get_direction() {
+        if let OrbitDirection::AntiClockwise = self.conic.get_direction() {
             self.current_orbit_point.get_angle_since_periapsis() >= self.end_orbit_point.as_ref().unwrap().get_angle_since_periapsis()
         } else {
             self.current_orbit_point.get_angle_since_periapsis() <= self.end_orbit_point.as_ref().unwrap().get_angle_since_periapsis()

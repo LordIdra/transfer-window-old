@@ -50,6 +50,7 @@ impl OrbitPoint {
         // If the true anomaly is slightly negative due to floating point errors, the object is considered as being BEHIND the periapsis which is... problematic
         angle_since_periapsis += 1.0e-6;
         let time_since_periapsis = conic.get_time_since_periapsis(angle_since_periapsis);
+        let position = conic.get_position(angle_since_periapsis);
         let velocity = conic.get_velocity(position, angle_since_periapsis);
         Self { angle_since_periapsis, time_since_periapsis, position, velocity }
     }

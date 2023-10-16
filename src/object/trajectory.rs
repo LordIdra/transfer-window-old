@@ -80,7 +80,6 @@ impl Trajectory {
                     println!("pos in {:?}", new_position);
                     println!("vel in {:?}", new_velocity);
                     new_orbit.debug();
-                    println!("");
                     self.orbits.push_back(new_orbit);
                 }
             }

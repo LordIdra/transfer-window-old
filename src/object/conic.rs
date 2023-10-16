@@ -14,14 +14,18 @@ mod hyperbola;
 
 pub fn transverse_velocity(position: DVec2, velocity: DVec2) -> f64 {  // TODO I'm very suspicious about this. Is it correct?
     // Component of velocity perpendicular to the displacement
-    let perpendicular_to_displacement = vec2(position.y, position.x).normalize();
-    let cos = perpendicular_to_displacement.dot(&velocity) / (perpendicular_to_displacement.magnitude() * velocity.magnitude());
-    velocity.magnitude() * cos
+    let angle = f64::atan2(position.y, position.x);
+    let normalized_velocity = vec2(velocity.magnitude() * f64::cos(-angle), velocity.magnitude() * f64::sin(-angle));
+    normalized_velocity.y
+    
+    //let perpendicular_to_displacement = vec2(position.y, position.x).normalize();
+    //let cos = perpendicular_to_displacement.dot(&velocity) / (perpendicular_to_displacement.magnitude() * velocity.magnitude());
+    //velocity.magnitude() * cos
 }
 
 
-fn semi_major_axis(displacement: DVec2, velocity: DVec2, reduced_mass: f64) -> f64 {
-    ((2.0 / displacement.magnitude()) - (velocity.magnitude().powi(2) / reduced_mass)).powi(-1)
+fn semi_major_axis(position: DVec2, velocity: DVec2, reduced_mass: f64) -> f64 {
+    ((2.0 / position.magnitude()) - (velocity.magnitude().powi(2) / reduced_mass)).powi(-1)
 }
 
 fn eccentricity(position: DVec2, velocity: DVec2, reduced_mass: f64, semi_major_axis: f64) -> f64 {

@@ -27,7 +27,7 @@ impl Ellipse {
 impl Conic for Ellipse {
     fn get_true_anomaly_from_position(&self, position: DVec2) -> f64 {
         let mut angle_since_periapsis = f64::atan2(position.y, position.x) - self.argument_of_periapsis;
-        if let OrbitDirection::Anticlockwise = self.direction {
+        if let OrbitDirection::Clockwise = self.direction {
             angle_since_periapsis = -angle_since_periapsis
         }
 
@@ -41,7 +41,7 @@ impl Conic for Ellipse {
         // The reason we add 0.5 here is kind of weird; the sign of atan flips halfway through the orbit
         // So we need to add 2pi halfway through the orbit to keep things consistent
         true_anomaly += (time / self.period + 0.5).floor() * 2.0 * PI;
-        if let OrbitDirection::Anticlockwise = self.direction {
+        if let OrbitDirection::Clockwise = self.direction {
             true_anomaly = -true_anomaly;
         }
         true_anomaly
@@ -65,7 +65,7 @@ impl Conic for Ellipse {
     fn get_velocity(&self, position: DVec2, true_anomaly: f64) -> DVec2 {
         let speed = position.magnitude() * f64::sqrt(self.reduced_mass / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
         let mut velocity_unit = vec2(-position.y, position.x).normalize();
-        if let OrbitDirection::Anticlockwise = self.direction {
+        if let OrbitDirection::Clockwise = self.direction {
             velocity_unit *= -1.0;
         }
         speed * velocity_unit
