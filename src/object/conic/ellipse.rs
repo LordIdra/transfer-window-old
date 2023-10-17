@@ -4,7 +4,7 @@ use nalgebra_glm::{vec2, DVec2};
 
 use crate::object::orbit_direction::OrbitDirection;
 
-use super::{period, argument_of_periapsis, Conic, solve_kepler_equation_for_ellipse};
+use super::{period, argument_of_periapsis, Conic, solve_kepler_equation_for_ellipse, eccentric_anomaly};
 
 #[derive(Debug)]
 pub struct Ellipse {
@@ -71,7 +71,7 @@ impl Conic for Ellipse {
         // }
         // speed * velocity_unit
         let speed = f64::sqrt(self.reduced_mass * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
-        let eccentric_anomaly = 
+        let eccentric_anomaly = eccentric_anomaly(self.eccentricity, true_anomaly);
         // let intermediate_value = f64::sqrt(1.0 + self.eccentricity.powi(2) + 2.0 * self.eccentricity * true_anomaly.cos());
         // let velocity_unit = vec2(-f64::sin(true_anomaly) / intermediate_value, (self.eccentricity + f64::cos(true_anomaly)) / intermediate_value);
         speed * vec2(f64::cos(eccentric_anomaly), f64::sin(eccentric_anomaly))

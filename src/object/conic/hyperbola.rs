@@ -2,7 +2,7 @@ use nalgebra_glm::{vec2, DVec2};
 
 use crate::object::orbit_direction::OrbitDirection;
 
-use super::{argument_of_periapsis, Conic, specific_angular_momentum, solve_kepler_equation_for_hyperbola};
+use super::{argument_of_periapsis, Conic, specific_angular_momentum, solve_kepler_equation_for_hyperbola, eccentric_anomaly};
 
 #[derive(Debug)]
 pub struct Hyperbola {
@@ -95,6 +95,7 @@ impl Conic for Hyperbola {
         // println!("vel {}", v);
         // v
         let speed = f64::sqrt(self.reduced_mass * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
+        let eccentric_anomaly = eccentric_anomaly(self.eccentricity, true_anomaly);
         // let intermediate_value = f64::sqrt(1.0 + self.eccentricity.powi(2) + 2.0 * self.eccentricity * true_anomaly.cos());
         // let velocity_unit = vec2(-f64::sin(true_anomaly) / intermediate_value, (self.eccentricity + f64::cos(true_anomaly)) / intermediate_value);
         // println!("{}", velocity_unit);
@@ -253,7 +254,7 @@ fn test_velocity_from_true_anomaly_1() {
     let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
     let direction = OrbitDirection::from_position_and_velocity(position, velocity);
     let hyperbola = Hyperbola::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction);
-    let true_anomaly = 0.0;
+    let true_anomaly = 0.0; // TODO the position isn't correct!!!!!!! true anomaly should be pi / 2!!!!!!!!!!!!!!!1
     let new_velocity = hyperbola.get_velocity(hyperbola.get_position(true_anomaly), true_anomaly);
     let velocity_difference = new_velocity - velocity;
     assert!(velocity_difference.x.abs() < 0.1);
