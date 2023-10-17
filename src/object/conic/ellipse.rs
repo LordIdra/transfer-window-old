@@ -26,12 +26,12 @@ impl Ellipse {
 
 impl Conic for Ellipse {
     fn get_true_anomaly_from_position(&self, position: DVec2) -> f64 {
-        let mut angle_since_periapsis = f64::atan2(position.y, position.x) - self.argument_of_periapsis;
+        let mut true_anomaly = f64::atan2(position.y, position.x) - self.argument_of_periapsis;
         if let OrbitDirection::Clockwise = self.direction {
-            angle_since_periapsis = -angle_since_periapsis
+            true_anomaly = -true_anomaly
         }
 
-        angle_since_periapsis
+        true_anomaly
     }
 
     fn get_true_anomaly_from_time_since_periapsis(&self, time: f64) -> f64 {
@@ -63,12 +63,18 @@ impl Conic for Ellipse {
     }
     
     fn get_velocity(&self, position: DVec2, true_anomaly: f64) -> DVec2 {
-        let speed = position.magnitude() * f64::sqrt(self.reduced_mass / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
-        let mut velocity_unit = vec2(-position.y, position.x).normalize();
-        if let OrbitDirection::Clockwise = self.direction {
-            velocity_unit *= -1.0;
-        }
-        speed * velocity_unit
+        // // todo this is wrong
+        // let speed = position.magnitude() * f64::sqrt(self.reduced_mass / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
+        // let mut velocity_unit = vec2(-position.y, position.x).normalize();
+        // if let OrbitDirection::Clockwise = self.direction {
+        //     velocity_unit *= -1.0;
+        // }
+        // speed * velocity_unit
+        let speed = f64::sqrt(self.reduced_mass * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
+        let eccentric_anomaly = 
+        // let intermediate_value = f64::sqrt(1.0 + self.eccentricity.powi(2) + 2.0 * self.eccentricity * true_anomaly.cos());
+        // let velocity_unit = vec2(-f64::sin(true_anomaly) / intermediate_value, (self.eccentricity + f64::cos(true_anomaly)) / intermediate_value);
+        speed * vec2(f64::cos(eccentric_anomaly), f64::sin(eccentric_anomaly))
     }
 
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64 {

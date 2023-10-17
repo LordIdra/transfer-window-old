@@ -14,8 +14,8 @@ mod hyperbola;
 
 pub fn transverse_velocity(position: DVec2, velocity: DVec2) -> f64 {  // TODO I'm very suspicious about this. Is it correct?
     // Component of velocity perpendicular to the displacement
-    let angle = f64::atan2(position.y, position.x);
-    let normalized_velocity = vec2(velocity.magnitude() * f64::cos(-angle), velocity.magnitude() * f64::sin(-angle));
+    let angle = -f64::atan2(position.y, position.x);
+    let normalized_velocity = vec2(velocity.x * angle.cos() - velocity.y * angle.sin(), velocity.y * angle.cos() + velocity.x * angle.sin());
     normalized_velocity.y
     
     //let perpendicular_to_displacement = vec2(position.y, position.x).normalize();
@@ -64,6 +64,10 @@ fn specific_angular_momentum(position: DVec2, velocity: DVec2) -> f64 {
     position.magnitude() * velocity.magnitude()
 }
 
+fn eccentric_anomaly(eccentricity: f64, true_anomaly: f64) -> f64 {
+    2.0 * f64::atan(f64::sqrt((eccentricity + 1.0) / (eccentricity - 1.0)) * f64::tan(true_anomaly / 2.0))
+}
+
 pub fn new_conic(parent_mass: f64, position: DVec2, velocity: DVec2) -> Box<dyn Conic> {
     let reduced_mass = GRAVITATIONAL_CONSTANT * parent_mass;
     let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
@@ -80,9 +84,9 @@ pub fn new_conic(parent_mass: f64, position: DVec2, velocity: DVec2) -> Box<dyn 
 pub trait Conic: Debug + Send {
     fn get_true_anomaly_from_position(&self, position: DVec2) -> f64;
     fn get_true_anomaly_from_time_since_periapsis(&self, time: f64) -> f64;
-    fn get_time_since_periapsis(&self, theta: f64) -> f64;
-    fn get_position(&self, angle_since_periapsis: f64) -> DVec2;
-    fn get_velocity(&self, position: DVec2, mean_anomaly: f64) -> DVec2;
+    fn get_time_since_periapsis(&self, true_anomaly: f64) -> f64;
+    fn get_position(&self, true_anomaly: f64) -> DVec2;
+    fn get_velocity(&self, position: DVec2, true_anomaly: f64) -> DVec2;
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64;
     fn get_direction(&self) -> OrbitDirection;
     fn debug(&self);
