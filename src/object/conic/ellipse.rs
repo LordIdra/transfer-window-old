@@ -94,3 +94,26 @@ impl Conic for Ellipse {
         println!("aop {}", self.argument_of_periapsis);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::object::orbit_direction::GRAVITATIONAL_CONSTANT;
+
+    use super::*;
+    
+    #[test]
+    fn test_time_from_true_anomaly() {
+        // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/hyperbolic-trajectory-example.html
+        let position = vec2(6678100.0,  0.0);
+        let velocity = vec2(0.0, 15000.0);
+        let reduced_mass = GRAVITATIONAL_CONSTANT * 5.9722e24;
+        let semi_major_axis = 1.53000e7;
+        let eccentricity = 0.3725;
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        let ellipse = Ellipse::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction);
+        let true_anomaly = f64::to_radians(120.0);
+        let time = ellipse.get_time_since_periapsis(true_anomaly);
+        let expected_time = 1.13 * 60.0 * 60.0;
+        assert!((time - expected_time).abs() < 30.0)
+    }
+}

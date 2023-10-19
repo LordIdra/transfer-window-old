@@ -91,3 +91,54 @@ pub trait Conic: Debug + Send {
     fn get_direction(&self) -> OrbitDirection;
     fn debug(&self);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use nalgebra_glm::vec2;
+
+    use crate::object::orbit_direction::GRAVITATIONAL_CONSTANT;
+
+    #[test]
+    fn test_semi_major_axis() {
+        // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html
+        let position = vec2(6.9818e10,  0.0);
+        let velocity = vec2(0.0, 3.886e4);
+        let reduced_mass = GRAVITATIONAL_CONSTANT * 1.989e30;
+        let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
+        // actual SMA is slightly different due to N-body perturbations and the like
+        assert!((semi_major_axis - 5.790375e10).abs() < 10000.0); 
+    }
+
+    #[test]
+    fn test_eccentricity_elliptical() {
+        // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html
+        let position = vec2(6.9818e10,  0.0);
+        let velocity = vec2(0.0, 3.886e4);
+        let reduced_mass = GRAVITATIONAL_CONSTANT * 1.989e30;
+        let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
+        let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
+        assert!((eccentricity - 0.2056).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_eccentricity_hyperbolic() {
+        // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/hyperbolic-trajectory-example.html
+        let position = vec2(6678100.0,  0.0);
+        let velocity = vec2(0.0, 15000.0);
+        let reduced_mass = GRAVITATIONAL_CONSTANT * 5.972e24;
+        let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
+        let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
+        assert!((eccentricity - 2.7696).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_direction() {
+        // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/hyperbolic-trajectory-example.html
+        let position = vec2(6678100.0,  0.0);
+        let velocity = vec2(0.0, 15000.0);
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        assert_eq!(direction, OrbitDirection::AntiClockwise);
+    }
+}
