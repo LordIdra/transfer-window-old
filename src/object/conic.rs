@@ -103,8 +103,8 @@ mod tests {
     #[test]
     fn test_semi_major_axis() {
         // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html
-        let position = vec2(6.9818e10,  0.0);
-        let velocity = vec2(0.0, 3.886e4);
+        let position = vec2(6.9818e10 * f64::cos(PI / 6.0),  6.9818e10 * f64::sin(PI / 6.0));
+        let velocity = vec2(3.886e4 * f64::cos(PI / 6.0 + PI / 2.0), 3.886e4 * f64::sin(PI / 6.0 + PI / 2.0));
         let reduced_mass = GRAVITATIONAL_CONSTANT * 1.989e30;
         let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
         // actual SMA is slightly different due to N-body perturbations and the like
@@ -114,8 +114,8 @@ mod tests {
     #[test]
     fn test_eccentricity_elliptical() {
         // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html
-        let position = vec2(6.9818e10,  0.0);
-        let velocity = vec2(0.0, 3.886e4);
+        let position = vec2(6.9818e10 * f64::cos(-PI / 6.0),  6.9818e10 * f64::sin(-PI / 6.0),);
+        let velocity = vec2(3.886e4 * f64::sin(-PI / 6.0 + PI / 2.0), 3.886e4 * f64::cos(-PI / 6.0 + PI / 2.0));
         let reduced_mass = GRAVITATIONAL_CONSTANT * 1.989e30;
         let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
         let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
