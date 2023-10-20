@@ -73,6 +73,7 @@ pub fn new_conic(parent_mass: f64, position: DVec2, velocity: DVec2) -> Box<dyn 
     let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
     let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
     let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+    println!("{}", semi_major_axis);
     if eccentricity <= 1.0 {
         Box::new(Ellipse::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction))
     } else {
@@ -114,8 +115,8 @@ mod tests {
     #[test]
     fn test_eccentricity_elliptical() {
         // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html
-        let position = vec2(6.9818e10 * f64::cos(-PI / 6.0),  6.9818e10 * f64::sin(-PI / 6.0),);
-        let velocity = vec2(3.886e4 * f64::sin(-PI / 6.0 + PI / 2.0), 3.886e4 * f64::cos(-PI / 6.0 + PI / 2.0));
+        let position = vec2(6.9818e10 * f64::cos(-PI / 6.0), 6.9818e10 * f64::sin(-PI / 6.0),);
+        let velocity = vec2(3.886e4 * f64::cos(-PI / 6.0 + PI / 2.0), 3.886e4 * f64::sin(-PI / 6.0 + PI / 2.0));
         let reduced_mass = GRAVITATIONAL_CONSTANT * 1.989e30;
         let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
         let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
@@ -125,8 +126,8 @@ mod tests {
     #[test]
     fn test_eccentricity_hyperbolic() {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/hyperbolic-trajectory-example.html
-        let position = vec2(6678100.0,  0.0);
-        let velocity = vec2(0.0, 15000.0);
+        let position = vec2(6678100.0 * f64::cos(-PI / 6.0), 6678100.0 * f64::sin(-PI / 6.0));
+        let velocity = vec2(15000.0 * f64::cos(-PI / 6.0 + PI / 2.0), 15000.0 * f64::sin(-PI / 6.0 + PI / 2.0));
         let reduced_mass = GRAVITATIONAL_CONSTANT * 5.972e24;
         let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
         let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);

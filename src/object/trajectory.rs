@@ -79,6 +79,7 @@ impl Trajectory {
                     println!("{} {}", new_parent.name, time);
                     println!("pos in {:?}", new_position);
                     println!("vel in {:?}", new_velocity);
+                    //panic!();
                     new_orbit.debug();
                     self.orbits.push_back(new_orbit);
                 }

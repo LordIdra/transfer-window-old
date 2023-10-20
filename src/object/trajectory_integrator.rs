@@ -26,7 +26,6 @@ pub fn do_full_trajectory_integration(objects: &Vec<Arc<Object>>) {
     for i in 0..TIME_STEPS {
         do_time_step(objects, &significant_mass_objects, i as f64 * TIME_STEP);
     }
-
     for object in objects {
         object.reset_all_conics();
     }
