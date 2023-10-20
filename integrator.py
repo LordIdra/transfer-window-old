@@ -1,5 +1,5 @@
 from tkinter import *
-from math import sqrt, cos, sin
+from math import sqrt, cos, sin, atan2
 
 GRAVITATIONAL_CONSTANT = 6.67408e-11;
 SCALE = 5.0e-7;
@@ -31,11 +31,11 @@ class Object:
 
     def render(self, canvas: Canvas):
         scaled_position = (self.position[0] * SCALE, self.position[1] * SCALE)
-        canvas.create_oval(400+scaled_position[0]-5, 400+scaled_position[1]-5, 400+scaled_position[0]+5, 400+scaled_position[1]+5, fill=self.color, outline=self.color)
+        canvas.create_oval(400+scaled_position[0]-5, 400-scaled_position[1]-5, 400+scaled_position[0]+5, 400-scaled_position[1]+5, fill=self.color, outline=self.color)
 
 
 earth = Object(None, 5.9722e24, [0, 0], [0, 0], "blue")
-moon = Object(earth, 0.07346e24, [0.4055e9 * cos(PI/6), 0.4055e9 * sin(PI/6)], [0.970e3 * cos(PI/6 + PI/2), 0.970e3 * sin(PI/6 + PI/2)], "gray")
+moon = Object(earth, 0.07346e24, [0.4055e9 * cos(PI/6), 0.4055e9 * sin(PI/6)], [-0.570e3 * cos(PI/6 - PI/2), -0.570e3 * sin(PI/6 - PI/2)], "gray")
 
 window = Tk()
 canvas = Canvas(window, width=800, height=800, background="black")
@@ -44,22 +44,25 @@ canvas.pack()
 previous_previous_distance = 0
 previous_distance = 0
 
-for i in range(0, 5000):
-    moon.step(500.0)
+for i in range(0, 10000):
+    moon.step(100.0)
     moon.render(canvas)
     window.update()
 
     if i > 3:
-        if (previous_distance < previous_previous_distance) and (moon.distance() > previous_distance): # periapsis
-            periapsis_vector = moon.position
-        elif (previous_distance > previous_previous_distance) and (moon.distance() < previous_distance): # apoapsis
-            apoapsis_vector = moon.position
+        if (previous_distance < previous_previous_distance) and (previous_distance < moon.distance()): # periapsis
+            periapsis_vector = [moon.position[0], moon.position[1]]
+        elif (previous_distance > previous_previous_distance) and (previous_distance > moon.distance()): # apoapsis
+            apoapsis_vector = [moon.position[0], moon.position[1]]
+    
+    print(moon.position, moon.velocity)
 
     previous_previous_distance = previous_distance
     previous_distance = moon.distance()
 
-apoapsis = magnitude(apoapsis_vector)
-periapsis = magnitude(periapsis_vector)
-semi_major_axis = (apoapsis + periapsis) / 2
 
-print(semi_major_axis)
+#apoapsis = magnitude(apoapsis_vector)
+#periapsis = magnitude(periapsis_vector)
+#semi_major_axis = (apoapsis + periapsis) / 2
+
+print(periapsis_vector, atan2(periapsis_vector[1], periapsis_vector[0]))

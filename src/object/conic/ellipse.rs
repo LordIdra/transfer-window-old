@@ -8,7 +8,7 @@ use super::{period, argument_of_periapsis, Conic, solve_kepler_equation_for_elli
 
 #[derive(Debug)]
 pub struct Ellipse {
-    reduced_mass: f64,
+    standard_gravitational_parameter: f64,
     semi_major_axis: f64,
     eccentricity: f64,
     direction: OrbitDirection,
@@ -18,11 +18,11 @@ pub struct Ellipse {
 }
 
 impl Ellipse {
-    pub(in super) fn new(position: DVec2, velocity: DVec2, reduced_mass: f64, semi_major_axis: f64, eccentricity: f64, direction: OrbitDirection) -> Self {
-        let period = period(reduced_mass, semi_major_axis);
-        let argument_of_periapsis = argument_of_periapsis(position, velocity, reduced_mass, eccentricity);
+    pub(in super) fn new(position: DVec2, velocity: DVec2, standard_gravitational_parameter: f64, semi_major_axis: f64, eccentricity: f64, direction: OrbitDirection) -> Self {
+        let period = period(standard_gravitational_parameter, semi_major_axis);
+        let argument_of_periapsis = argument_of_periapsis(position, velocity, standard_gravitational_parameter, eccentricity, direction);
         let specific_angular_momentum = specific_angular_momentum(position, velocity);
-        Ellipse { reduced_mass, semi_major_axis, eccentricity, period, argument_of_periapsis, direction, specific_angular_momentum }
+        Ellipse { standard_gravitational_parameter, semi_major_axis, eccentricity, period, argument_of_periapsis, direction, specific_angular_momentum }
     }
 }
 
@@ -64,19 +64,19 @@ impl Conic for Ellipse {
     
     fn get_velocity(&self, position: DVec2, true_anomaly: f64) -> DVec2 {
         // // todo this is wrong
-        // let speed = position.magnitude() * f64::sqrt(self.reduced_mass / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
+        // let speed = position.magnitude() * f64::sqrt(self.standard_gravitational_parameter / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
         // let mut velocity_unit = vec2(-position.y, position.x).normalize();
         // if let OrbitDirection::Clockwise = self.direction {
         //     velocity_unit *= -1.0;
         // }
         // speed * velocity_unit
-        // let speed = f64::sqrt(self.reduced_mass * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
+        // let speed = f64::sqrt(self.standard_gravitational_parameter * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
         // let eccentric_anomaly = eccentric_anomaly(self.eccentricity, true_anomaly);
         // let intermediate_value = f64::sqrt(1.0 + self.eccentricity.powi(2) + 2.0 * self.eccentricity * true_anomaly.cos());
         // let velocity_unit = vec2(-f64::sin(true_anomaly) / intermediate_value, (self.eccentricity + f64::cos(true_anomaly)) / intermediate_value);
         // speed * vec2(f64::cos(eccentric_anomaly), f64::sin(eccentric_anomaly))
         let mean_anomaly = true_anomaly - self.argument_of_periapsis;
-        let radial_speed = (self.reduced_mass / self.specific_angular_momentum) * self.eccentricity * mean_anomaly.sin();
+        let radial_speed = (self.standard_gravitational_parameter / self.specific_angular_momentum) * self.eccentricity * mean_anomaly.sin();
         let normal_speed = self.specific_angular_momentum / position.magnitude();
         let radial_direction = position.normalize();
         let mut normal_direction = vec2(-radial_direction.y, radial_direction.x);
@@ -95,7 +95,7 @@ impl Conic for Ellipse {
     }
 
     fn debug(&self) {
-        println!("rm {}", self.reduced_mass);
+        println!("rm {}", self.standard_gravitational_parameter);
         println!("sma {}", self.semi_major_axis);
         println!("ecc {}", self.eccentricity);
         println!("dir {:?}", self.direction);
@@ -115,11 +115,11 @@ mod tests {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
         let position = vec2(6678100.0,  0.0);
         let velocity = vec2(0.0, 15000.0);
-        let reduced_mass = GRAVITATIONAL_CONSTANT * 5.9722e24;
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.9722e24;
         let semi_major_axis = 1.53000e7;
         let eccentricity = 0.3725;
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
-        let ellipse = Ellipse::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction);
+        let ellipse = Ellipse::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
         let true_anomaly = f64::to_radians(120.0);
         let time = ellipse.get_time_since_periapsis(true_anomaly);
         let expected_time = 1.13 * 60.0 * 60.0;
@@ -131,11 +131,11 @@ mod tests {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
         let position = vec2(6678100.0,  0.0);
         let velocity = vec2(0.0, 15000.0);
-        let reduced_mass = GRAVITATIONAL_CONSTANT * 5.9722e24;
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.9722e24;
         let semi_major_axis = 1.53000e7;
         let eccentricity = 0.3725;
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
-        let ellipse = Ellipse::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction);
+        let ellipse = Ellipse::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
         let time = 3.0 * 3600.0;
         let true_anomaly = ellipse.get_true_anomaly_from_time_since_periapsis(time);
         let expected_true_anomaly = f64::to_radians(193.16);
@@ -147,11 +147,11 @@ mod tests {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
         let position = vec2(1.52100e11,  0.0);
         let velocity = vec2(0.0, 2.929e4);
-        let reduced_mass = GRAVITATIONAL_CONSTANT * 1.988500e30;
-        let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
-        let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 1.988500e30;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
-        let ellipse = Ellipse::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction);
+        let ellipse = Ellipse::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
         let true_anomaly = PI;
         let new_position = ellipse.get_position(true_anomaly);
         let expected_position = vec2(-1.470834e11, 0.0);
@@ -165,11 +165,11 @@ mod tests {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
         let position = vec2(1.52100e11,  0.0);
         let velocity = vec2(0.0, 2.929e4);
-        let reduced_mass = GRAVITATIONAL_CONSTANT * 1.988500e30;
-        let semi_major_axis = semi_major_axis(position, velocity, reduced_mass);
-        let eccentricity = eccentricity(position, velocity, reduced_mass, semi_major_axis);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 1.988500e30;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
-        let ellipse = Ellipse::new(position, velocity, reduced_mass, semi_major_axis, eccentricity, direction);
+        let ellipse = Ellipse::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
         let true_anomaly = PI;
         let new_position = ellipse.get_position(true_anomaly);
         let new_velocity = ellipse.get_velocity(new_position, true_anomaly);
