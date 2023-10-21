@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::object::orbit_direction::OrbitDirection;
+use crate::object::orbit_direction::{OrbitDirection, GRAVITATIONAL_CONSTANT};
 
 use super::{period, argument_of_periapsis, Conic, solve_kepler_equation_for_ellipse, specific_angular_momentum};
 
@@ -57,7 +57,7 @@ impl Conic for Ellipse {
     }
 
     fn get_position(&self, true_anomaly: f64) -> DVec2 {
-        let mean_anomaly = true_anomaly + self.argument_of_periapsis;
+        let mean_anomaly = true_anomaly - self.argument_of_periapsis;
         let radius = (self.semi_major_axis * (1.0 - self.eccentricity.powi(2))) / (1.0 + self.eccentricity * mean_anomaly.cos());
         vec2(radius * true_anomaly.cos(), radius * true_anomaly.sin())
     }
@@ -75,15 +75,40 @@ impl Conic for Ellipse {
         // let intermediate_value = f64::sqrt(1.0 + self.eccentricity.powi(2) + 2.0 * self.eccentricity * true_anomaly.cos());
         // let velocity_unit = vec2(-f64::sin(true_anomaly) / intermediate_value, (self.eccentricity + f64::cos(true_anomaly)) / intermediate_value);
         // speed * vec2(f64::cos(eccentric_anomaly), f64::sin(eccentric_anomaly))
+
+        // THIS METHOD WORKS
+        // let mean_anomaly = true_anomaly - self.argument_of_periapsis;
+        // let radial_speed = (self.standard_gravitational_parameter / self.specific_angular_momentum) * self.eccentricity * mean_anomaly.sin();
+        // let normal_speed = self.specific_angular_momentum / position.magnitude();
+        // let radial_direction = position.normalize();
+        // let mut normal_direction = vec2(-radial_direction.y, radial_direction.x);
+        // if let OrbitDirection::Clockwise = self.direction {
+        //     normal_direction = -normal_direction;
+        // }
+        // (radial_speed * radial_direction) + (normal_speed * normal_direction)
+
+        // let mean_anomaly = true_anomaly + 2.615930001576588;
+        // let radial_speed = (1383.585334148634) * 0.6694664826663406 * mean_anomaly.sin();
+        // let normal_speed = 860.6365540496415;
+        // let radial_direction = position.normalize();
+        // let mut normal_direction = vec2(-radial_direction.y, radial_direction.x);
+        // if let OrbitDirection::Clockwise = self.direction {
+        //     normal_direction = -normal_direction;
+        // }
+        // (radial_speed * radial_direction) + (normal_speed * normal_direction)
+
+        // THIS METHOD ALSO WORKS
         let mean_anomaly = true_anomaly - self.argument_of_periapsis;
-        let radial_speed = (self.standard_gravitational_parameter / self.specific_angular_momentum) * self.eccentricity * mean_anomaly.sin();
-        let normal_speed = self.specific_angular_momentum / position.magnitude();
-        let radial_direction = position.normalize();
-        let mut normal_direction = vec2(-radial_direction.y, radial_direction.x);
-        if let OrbitDirection::Clockwise = self.direction {
-            normal_direction = -normal_direction;
-        }
-        (radial_speed * radial_direction) + (normal_speed * normal_direction)
+        let radius = position.magnitude();
+        let radius_derivative_with_respect_to_true_anomaly = self.semi_major_axis * self.eccentricity * (1.0 - self.eccentricity.powi(2)) * mean_anomaly.sin()
+            / (self.eccentricity * mean_anomaly.cos() + 1.0).powi(2);
+        let position_derivative_with_respect_to_true_anomaly = vec2(
+            radius_derivative_with_respect_to_true_anomaly * true_anomaly.cos() - radius * true_anomaly.sin(), 
+            radius_derivative_with_respect_to_true_anomaly * true_anomaly.sin() + radius * true_anomaly.cos());
+        //let speed = f64::sqrt(self.standard_gravitational_parameter * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
+        //let angular_speed = speed / radius;
+        let angular_speed = self.specific_angular_momentum / radius.powi(2);
+        position_derivative_with_respect_to_true_anomaly * angular_speed
     }
 
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64 {
@@ -143,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn test_position_from_true_anomaly() {
+    fn test_position_from_true_anomaly_1() {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
         let position = vec2(1.52100e11,  0.0);
         let velocity = vec2(0.0, 2.929e4);
@@ -156,12 +181,30 @@ mod tests {
         let new_position = ellipse.get_position(true_anomaly);
         let expected_position = vec2(-1.470834e11, 0.0);
         let position_difference = new_position - expected_position;
-        assert!(position_difference.x < 10000.0);
-        assert!(position_difference.y < 10000.0);
+        assert!(position_difference.x.abs() < 5000.0);
+        assert!(position_difference.y.abs() < 0.1);
     }
 
     #[test]
-    fn test_velocity_from_true_anomaly() {
+    fn test_position_from_true_anomaly_2() {
+        // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
+        let position = vec2(321699434.0757532, 238177462.81333557);
+        let velocity = vec2(-448.8853759438255, 386.13875843572083);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.9722e24;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        let ellipse = Ellipse::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
+        let true_anomaly = 0.6373110791759163;
+        let new_position = ellipse.get_position(true_anomaly);
+        //178.27214929701432, 677.9192304463596
+        let position_difference = new_position - position;
+        assert!(position_difference.x.abs() < 0.01);
+        assert!(position_difference.y.abs() < 0.01);
+    }
+
+    #[test]
+    fn test_velocity_from_true_anomaly_1() {
         // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
         let position = vec2(1.52100e11,  0.0);
         let velocity = vec2(0.0, 2.929e4);
@@ -175,7 +218,25 @@ mod tests {
         let new_velocity = ellipse.get_velocity(new_position, true_anomaly);
         let expected_velocity = vec2(0.0, -3.029e4);
         let velocity_difference = new_velocity - expected_velocity;
-        assert!(velocity_difference.x < 10.0);
-        assert!(velocity_difference.y < 10.0);
+        assert!(velocity_difference.x.abs() < 0.01);
+        assert!(velocity_difference.y.abs() < 10.0);
+    }
+
+    #[test]
+    fn test_velocity_from_true_anomaly_2() {
+        // https://orbital-mechanics.space/time-since-periapsis-and-keplers-equation/elliptical-orbits.html
+        let position = vec2(234851481.38196197, 174455271.78610012);
+        let velocity = vec2(-250.6798696407834, 817.5591126812552);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.9722e24;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        let ellipse = Ellipse::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
+        let true_anomaly = f64::atan2(position.y, position.x);
+        let new_position = ellipse.get_position(true_anomaly);
+        let new_velocity = ellipse.get_velocity(new_position, true_anomaly);
+        let velocity_difference = new_velocity - velocity;
+        assert!(velocity_difference.x.abs() < 0.01);
+        assert!(velocity_difference.y.abs() < 0.01);
     }
 }

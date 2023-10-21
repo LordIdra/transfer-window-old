@@ -32,27 +32,26 @@ fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
 }
 
 fn argument_of_periapsis(position: DVec2, velocity: DVec2, standard_gravitational_parameter: f64, eccentricity: f64, direction: OrbitDirection) -> f64 {
-    // let eccentricity_vector = (velocity.magnitude() / standard_gravitational_parameter - 1.0 / position.magnitude()) * position - (position.dot(&velocity) / standard_gravitational_parameter) * velocity;
-    // f64::atan2(eccentricity_vector.y, eccentricity_vector.x)
-    let mut x = ((position.magnitude() * transverse_velocity(position, velocity).powi(2) / standard_gravitational_parameter) - 1.0) / eccentricity;
-    // Make sure x is between -1 and 1; sometimes it will go slightly out of bounds due to floating point errors
-    x = f64::min(x, 1.0);
-    x = f64::max(x, -1.0);
-    let mut argument_of_periapsis = f64::atan2(position.y, position.x);
-    if let OrbitDirection::AntiClockwise = direction {
-        argument_of_periapsis -= x.acos();
-    } else {
-        argument_of_periapsis += x.acos();
-    }
+    // let mut x = ((position.magnitude() * transverse_velocity(position, velocity).powi(2) / standard_gravitational_parameter) - 1.0) / eccentricity;
+    // // Make sure x is between -1 and 1; sometimes it will go slightly out of bounds due to floating point errors
+    // x = f64::min(x, 1.0);
+    // x = f64::max(x, -1.0);
+    // let mut argument_of_periapsis = if let OrbitDirection::AntiClockwise = direction {
+    //     f64::atan(position.y / position.x) + x.acos()
+    // } else {
+    //     f64::atan(position.y / position.x) - x.acos()
+    // };
 
-    while argument_of_periapsis > PI {
-        argument_of_periapsis -= 2.0 * PI
-    }
-    while argument_of_periapsis < -PI {
-        argument_of_periapsis += 2.0 * PI
-    }
+    // while argument_of_periapsis > PI {
+    //     argument_of_periapsis -= 2.0 * PI
+    // }
+    // while argument_of_periapsis < -PI {
+    //     argument_of_periapsis += 2.0 * PI
+    // }
 
-    argument_of_periapsis
+    // argument_of_periapsis
+    let eccentricity_vector = ((velocity.magnitude().powi(2) - standard_gravitational_parameter / position.magnitude()) * position - (position.dot(&velocity) * velocity)) / standard_gravitational_parameter;
+    f64::atan2(eccentricity_vector.y, eccentricity_vector.x)
 }
 
 fn solve_kepler_equation_for_ellipse(eccentricity: f64, mean_anomaly: f64) -> f64 {
@@ -72,7 +71,7 @@ fn solve_kepler_equation_for_hyperbola(eccentricity: f64, mean_anomaly: f64) -> 
 }
 
 fn specific_angular_momentum(position: DVec2, velocity: DVec2) -> f64 {
-    position.magnitude() * velocity.magnitude()
+    position.magnitude() * transverse_velocity(position, velocity)
 }
 
 pub fn new_conic(parent_mass: f64, position: DVec2, velocity: DVec2) -> Box<dyn Conic> {
@@ -168,7 +167,7 @@ mod tests {
     #[test]
     fn test_period_3() {
         // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html
-        let position = vec2(6.9818e10 * f64::cos(-PI / 6.0), 6.9818e10 * f64::sin(-PI / 6.0),);
+        let position = vec2(6.9818e10 * f64::cos(-PI / 6.0), 6.9818e10 * f64::sin(-PI / 6.0));
         let velocity = vec2(3.886e4 * f64::cos(-PI / 6.0 + PI / 2.0), 3.886e4 * f64::sin(-PI / 6.0 + PI / 2.0));
         let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 1.9895e30;
         let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
@@ -206,9 +205,8 @@ mod tests {
 
     #[test]
     fn test_argument_of_periapsis_3() {
-        // TODO why is this incorrect while test #4 is correct???????????????????????????????????
-        let position = vec2(357763349.84697163, 67737833.15249428);
-        let velocity = vec2(256.38739523415967, 694.5991720696464);
+        let position = vec2(369236029.3588132, 143598629.71966434);
+        let velocity = vec2(47.79968959560202, -607.3920534306773);
         let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.9722e24;
         let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
         let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
@@ -228,6 +226,19 @@ mod tests {
         let direction = OrbitDirection::from_position_and_velocity(position, velocity);
         let argument_of_periapsis = argument_of_periapsis(position, velocity, standard_gravitational_parameter, eccentricity, direction);
         let expected_argument_of_periapsis = PI / 6.0 - PI;
+        assert!((argument_of_periapsis - expected_argument_of_periapsis).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_argument_of_periapsis_5() {
+        let position = vec2(321699434.0757532, 238177462.81333557);
+        let velocity = vec2(-448.8853759438255, 386.13875843572083);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.9722e24;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        let argument_of_periapsis = argument_of_periapsis(position, velocity, standard_gravitational_parameter, eccentricity, direction);
+        let expected_argument_of_periapsis = -2.615930001576588;
         assert!((argument_of_periapsis - expected_argument_of_periapsis).abs() < 0.01);
     }
 }

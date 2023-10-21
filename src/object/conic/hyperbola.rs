@@ -64,42 +64,17 @@ impl Conic for Hyperbola {
     }
     
     fn get_velocity(&self, position: DVec2, true_anomaly: f64) -> DVec2 {
-        // THIS FUNCTION IS WHERE THIS STUPID BUG STEMS FROM
-        // TODO 
-        // DANGER
-        // VELOCITY DIRECTION IS NOT BEING COMPUTED CORRECTLY. MAGNITUDE IS CORRECT
-        /*let speed = position.magnitude() * f64::sqrt(self.standard_gravitational_parameter / (self.semi_major_axis.powi(3) * (1.0 - self.eccentricity.powi(2)).powi(3))) * (1.0 + (self.eccentricity * f64::cos(true_anomaly))).powi(2);
-        println!("spd{}", speed);
-        let mut velocity_unit = vec2(-position.y, position.x).normalize();
-        if let OrbitDirection::Anticlockwise = self.direction {
-            velocity_unit *= -1.0;
-        }
-        speed * velocity_unit*/
-        /*let radius = (self.semi_major_axis * (1.0 - self.eccentricity.powi(2))) / (1.0 + self.eccentricity * true_anomaly.cos());
-        let radius_derivative = self.semi_major_axis * (1.0 - self.eccentricity.powi(2)) * (self.eccentricity * true_anomaly.sin()) / (1.0 + self.eccentricity * true_anomaly.cos()).powi(2);
-        let a = self.argument_of_periapsis.cos() * true_anomaly.cos() - self.argument_of_periapsis.sin() * true_anomaly.sin();
-        let b = self.argument_of_periapsis.cos() * true_anomaly.sin() + self.argument_of_periapsis.sin() * true_anomaly.cos();
-        DVec2::new(radius_derivative * a - radius * b, radius_derivative * b + radius * a)*/
-        //f64::sqrt(self.standard_gravitational_parameter * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)))
         let mean_anomaly = true_anomaly - self.argument_of_periapsis;
-        let radial_speed = (self.standard_gravitational_parameter / self.specific_angular_momentum) * self.eccentricity * mean_anomaly.sin();
-        let normal_speed = self.specific_angular_momentum / position.magnitude();
-        let radial_direction = position.normalize();
-        let mut normal_direction = vec2(-radial_direction.y, radial_direction.x);
-        if let OrbitDirection::Clockwise = self.direction {
-            normal_direction = -normal_direction;
-        }
-        let v = (radial_speed * radial_direction) + (normal_speed * normal_direction);
-        println!("scp {} {}", radial_speed, normal_speed);
-        println!("spd {}", v.magnitude());
-        println!("vel {}", v);
-        v
+        let radius = position.magnitude();
+        let radius_derivative_with_respect_to_true_anomaly = self.semi_major_axis * self.eccentricity * (1.0 - self.eccentricity.powi(2)) * mean_anomaly.sin()
+            / (self.eccentricity * mean_anomaly.cos() + 1.0).powi(2);
+        let position_derivative_with_respect_to_true_anomaly = vec2(
+            radius_derivative_with_respect_to_true_anomaly * true_anomaly.cos() - radius * true_anomaly.sin(), 
+            radius_derivative_with_respect_to_true_anomaly * true_anomaly.sin() + radius * true_anomaly.cos());
         //let speed = f64::sqrt(self.standard_gravitational_parameter * ((2.0 / position.magnitude()) - (1.0 / self.semi_major_axis)));
-        //let eccentric_anomaly = eccentric_anomaly(self.eccentricity, true_anomaly);
-        // let intermediate_value = f64::sqrt(1.0 + self.eccentricity.powi(2) + 2.0 * self.eccentricity * true_anomaly.cos());
-        // let velocity_unit = vec2(-f64::sin(true_anomaly) / intermediate_value, (self.eccentricity + f64::cos(true_anomaly)) / intermediate_value);
-        // println!("{}", velocity_unit);
-        //speed * vec2(f64::cos(eccentric_anomaly), f64::sin(eccentric_anomaly))
+        //let angular_speed = speed / radius;
+        let angular_speed = self.specific_angular_momentum / radius.powi(2);
+        position_derivative_with_respect_to_true_anomaly * angular_speed
     }
 
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64 {
