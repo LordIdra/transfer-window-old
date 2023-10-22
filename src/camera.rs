@@ -1,14 +1,12 @@
-use std::sync::Arc;
-
 use eframe::{epaint::Rect, egui::Context};
 use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3};
 
-use crate::object::Object;
+use crate::{app::ObjectId, storage::Storage};
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
 
 pub struct Camera {
-    following: Option<Arc<Object>>,
+    following: Option<ObjectId>,
     world_translation: DVec2,
     zoom: f64,
 }
@@ -26,11 +24,11 @@ impl Camera {
         self.world_translation += amount / self.zoom;
     }
 
-    pub fn follow(&mut self, object: Arc<Object>) {
+    pub fn follow(&mut self, object: ObjectId) {
         self.following = Some(object);
     }
 
-    pub fn update(&mut self, context: &Context) {
+    pub fn update(&mut self, context: &Context, storage: &Storage) {
         context.input(|input| {
             if input.pointer.secondary_down() {
                 self.translate(0.5 * DVec2::new(-input.pointer.delta().x as f64, input.pointer.delta().y as f64));
@@ -48,7 +46,7 @@ impl Camera {
             }
 
             if let Some(following) = &self.following {
-                self.world_translation = following.get_absolute_scaled_position();
+                self.world_translation = storage.get(following).get_absolute_scaled_position(storage);
             }
         });
     }

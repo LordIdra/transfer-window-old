@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use eframe::{epaint::Rect, egui::{self}};
 use glow::Context;
 
-use crate::camera::Camera;
+use crate::{camera::Camera, storage::Storage};
 
 use self::{shader_program::ShaderProgram, vertex_array_object::{VertexArrayObject, VertexAttribute}};
 
@@ -31,8 +31,8 @@ impl Renderer {
         self.vertex_array_object.data(vertices);
     }
 
-    pub fn update(&mut self, context: &egui::Context) {
-        self.camera.lock().unwrap().update(context);
+    pub fn update(&mut self, context: &egui::Context, object_storage: &Storage) {
+        self.camera.lock().unwrap().update(context, object_storage);
     }
 
     pub fn render(&self, screen_size: Rect) {

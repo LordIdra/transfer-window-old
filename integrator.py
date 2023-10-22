@@ -34,11 +34,11 @@ class Object:
 
     def render(self, canvas: Canvas):
         scaled_position = (self.position[0] * SCALE, self.position[1] * SCALE)
-        #canvas.create_oval(400+scaled_position[0]-5, 400-scaled_position[1]-5, 400+scaled_position[0]+5, 400-scaled_position[1]+5, fill=self.color, outline=self.color)
+        canvas.create_oval(400+scaled_position[0]-5, 400-scaled_position[1]-5, 400+scaled_position[0]+5, 400-scaled_position[1]+5, fill=self.color, outline=self.color)
 
 
-start_position = [-34042272.784328505,228391355.7630093]
-start_velocity = [-914.5252638280764,-789.2460296350055]
+start_position = [-83760632.16012573, -305649596.3836937]
+start_velocity = [-929.2507297680404, 1168.0344669650149]
 earth = Object(None, 5.9722e24, [0, 0], [0, 0], "blue")
 moon = Object(earth, 0.07346e24, [start_position[0], start_position[1]], [start_velocity[0], start_velocity[1]], "gray")
 
@@ -49,8 +49,8 @@ canvas.pack()
 previous_previous_distance = 0
 previous_distance = 0
 
-for i in range(0, 14000):
-    moon.step(100.0)
+for i in range(0, 20000):
+    moon.step(1000.0)
     moon.render(canvas)
     window.update()
 
@@ -74,7 +74,7 @@ argument_of_periapsis = atan2(periapsis_vector[1], periapsis_vector[0])
 eccentricity = 1 - periapsis / semi_major_axis
 
 print("periapsis vector", periapsis_vector)
-print("periapsis argument", )
+print("periapsis argument", argument_of_periapsis)
 print("periapsis distance", periapsis)
 print("apoapsis distance", apoapsis)
 print("semimajor axis", semi_major_axis)

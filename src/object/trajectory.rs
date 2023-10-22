@@ -1,36 +1,33 @@
-use std::{sync::Arc, collections::VecDeque};
+use std::collections::VecDeque;
 
 use nalgebra_glm::{vec3, DVec2};
 
+use crate::{storage::Storage, app::ObjectId};
+
 use super::{orbit::Orbit, Object};
 
-#[derive(Debug)]
 pub struct Trajectory {
     orbits: VecDeque<Orbit>,
 }
 
 impl Trajectory {
-    pub fn new(parent: Option<Arc<Object>>, position: DVec2, velocity: DVec2) -> Self {
+    pub fn new(storage: &Storage, parent: Option<ObjectId>, position: DVec2, velocity: DVec2, time: f64) -> Self {
         let mut orbits = VecDeque::new();
         if let Some(parent) = parent {
-            orbits.push_back(Orbit::new(parent, vec3(0.0, 0.6, 1.0), position, velocity));
+            orbits.push_back(Orbit::new(storage, parent, vec3(0.0, 0.6, 1.0), position, velocity, time));
         }
         Self { orbits }
     }
 
-    pub fn get_sphere_of_influence(&self, mass: f64) -> f64 {
+    pub fn get_sphere_of_influence_squared(&self, storage: &Storage, mass: f64) -> Option<f64> {
         // https://en.wikipedia.org/wiki/Sphere_of_influence_(astrodynamics)
-        if let Some(orbit) = self.orbits.front() {
-            orbit.get_sphere_of_influence(mass)
-        } else {
-            0.0
-        }
+        self.orbits.front().map(|orbit| orbit.get_sphere_of_influence(storage, mass).powi(2))
     }
 
-    pub fn get_orbit_vertices(&self, zoom: f64) -> Vec<f32> {
+    pub fn get_orbit_vertices(&self, storage: &Storage, zoom: f64) -> Vec<f32> {
         let mut vertices = vec![];
         for orbit in &self.orbits {
-            vertices.extend(orbit.get_orbit_vertices(zoom));
+            vertices.extend(orbit.get_orbit_vertices(storage, zoom));
         }
         vertices
     }
@@ -51,8 +48,20 @@ impl Trajectory {
         self.orbits.back().map(|orbit| orbit.get_velocity())
     }
 
-    pub fn get_parent(&self) -> Option<Arc<Object>> {
-        self.orbits.front().map(|orbit| orbit.get_parent())
+    pub fn get_current_parent(&self) -> Option<ObjectId> {
+        self.orbits.front().map(|orbit| orbit.get_parent().clone())
+    }
+
+    pub fn change_parent(&mut self, storage: &Storage, object: &Object, new_parent: ObjectId, time: f64) {
+        if let Some(orbit) = self.orbits.back_mut() {
+            orbit.end();
+            
+            // Switch frames of reference
+            let new_position = object.get_absolute_position(storage) - storage.get(&new_parent).get_absolute_position(storage);
+            let new_velocity = object.get_absolute_velocity(storage, time) - storage.get(&new_parent).get_absolute_velocity(storage, time);
+            let new_orbit = Orbit::new(storage, new_parent, vec3(1.0, 0.0, 0.0), new_position, new_velocity, time);
+            self.orbits.push_back(new_orbit);
+        }
     }
 
     pub fn update(&mut self, delta_time: f64) {
@@ -65,25 +74,9 @@ impl Trajectory {
         }
     }
 
-    pub fn update_for_trajectory_integration(&mut self, object: &Object, significant_mass_objects: &[Arc<Object>], delta_time: f64, time: f64) {
-        // Act on the last orbit, since we're extending a trajectory
-        if let Some(orbit) = self.orbits.back_mut() { 
+    pub fn update_for_prediction(&mut self, delta_time: f64) {
+        if let Some(orbit) = self.orbits.back_mut() {
             orbit.update(delta_time);
-            if let Some(new_parent) = orbit.get_new_soi(object, significant_mass_objects) {
-                if new_parent.name != orbit.get_parent().name {
-                    orbit.end();
-                    // Switch frames of reference
-                    let new_position = object.get_absolute_position() - new_parent.get_absolute_position();
-                    let new_velocity = object.get_absolute_velocity(time) - new_parent.get_absolute_velocity(time);
-                    let new_orbit = Orbit::new(new_parent.clone(), vec3(1.0, 0.0, 0.0), new_position, new_velocity);
-                    println!("{} {}", new_parent.name, time);
-                    println!("pos in {:?}", new_position);
-                    println!("vel in {:?}", new_velocity);
-                    //panic!();
-                    new_orbit.debug();
-                    self.orbits.push_back(new_orbit);
-                }
-            }
         }
     }
 
