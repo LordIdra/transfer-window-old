@@ -89,7 +89,7 @@ impl Object {
         let scaled_radius = self.radius * SCALE_FACTOR;
         let absolute_scaled_position = (self.get_absolute_parent_position(storage) + self.position) * SCALE_FACTOR;
         let mut vertices = vec![];
-        let sides = 100; // TODO make this depend on something else
+        let sides = 100; // TODO make this depend on something else ie zoom/translation
         let mut previous_location = absolute_scaled_position + vec2(scaled_radius, 0.0);
         for i in 1..=sides { // 1..=sides to make sure we fill in the gap between the last location and first location, wrapping back round
             let angle = (i as f64 / sides as f64) * 2.0 * PI; // both i and sides must be cast to prevent integer division problems

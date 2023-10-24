@@ -1,37 +1,33 @@
-use eframe::{epaint::Rect, egui::Context};
-use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3};
+use eframe::{epaint::{Rect, Pos2}, egui::Context};
+use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3, Vec2};
 
-use crate::{app::ObjectId, storage::Storage};
+use crate::{app::ObjectId, storage::Storage, util::f64_to_f32_pair};
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
 
 pub struct Camera {
-    following: Option<ObjectId>,
     world_translation: DVec2,
+    relative_translation: DVec2,
     zoom: f64,
 }
 
 impl Camera {
     pub fn new() -> Self {
         Self {
-            following: None,
             world_translation: DVec2::new(0.0, 0.0),
+            relative_translation: DVec2::new(0.0, 0.0),
             zoom: 0.0002,
         }
     }
 
     fn translate(&mut self, amount: DVec2) {
-        self.world_translation += amount / self.zoom;
+        self.relative_translation += amount / self.zoom;
     }
 
-    pub fn follow(&mut self, object: ObjectId) {
-        self.following = Some(object);
-    }
-
-    pub fn update(&mut self, context: &Context, storage: &Storage) {
+    pub fn update(&mut self, context: &Context, storage: &Storage, selected: &ObjectId) {
         context.input(|input| {
             if input.pointer.secondary_down() {
-                self.translate(0.5 * DVec2::new(-input.pointer.delta().x as f64, input.pointer.delta().y as f64));
+                self.translate(DVec2::new(-input.pointer.delta().x as f64, input.pointer.delta().y as f64));
             }
 
             if let Some(latest_mouse_position) = input.pointer.latest_pos() {
@@ -45,25 +41,35 @@ impl Camera {
                 self.zoom = new_zoom;
             }
 
-            if let Some(following) = &self.following {
-                self.world_translation = storage.get(following).get_absolute_scaled_position(storage);
-            }
+            self.world_translation = storage.get(selected).get_absolute_scaled_position(storage);
         });
     }
 
-    pub fn get_matrix(&self, screen_size: Rect) -> Mat3 {
-        let mut matrix = DMat3::identity();
-        matrix = scale2d(&matrix, &DVec2::new(2.0 / screen_size.width() as f64, 2.0 / screen_size.height() as f64));
-        matrix = scale2d(&matrix, &DVec2::new(self.zoom, self.zoom));
-        matrix = translate2d(&matrix, &DVec2::new(-self.world_translation.x,-self.world_translation.y));
+    pub fn get_zoom_matrix(&self, screen_size: Rect) -> Mat3 {
+        let mut mat = DMat3::identity();
+        mat = scale2d(&mat, &DVec2::new(2.0 / screen_size.width() as f64, 2.0 / screen_size.height() as f64));
+        mat = scale2d(&mat, &DVec2::new(self.zoom, self.zoom));
         Mat3::new(
-            matrix.m11 as f32, matrix.m12 as f32, matrix.m13 as f32,
-            matrix.m21 as f32, matrix.m22 as f32, matrix.m23 as f32,
-            matrix.m31 as f32, matrix.m32 as f32, matrix.m33 as f32,
+            mat.m11 as f32, mat.m12 as f32, mat.m13 as f32,
+            mat.m21 as f32, mat.m22 as f32, mat.m23 as f32,
+            mat.m31 as f32, mat.m32 as f32, mat.m33 as f32,
         )
+    }
+
+    pub fn get_translation_matrices(&self) -> (Mat3, Mat3) {
+        let final_translation = self.world_translation + self.relative_translation;
+        let world_translation_x_pair = f64_to_f32_pair(final_translation.x);
+        let world_translation_y_pair = f64_to_f32_pair(final_translation.y);
+        let mat1 = translate2d(&Mat3::identity(), &Vec2::new(-world_translation_x_pair.0, -world_translation_y_pair.0));
+        let mat2 = translate2d(&Mat3::identity(), &Vec2::new(-world_translation_x_pair.1, -world_translation_y_pair.1));
+        (mat1, mat2)
     }
 
     pub fn get_zoom(&self) -> f64 {
         self.zoom
+    }
+
+    pub fn window_space_to_world_space(&self, window_coords: Pos2, screen_size: Rect) -> DVec2 {
+        self.world_translation + DVec2::new(window_coords.x as f64 / self.zoom, window_coords.y as f64 / self.zoom)
     }
 }

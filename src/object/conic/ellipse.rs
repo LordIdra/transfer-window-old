@@ -11,24 +11,18 @@ fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
 }
 
 fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64) -> f64 {
-    // https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html
-    // ENKRE algorithm
-
     // Choosing an initial seed: https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html#S5
     // Yes, they're actually serious about that 0.999999 thing
-    let mut eccentric_anomaly = mean_anomaly 
-        + (0.999999 * 4.0 * eccentricity * mean_anomaly * (PI - mean_anomaly)) 
+    let mut eccentric_anomaly = mean_anomaly
+        + (0.999999 * 4.0 * eccentricity * mean_anomaly * (PI - mean_anomaly))
         / (8.0 * eccentricity * mean_anomaly + 4.0 * eccentricity * (eccentricity - PI) + PI.powi(2));
-    let max_error = 1.0e-4; // todo better value for this
+    let max_delta_squared = (1.0e-7_f64).powi(2); // todo better value for this
     loop {
-        let sin_eccentric_anomaly = eccentric_anomaly.sin();
-        let cos_eccentric_anomaly = eccentric_anomaly.cos();
-        let delta = -(eccentric_anomaly - eccentricity * );
-        let error_squared = (2.0 * (1.0 - eccentricity * f64::cos(eccentric_anomaly)) * max_error) / (eccentricity + f64::EPSILON);
-        if delta.powi(2) < error_squared {
+        let delta = -(eccentric_anomaly - eccentricity * f64::sin(eccentric_anomaly) - mean_anomaly) / (1.0 - eccentricity * f64::cos(eccentric_anomaly));
+        if delta.powi(2) < max_delta_squared {
             break;
         }
-
+        eccentric_anomaly += delta;
     }
     eccentric_anomaly
 }
