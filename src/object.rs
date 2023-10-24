@@ -57,6 +57,10 @@ impl Object {
         self.parent.clone()
     }
 
+    pub fn get_children(&self) -> HashSet<ObjectId> {
+        self.children
+    }
+
     pub fn get_absolute_parent_position(&self, storage: &Storage) -> DVec2 {
         if let Some(parent) = &self.parent {
             storage.get(parent).get_absolute_position(storage)

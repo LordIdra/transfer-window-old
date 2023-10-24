@@ -4,6 +4,7 @@ use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3, Vec2};
 use crate::{app::ObjectId, storage::Storage, util::f64_to_f32_pair};
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
+const MAX_DISTANCE_TO_SELECT: f64 = 0.02;
 
 pub struct Camera {
     world_translation: DVec2,
@@ -69,7 +70,13 @@ impl Camera {
         self.zoom
     }
 
+    pub fn get_max_distance_to_select(&self) -> f64 {
+        MAX_DISTANCE_TO_SELECT / self.zoom
+    }
+
     pub fn window_space_to_world_space(&self, window_coords: Pos2, screen_size: Rect) -> DVec2 {
-        self.world_translation + DVec2::new(window_coords.x as f64 / self.zoom, window_coords.y as f64 / self.zoom)
+        self.world_translation + self.relative_translation + DVec2::new(
+            (window_coords.x - (screen_size.width() / 2.0)) as f64 / self.zoom, 
+            ((screen_size.height() / 2.0) - window_coords.y) as f64 / self.zoom)
     }
 }

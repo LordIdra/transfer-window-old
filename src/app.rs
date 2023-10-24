@@ -19,20 +19,21 @@ pub struct App {
     camera: Arc<Mutex<Camera>>,
     orbit_renderer: Arc<Mutex<Renderer>>,
     object_renderer: Arc<Mutex<Renderer>>,
-    object_storage: Storage,
+    storage: Storage,
     last_frame: Instant,
 }
 
 impl App {
     pub fn new(creation_context: &CreationContext) -> Self {
-        let mut object_storage = Storage::new();
-        let sun = Object::new(&mut object_storage, "sun".to_string(), None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0), 0.0);
-        let earth = Object::new(&mut object_storage, "earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0), 0.0);
-        Object::new(&mut object_storage, "moon".to_string(), Some(earth.clone()), vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0), 0.0);
-        let spacecraft = Object::new(&mut object_storage, "spacecraft".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0), 0.0);
+        let mut storage = Storage::new();
+        let sun = Object::new(&mut storage, "sun".to_string(), None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0), 0.0);
+        let earth = Object::new(&mut storage, "earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0), 0.0);
+        Object::new(&mut storage, "moon".to_string(), Some(earth.clone()), vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0), 0.0);
+        let spacecraft = Object::new(&mut storage, "spacecraft".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0), 0.0);
+        storage.set_root(sun);
         
         let camera = Camera::new();
-        object_storage.do_full_prediction(0.0);
+        storage.do_full_prediction(0.0);
 
         let camera = Arc::new(Mutex::new(camera));
         
@@ -45,7 +46,7 @@ impl App {
             camera: camera.clone(),
             orbit_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
             object_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
-            object_storage,
+            storage,
             last_frame: Instant::now(),
         }
     }
@@ -67,15 +68,18 @@ impl App {
         if input.pointer.button_double_clicked(PointerButton::Primary) {
             if let Some(screen_position) = input.pointer.latest_pos() {
                 let world_position = self.camera.lock().unwrap().window_space_to_world_space(screen_position, screen_size);
-                println!("{}", world_position);
+                let max_distance_to_select = self.camera.lock().unwrap().get_max_distance_to_select();
+                if let Some(selected_object) = self.storage.get_selected_object(world_position, max_distance_to_select) {
+                    self.selected_object = selected_object;
+                }
             }
         }
     }
 
     fn render_underlay(&self, context: &Context, ui: &Ui) {
-        let object_vertices = self.object_storage.get_object_vertices();
+        let object_vertices = self.storage.get_object_vertices();
         self.object_renderer.lock().unwrap().set_vertices(object_vertices);
-        let orbit_vertices = self.object_storage.get_orbit_vertices(self.camera.lock().unwrap().get_zoom());
+        let orbit_vertices = self.storage.get_orbit_vertices(self.camera.lock().unwrap().get_zoom());
         self.orbit_renderer.lock().unwrap().set_vertices(orbit_vertices);
         let rect = context.screen_rect();
         let orbit_renderer = self.orbit_renderer.clone();
@@ -109,12 +113,12 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
         CentralPanel::default().show(context, |ui| {
-            self.camera.lock().unwrap().update(context, &self.object_storage, &self.selected_object);
+            self.camera.lock().unwrap().update(context, &self.storage, &self.selected_object);
             self.render_underlay(context, ui);
             self.render_ui(ui);
             let delta_time = (Instant::now() - self.last_frame).as_secs_f64() * self.get_time_step();
             self.time += delta_time;
-            self.object_storage.update(delta_time);
+            self.storage.update(delta_time);
             self.last_frame = Instant::now();
 
             let screen_size = context.screen_rect();
