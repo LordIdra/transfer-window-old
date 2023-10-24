@@ -56,6 +56,7 @@ pub trait Conic: Debug + Send {
     fn get_velocity(&self, position: DVec2, theta: f64) -> DVec2;
     fn get_direction(&self) -> OrbitDirection;
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64;
+    fn get_remaining_orbits(&self, remaining_time: f64) -> i32;
 }
 
 #[cfg(test)]

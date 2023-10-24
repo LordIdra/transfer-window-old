@@ -33,19 +33,19 @@ impl Trajectory {
     }
 
     pub fn get_current_unscaled_position(&self) -> Option<DVec2> {
-        self.orbits.front().map(|orbit| orbit.get_unscaled_position())
+        self.orbits.front().map(|orbit| orbit.get_current_unscaled_position())
     }
 
     pub fn get_current_velocity(&self) -> Option<DVec2> {
-        self.orbits.front().map(|orbit| orbit.get_velocity())
+        self.orbits.front().map(|orbit| orbit.get_current_velocity())
     }
 
     pub fn get_final_unscaled_position(&self) -> Option<DVec2> {
-        self.orbits.back().map(|orbit| orbit.get_unscaled_position())
+        self.orbits.back().map(|orbit| orbit.get_end_unscaled_position())
     }
 
     pub fn get_final_velocity(&self) -> Option<DVec2> {
-        self.orbits.back().map(|orbit| orbit.get_velocity())
+        self.orbits.back().map(|orbit| orbit.get_end_velocity())
     }
 
     pub fn get_current_parent(&self) -> Option<ObjectId> {
@@ -53,15 +53,12 @@ impl Trajectory {
     }
 
     pub fn change_parent(&mut self, storage: &Storage, object: &Object, new_parent: ObjectId, time: f64) {
-        if let Some(orbit) = self.orbits.back_mut() {
-            orbit.end();
-            
-            // Switch frames of reference
-            let new_position = object.get_absolute_position(storage) - storage.get(&new_parent).get_absolute_position(storage);
-            let new_velocity = object.get_absolute_velocity(storage, time) - storage.get(&new_parent).get_absolute_velocity(storage, time);
-            let new_orbit = Orbit::new(storage, new_parent, vec3(1.0, 0.0, 0.0), new_position, new_velocity, time);
-            self.orbits.push_back(new_orbit);
-        }
+        // Switch frames of reference
+        let new_position = object.get_absolute_position(storage) - storage.get(&new_parent).get_absolute_position(storage);
+        let new_velocity = object.get_absolute_velocity(storage, time) - storage.get(&new_parent).get_absolute_velocity(storage, time);
+
+        let new_orbit = Orbit::new(storage, new_parent, vec3(1.0, 0.0, 0.0), new_position, new_velocity, time);
+        self.orbits.push_back(new_orbit);
     }
 
     pub fn update(&mut self, delta_time: f64) {
@@ -76,17 +73,7 @@ impl Trajectory {
 
     pub fn update_for_prediction(&mut self, delta_time: f64) {
         if let Some(orbit) = self.orbits.back_mut() {
-            orbit.update(delta_time);
-        }
-    }
-
-    // Sets all orbit current points back to their starting points, and sets an endpoint for the last orbit
-    pub fn reset(&mut self) {
-        if let Some(orbit) = self.orbits.back_mut() {
-            orbit.end()
-        }
-        for orbit in &mut self.orbits {
-            orbit.reset();
+            orbit.update_for_prediction(delta_time);
         }
     }
 }

@@ -40,6 +40,10 @@ impl OrbitPoint {
         self.velocity
     }
 
+    pub fn get_time(&self) -> f64 {
+        self.time
+    }
+
     pub fn is_after(&self, other: &OrbitPoint) -> bool {
         self.time > other.time
     }

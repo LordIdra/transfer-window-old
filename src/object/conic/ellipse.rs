@@ -11,9 +11,24 @@ fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
 }
 
 fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64) -> f64 {
-    let mut eccentric_anomaly = mean_anomaly;
-    for _ in 0..1000 {
-        eccentric_anomaly = mean_anomaly + eccentricity * f64::sin(eccentric_anomaly);
+    // https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html
+    // ENKRE algorithm
+
+    // Choosing an initial seed: https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html#S5
+    // Yes, they're actually serious about that 0.999999 thing
+    let mut eccentric_anomaly = mean_anomaly 
+        + (0.999999 * 4.0 * eccentricity * mean_anomaly * (PI - mean_anomaly)) 
+        / (8.0 * eccentricity * mean_anomaly + 4.0 * eccentricity * (eccentricity - PI) + PI.powi(2));
+    let max_error = 1.0e-4; // todo better value for this
+    loop {
+        let sin_eccentric_anomaly = eccentric_anomaly.sin();
+        let cos_eccentric_anomaly = eccentric_anomaly.cos();
+        let delta = -(eccentric_anomaly - eccentricity * );
+        let error_squared = (2.0 * (1.0 - eccentricity * f64::cos(eccentric_anomaly)) * max_error) / (eccentricity + f64::EPSILON);
+        if delta.powi(2) < error_squared {
+            break;
+        }
+
     }
     eccentric_anomaly
 }
@@ -105,6 +120,10 @@ impl Conic for Ellipse {
 
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64 {
         self.semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)
+    }
+
+    fn get_remaining_orbits(&self, remaining_time: f64) -> i32 {
+        (remaining_time / self.period) as i32
     }
 }
 

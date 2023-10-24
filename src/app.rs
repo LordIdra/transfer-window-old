@@ -5,7 +5,7 @@ use nalgebra_glm::vec2;
 
 use crate::{object::Object, renderer::Renderer, camera::Camera, storage::Storage};
 
-const TIME_STEP: f64 = 86400.0 * 365.0 / 250.0;
+const TIME_STEP: f64 = 86400.0 * 365.0 / 1000.0;
 
 pub type ObjectId = String;
 
@@ -27,7 +27,7 @@ impl App {
         let sun = Object::new(&mut object_storage, "sun".to_string(), None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0), 0.0);
         let earth = Object::new(&mut object_storage, "earth".to_string(), Some(sun), vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0), 0.0);
         Object::new(&mut object_storage, "moon".to_string(), Some(earth.clone()), vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0), 0.0);
-        let spacecraft1 = Object::new(&mut object_storage, "spacecraft1".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(0.979e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0), 0.0);
+        let spacecraft1 = Object::new(&mut object_storage, "spacecraft1".to_string(), Some(earth.clone()), vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0), 0.0);
 
         camera.follow(spacecraft1);
         object_storage.do_full_prediction(0.0);
@@ -91,6 +91,8 @@ impl eframe::App for App {
             self.time += delta_time;
             self.object_storage.update(delta_time);
             self.last_frame = Instant::now();
+
+            context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
         });            
     }
 }

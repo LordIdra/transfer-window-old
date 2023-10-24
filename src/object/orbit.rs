@@ -16,7 +16,7 @@ pub struct Orbit {
     color: Vec3,
     conic: Box<dyn Conic>,
     start_orbit_point: OrbitPoint,
-    end_orbit_point: Option<OrbitPoint>, // if none, a simulation is running to determine the endpoint of this conic
+    end_orbit_point: OrbitPoint,
     current_orbit_point: OrbitPoint,
 }
 
@@ -24,7 +24,7 @@ impl Orbit {
     pub fn new(storage: &Storage, parent: ObjectId, color: Vec3, position: DVec2, velocity: DVec2, time: f64) -> Self {
         let conic = new_conic(storage.get(&parent).mass, position, velocity);
         let start_orbit_point = OrbitPoint::new(&*conic, position, time);
-        let end_orbit_point = None;
+        let end_orbit_point = start_orbit_point.clone();
         let current_orbit_point = start_orbit_point.clone();
         Self { parent, color, conic, start_orbit_point, end_orbit_point, current_orbit_point }
     }
@@ -36,8 +36,12 @@ impl Orbit {
     }
 
     fn get_remaining_angle(&self) -> f64 {
-        // We can unwrap since end_orbit_point can only be None when we are running a simulation
-        let mut remaining_angle = self.end_orbit_point.as_ref().unwrap().get_true_anomaly() - self.current_orbit_point.get_true_anomaly();
+        // If we have any full orbits remaining, only return up to 2pi
+        if self.get_remaining_orbits() > 0 {
+            return 2.0 * PI;
+        }
+
+        let mut remaining_angle = self.end_orbit_point.get_true_anomaly() - self.current_orbit_point.get_true_anomaly();
         if let OrbitDirection::Clockwise = self.conic.get_direction() {
             if remaining_angle > 0.0 {
                 remaining_angle -= 2.0 * PI
@@ -51,11 +55,15 @@ impl Orbit {
         }
     }
 
+    fn get_remaining_orbits(&self) -> i32 {
+        self.conic.get_remaining_orbits(self.end_orbit_point.get_time() - self.start_orbit_point.get_time())
+    }
+
     fn get_visual_orbit_points(&self, storage: &Storage) -> Vec<VisualOrbitPoint> {
         let absolute_parent_position = self.get_absolute_parent_position(storage) * SCALE_FACTOR;
         let mut visual_orbit_points = vec![];
         let angle_to_rotate_through = self.get_remaining_angle();
-        for i in 0..ORBIT_POINTS {
+        for i in 0..=ORBIT_POINTS {
             let angle = self.current_orbit_point.get_true_anomaly() + (i as f64 / ORBIT_POINTS as f64) * angle_to_rotate_through;
             let relative_point_position = self.get_scaled_position(angle);
             visual_orbit_points.push(VisualOrbitPoint::new(absolute_parent_position + relative_point_position, relative_point_position.normalize()));
@@ -83,36 +91,6 @@ impl Orbit {
         add_triangle(vertices, v2, v3, v4, rgba);
     }
 
-    fn complete_orbit_vertices_from_points(&self, points: Vec<VisualOrbitPoint>, zoom: f64) -> Vec<f32> {
-        // Visualises an entire ellipse without any gaps
-        let mut previous_point = points.last().unwrap();
-        let mut vertices = vec![];
-        for new_point in &points {
-            // Loop to create glow effect
-            for i in 0..10 {
-                self.add_orbit_line(&mut vertices, previous_point, new_point, zoom, i);
-            }
-            previous_point = new_point;
-        }
-        vertices
-    }
-
-    fn incomplete_orbit_vertices_from_points(&self, points: Vec<VisualOrbitPoint>, zoom: f64) -> Vec<f32> {
-        // Visualises an ellipse or hyperbola between two angles
-        let mut previous_point = None;
-        let mut vertices = vec![];
-        for new_point in &points {
-            // Loop to create glow effect
-            if let Some(previous_point) = previous_point {
-                for i in 0..10 {
-                    self.add_orbit_line(&mut vertices, previous_point, new_point, zoom, i);
-                }
-            }
-            previous_point = Some(new_point);
-        }
-        vertices
-    }
-
     pub fn get_parent(&self) -> ObjectId {
         self.parent.clone()
     }
@@ -131,35 +109,45 @@ impl Orbit {
 
     pub fn get_orbit_vertices(&self, storage: &Storage, zoom: f64) -> Vec<f32> {
         let points = self.get_visual_orbit_points(storage);
-        if self.get_remaining_angle().abs() >= 2.0 * PI {
-            self.complete_orbit_vertices_from_points(points, zoom)
-        } else {
-            self.incomplete_orbit_vertices_from_points(points, zoom)
+        let mut previous_point = None;
+        let mut vertices = vec![];
+        for new_point in &points {
+            // Loop to create glow effect
+            if let Some(previous_point) = previous_point {
+                for i in 0..10 {
+                    self.add_orbit_line(&mut vertices, previous_point, new_point, zoom, i);
+                }
+            }
+            previous_point = Some(new_point);
         }
+        vertices
     }
 
-    pub fn get_unscaled_position(&self) -> DVec2 {
+    pub fn get_current_unscaled_position(&self) -> DVec2 {
         self.current_orbit_point.get_unscaled_position()
     }
 
-    pub fn get_velocity(&self) -> DVec2 {
+    pub fn get_end_unscaled_position(&self) -> DVec2 {
+        self.end_orbit_point.get_unscaled_position()
+    }
+
+    pub fn get_current_velocity(&self) -> DVec2 {
         self.current_orbit_point.get_velocity()
+    }
+    
+    pub fn get_end_velocity(&self) -> DVec2 {
+        self.end_orbit_point.get_velocity()
     }
 
     pub fn update(&mut self, delta_time: f64) {
         self.current_orbit_point = self.current_orbit_point.next(&*self.conic, delta_time);
     }
 
-    pub fn reset(&mut self) {
-        self.current_orbit_point = self.start_orbit_point.clone();
-    }
-
-    pub fn end(&mut self) {
-        self.end_orbit_point = Some(self.current_orbit_point.clone());
+    pub fn update_for_prediction(&mut self, delta_time: f64) {
+        self.end_orbit_point = self.end_orbit_point.next(&*self.conic, delta_time);
     }
 
     pub fn is_finished(&self) -> bool {
-        // We can unwrap since this will only be called after simulation is complete
-        self.current_orbit_point.is_after(self.end_orbit_point.as_ref().unwrap())
+        self.current_orbit_point.is_after(&self.end_orbit_point)
     }
 }

@@ -49,7 +49,7 @@ impl Storage {
             }
         }
         for object in self.objects.values_mut() {
-            object.borrow_mut().reset_all_conics();
+            object.borrow_mut().reset();
         }
         
     }

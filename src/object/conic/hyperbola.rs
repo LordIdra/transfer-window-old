@@ -90,6 +90,10 @@ impl Conic for Hyperbola {
     fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64 {
         self.semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)
     }
+
+    fn get_remaining_orbits(&self, _: f64) -> i32 {
+        0 // Hyperbola can never complete an entire orbit
+    }
 }
 
 #[cfg(test)]

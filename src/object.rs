@@ -186,8 +186,7 @@ impl Object {
         self.update_parent_for_prediction(storage, time);
     }
 
-    pub fn reset_all_conics(&mut self) {
-        self.trajectory.borrow_mut().reset();
+    pub fn reset(&mut self) {
         self.sync_to_trajectory();
     }
 }
