@@ -15,7 +15,7 @@ mod trajectory;
 mod orbit_direction;
 
 const SIGNIFICANT_MASS_THRESHOLD: f64 = 1.0e8; // Objects above this mass are modelled as having an SOI
-const SCALE_FACTOR: f64 = 1.0 / 100000.0;
+pub const SCALE_FACTOR: f64 = 1.0 / 1000.0;
 
 pub struct Object {
     id: String,
@@ -58,7 +58,7 @@ impl Object {
     }
 
     pub fn get_children(&self) -> HashSet<ObjectId> {
-        self.children
+        self.children.clone()
     }
 
     pub fn get_absolute_parent_position(&self, storage: &Storage) -> DVec2 {

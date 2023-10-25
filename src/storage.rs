@@ -31,7 +31,7 @@ impl Storage {
     }
 
     fn get_root(&self) -> ObjectId {
-        self.root.expect("Object storage does not have a root")
+        self.root.clone().expect("Object storage does not have a root")
     }
 
     pub fn get(&self, id: &ObjectId) -> Ref<Object> {
@@ -54,24 +54,45 @@ impl Storage {
         vertices
     }
 
-    fn breadth_first_radius_search(&self, object: ObjectId, world_position: DVec2,  max_distance_to_select: f64) -> Option<ObjectId> {
-        let mut closest_distance_squared = f64::MAX;
+    fn get_all_objects_at_layer(&self, layer: i32, objects: &Vec<ObjectId>) -> Vec<ObjectId> {
+        if layer == 0 {
+            return objects.clone();
+        }
+
+        let mut new_objects = vec![];
+        for object in objects {
+            new_objects.extend(self.get(object).get_children());
+        }
+        new_objects
+    }
+
+    fn breadth_first_radius_search(&self, world_position: DVec2,  max_distance_to_select_squared: f64) -> Option<ObjectId> {
         let mut closest_object = None;
-        for child in self.get(&object).get_children() {
-            let distance_squared = (self.get(&child).get_absolute_position(self) - world_position).magnitude_squared();
-            if closest_distance_squared > distance_squared {
-                closest_distance_squared = distance_squared;
-                closest_object = Some(child)
+        let mut layer = 0;
+        let mut objects_at_layer = vec![self.get_root()];
+        loop {
+            let mut closest_distance_squared = f64::MAX;
+            objects_at_layer = self.get_all_objects_at_layer(layer, &objects_at_layer);
+            if objects_at_layer.is_empty() {
+                break;
             }
+            for child in &objects_at_layer {
+                let distance_squared = (self.get(child).get_absolute_position(self) - world_position).magnitude_squared();
+                if closest_distance_squared > distance_squared {
+                    closest_distance_squared = distance_squared;
+                    closest_object = Some(child.clone())
+                }
+            }
+            if closest_object.is_some() && closest_distance_squared < max_distance_to_select_squared {
+                return closest_object;
+            }
+            layer += 1;
         }
-        if closest_object.is_some() {
-            closest_object
-        }
-        // TODO recurse
+        closest_object
     }
 
     pub fn get_selected_object(&self, world_position: DVec2, max_distance_to_select: f64) -> Option<ObjectId> {
-        self.breadth_first_radius_search(self.get_root(), world_position, max_distance_to_select)
+        self.breadth_first_radius_search(world_position, max_distance_to_select.powi(2))
     }
 
     pub fn do_full_prediction(&mut self, start_time: f64) {

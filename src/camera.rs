@@ -1,10 +1,10 @@
 use eframe::{epaint::{Rect, Pos2}, egui::Context};
 use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3, Vec2};
 
-use crate::{app::ObjectId, storage::Storage, util::f64_to_f32_pair};
+use crate::{app::ObjectId, storage::Storage, util::f64_to_f32_pair, object::SCALE_FACTOR};
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
-const MAX_DISTANCE_TO_SELECT: f64 = 0.02;
+const MAX_DISTANCE_TO_SELECT: f64 = 0.2;
 
 pub struct Camera {
     world_translation: DVec2,
@@ -23,6 +23,10 @@ impl Camera {
 
     fn translate(&mut self, amount: DVec2) {
         self.relative_translation += amount / self.zoom;
+    }
+
+    pub fn reset_relative_translation(&mut self) {
+        self.relative_translation = DVec2::new(0.0, 0.0)
     }
 
     pub fn update(&mut self, context: &Context, storage: &Storage, selected: &ObjectId) {
@@ -71,7 +75,7 @@ impl Camera {
     }
 
     pub fn get_max_distance_to_select(&self) -> f64 {
-        MAX_DISTANCE_TO_SELECT / self.zoom
+        MAX_DISTANCE_TO_SELECT / self.zoom / SCALE_FACTOR
     }
 
     pub fn window_space_to_world_space(&self, window_coords: Pos2, screen_size: Rect) -> DVec2 {
