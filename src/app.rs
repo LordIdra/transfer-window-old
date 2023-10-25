@@ -70,7 +70,11 @@ impl App {
                 let world_position = self.camera.lock().unwrap().window_space_to_world_space(screen_position, screen_size);
                 let max_distance_to_select = self.camera.lock().unwrap().get_max_distance_to_select();
                 if let Some(selected_object) = self.storage.get_selected_object(world_position, max_distance_to_select) {
-                    self.selected_object = selected_object;
+                    if self.selected_object != selected_object {
+                        self.selected_object = selected_object.clone();
+                        self.camera.lock().unwrap().reset_relative_translation();
+                        println!("{}", selected_object);
+                    }
                 }
             }
         }
