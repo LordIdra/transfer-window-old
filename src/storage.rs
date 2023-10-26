@@ -67,11 +67,11 @@ impl Storage {
     }
 
     fn breadth_first_radius_search(&self, world_position: DVec2,  max_distance_to_select_squared: f64) -> Option<ObjectId> {
-        let mut closest_object = None;
         let mut layer = 0;
         let mut objects_at_layer = vec![self.get_root()];
         loop {
             let mut closest_distance_squared = f64::MAX;
+            let mut closest_object = None;
             objects_at_layer = self.get_all_objects_at_layer(layer, &objects_at_layer);
             if objects_at_layer.is_empty() {
                 break;
@@ -89,7 +89,7 @@ impl Storage {
             }
             layer += 1;
         }
-        closest_object
+        None
     }
 
     pub fn get_selected_object(&self, world_position: DVec2, max_distance_to_select: f64) -> Option<ObjectId> {

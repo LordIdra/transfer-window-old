@@ -2,7 +2,8 @@
 [x] Figure out how to get double precision in shaders without completely destroying performance
 [x] Move camera freely while locked onto an object (remain in inertial frame)
 [x] Keys to speed up / slow down simulation
-[ ] Select different objects by double clicking near them w/ prioritisation algorithm
+[x] Select different objects by double clicking near them w/ prioritisation algorithm
+[ ] Fix weird camera switch flickering
 [ ] Key press recenters camera to selected object
 [ ] Icons to represent planets/stars/spacecraft when zoomed out
 [ ] Smooth transition between objects when selecting them

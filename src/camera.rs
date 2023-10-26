@@ -4,7 +4,7 @@ use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3, Vec2};
 use crate::{app::ObjectId, storage::Storage, util::f64_to_f32_pair, object::SCALE_FACTOR};
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
-const SELECT_DISTANCE: f64 = 10000.0;
+const SELECT_DISTANCE: f64 = 10.0;
 
 pub struct Camera {
     world_translation: DVec2,
