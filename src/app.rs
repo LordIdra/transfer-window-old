@@ -67,12 +67,12 @@ impl App {
     fn update_selected_object(&mut self, input: &InputState, screen_size: Rect) {
         if input.pointer.button_double_clicked(PointerButton::Primary) {
             if let Some(screen_position) = input.pointer.latest_pos() {
-                let world_position = self.camera.lock().unwrap().window_space_to_world_space(screen_position, screen_size);
+                let world_position = self.camera.lock().unwrap().window_space_to_world_space(&self.storage, screen_position, screen_size);
                 let max_distance_to_select = self.camera.lock().unwrap().get_max_distance_to_select();
                 if let Some(selected_object) = self.storage.get_selected_object(world_position, max_distance_to_select) {
                     if self.selected_object != selected_object {
                         self.selected_object = selected_object.clone();
-                        self.camera.lock().unwrap().reset_relative_translation();
+                        self.camera.lock().unwrap().update_selected(selected_object);
                         println!("{}", selected_object);
                     }
                 }
@@ -90,8 +90,8 @@ impl App {
         let object_renderer = self.object_renderer.clone();
         let camera = self.camera.clone();
         let callback = Arc::new(CallbackFn::new(move |_info, _painter| {
-            orbit_renderer.lock().unwrap().render(rect, camera.clone());
-            object_renderer.lock().unwrap().render(rect, camera.clone());
+            orbit_renderer.lock().unwrap().render(&self.storage, rect, camera.clone());
+            object_renderer.lock().unwrap().render(&self.storage, rect, camera.clone());
         }));
 
         ui.painter().add(PaintCallback { rect, callback });
@@ -117,7 +117,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
         CentralPanel::default().show(context, |ui| {
-            self.camera.lock().unwrap().update(context, &self.storage, &self.selected_object);
+            self.camera.lock().unwrap().update(context, &self.storage);
             self.render_underlay(context, ui);
             self.render_ui(ui);
             let delta_time = (Instant::now() - self.last_frame).as_secs_f64() * self.get_time_step();

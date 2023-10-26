@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use eframe::epaint::Rect;
 use glow::Context;
 
-use crate::camera::Camera;
+use crate::{camera::Camera, storage::Storage};
 
 use self::{shader_program::ShaderProgram, vertex_array_object::{VertexArrayObject, VertexAttribute}};
 
@@ -31,10 +31,10 @@ impl Renderer {
         self.vertex_array_object.data(vertices);
     }
 
-    pub fn render(&self, screen_size: Rect, camera: Arc<Mutex<Camera>>) {
+    pub fn render(&self, storage: &Storage, screen_size: Rect, camera: Arc<Mutex<Camera>>) {
         self.program.use_program();
         self.program.uniform_mat3("zoom_matrix", camera.lock().unwrap().get_zoom_matrix(screen_size).as_slice());
-        let translation_matrices = camera.lock().unwrap().get_translation_matrices();
+        let translation_matrices = camera.lock().unwrap().get_translation_matrices(storage);
         self.program.uniform_mat3("translation_matrix_upper", translation_matrices.0.as_slice());
         self.program.uniform_mat3("translation_matrix_lower", translation_matrices.1.as_slice());
         self.vertex_array_object.draw();

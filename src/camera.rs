@@ -7,7 +7,7 @@ const ZOOM_SENSITIVITY: f64 = 0.003;
 const SELECT_DISTANCE: f64 = 10.0;
 
 pub struct Camera {
-    world_translation: DVec2,
+    selected: Option<ObjectId>,
     relative_translation: DVec2,
     zoom: f64,
 }
@@ -15,7 +15,7 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Self {
-            world_translation: DVec2::new(0.0, 0.0),
+            selected: None,
             relative_translation: DVec2::new(0.0, 0.0),
             zoom: 0.0002,
         }
@@ -25,11 +25,12 @@ impl Camera {
         self.relative_translation += amount / self.zoom;
     }
 
-    pub fn reset_relative_translation(&mut self) {
+    pub fn update_selected(&mut self, selected: ObjectId) {
+        self.selected = Some(selected);
         self.relative_translation = DVec2::new(0.0, 0.0)
     }
 
-    pub fn update(&mut self, context: &Context, storage: &Storage, selected: &ObjectId) {
+    pub fn update(&mut self, context: &Context, storage: &Storage) {
         context.input(|input| {
             if input.pointer.secondary_down() {
                 self.translate(DVec2::new(-input.pointer.delta().x as f64, input.pointer.delta().y as f64));
@@ -45,8 +46,6 @@ impl Camera {
                 self.translate(mouse_position * delta_zoom);
                 self.zoom = new_zoom;
             }
-
-            self.world_translation = storage.get(selected).get_absolute_scaled_position(storage);
         });
     }
 
@@ -61,12 +60,20 @@ impl Camera {
         )
     }
 
-    pub fn get_translation_matrices(&self) -> (Mat3, Mat3) {
-        let final_translation = self.world_translation + self.relative_translation;
-        let world_translation_x_pair = f64_to_f32_pair(final_translation.x);
-        let world_translation_y_pair = f64_to_f32_pair(final_translation.y);
-        let mat1 = translate2d(&Mat3::identity(), &Vec2::new(-world_translation_x_pair.0, -world_translation_y_pair.0));
-        let mat2 = translate2d(&Mat3::identity(), &Vec2::new(-world_translation_x_pair.1, -world_translation_y_pair.1));
+    fn get_translation(&self, storage: &Storage) -> DVec2 {
+        let mut translation = self.relative_translation;
+        if let Some(selected) = self.selected {
+            translation += storage.get(&selected).get_absolute_position(storage);
+        }
+        translation
+    }
+
+    pub fn get_translation_matrices(&self, storage: &Storage) -> (Mat3, Mat3) {
+        let translation = self.get_translation(storage);
+        let translation_x_pair = f64_to_f32_pair(translation.x);
+        let translation_y_pair = f64_to_f32_pair(translation.y);
+        let mat1 = translate2d(&Mat3::identity(), &Vec2::new(-translation_x_pair.0, -translation_y_pair.0));
+        let mat2 = translate2d(&Mat3::identity(), &Vec2::new(-translation_x_pair.1, -translation_y_pair.1));
         (mat1, mat2)
     }
 
@@ -78,8 +85,9 @@ impl Camera {
         SELECT_DISTANCE / self.zoom / SCALE_FACTOR
     }
 
-    pub fn window_space_to_world_space(&self, window_coords: Pos2, screen_size: Rect) -> DVec2 {
-        (self.world_translation + self.relative_translation + DVec2::new(
+    pub fn window_space_to_world_space(&self, storage: &Storage, window_coords: Pos2, screen_size: Rect) -> DVec2 {
+        let translation = self.get_translation(storage);
+        (translation + DVec2::new(
             (window_coords.x - (screen_size.width() / 2.0)) as f64 / self.zoom,
             ((screen_size.height() / 2.0) - window_coords.y) as f64 / self.zoom)) / SCALE_FACTOR
     }
