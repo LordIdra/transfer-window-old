@@ -78,7 +78,6 @@ impl Storage {
             }
             for child in &objects_at_layer {
                 let distance_squared = (self.get(child).get_absolute_position(self) - world_position).magnitude_squared();
-                println!("x{} {}", distance_squared, max_distance_to_select_squared);
                 if closest_distance_squared > distance_squared {
                     closest_distance_squared = distance_squared;
                     closest_object = Some(child.clone())

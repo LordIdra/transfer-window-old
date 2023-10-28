@@ -7,8 +7,9 @@ const ZOOM_SENSITIVITY: f64 = 0.003;
 const SELECT_DISTANCE: f64 = 10.0;
 
 pub struct Camera {
-    selected: Option<ObjectId>,
-    relative_translation: DVec2,
+    selected: Option<ObjectId>, // Yes, we really do have to have both of these options due to baffling design decisions in egui
+    selected_position: Option<DVec2>,
+    translation: DVec2,
     zoom: f64,
 }
 
@@ -16,22 +17,25 @@ impl Camera {
     pub fn new() -> Self {
         Self {
             selected: None,
-            relative_translation: DVec2::new(0.0, 0.0),
+            selected_position: None,
+            translation: DVec2::new(0.0, 0.0),
             zoom: 0.0002,
         }
     }
 
     fn translate(&mut self, amount: DVec2) {
-        self.relative_translation += amount / self.zoom;
+        self.translation += amount / self.zoom;
     }
 
-    pub fn update_selected(&mut self, selected: ObjectId) {
-        self.selected = Some(selected);
-        self.relative_translation = DVec2::new(0.0, 0.0)
+    pub fn update_selected(&mut self, selected: Option<ObjectId>) {
+        self.selected = selected;
+        self.translation = DVec2::new(0.0, 0.0);
     }
 
-    pub fn update(&mut self, context: &Context, storage: &Storage) {
+    pub fn update(&mut self, storage: &Storage, context: &Context) {
         context.input(|input| {
+            self.selected_position = self.selected.as_ref().map(|selected| storage.get(selected).get_absolute_position(storage));
+
             if input.pointer.secondary_down() {
                 self.translate(DVec2::new(-input.pointer.delta().x as f64, input.pointer.delta().y as f64));
             }
@@ -60,16 +64,16 @@ impl Camera {
         )
     }
 
-    fn get_translation(&self, storage: &Storage) -> DVec2 {
-        let mut translation = self.relative_translation;
-        if let Some(selected) = self.selected {
-            translation += storage.get(&selected).get_absolute_position(storage);
+    fn get_translation(&self) -> DVec2 {
+        let mut translation = self.translation;
+        if let Some(selected_position) = &self.selected_position {
+            translation += selected_position;
         }
         translation
     }
 
-    pub fn get_translation_matrices(&self, storage: &Storage) -> (Mat3, Mat3) {
-        let translation = self.get_translation(storage);
+    pub fn get_translation_matrices(&self) -> (Mat3, Mat3) {
+        let translation = self.get_translation();
         let translation_x_pair = f64_to_f32_pair(translation.x);
         let translation_y_pair = f64_to_f32_pair(translation.y);
         let mat1 = translate2d(&Mat3::identity(), &Vec2::new(-translation_x_pair.0, -translation_y_pair.0));
@@ -85,8 +89,8 @@ impl Camera {
         SELECT_DISTANCE / self.zoom / SCALE_FACTOR
     }
 
-    pub fn window_space_to_world_space(&self, storage: &Storage, window_coords: Pos2, screen_size: Rect) -> DVec2 {
-        let translation = self.get_translation(storage);
+    pub fn window_space_to_world_space(&self, window_coords: Pos2, screen_size: Rect) -> DVec2 {
+        let translation = self.get_translation();
         (translation + DVec2::new(
             (window_coords.x - (screen_size.width() / 2.0)) as f64 / self.zoom,
             ((screen_size.height() / 2.0) - window_coords.y) as f64 / self.zoom)) / SCALE_FACTOR
