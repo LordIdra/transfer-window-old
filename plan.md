@@ -3,8 +3,8 @@
 [x] Move camera freely while locked onto an object (remain in inertial frame)
 [x] Keys to speed up / slow down simulation
 [x] Select different objects by double clicking near them w/ prioritisation algorithm
-[ ] Fix weird camera switch flickering
-[ ] Key press recenters camera to selected object
+[x] Fix weird camera switch flickering
+[x] Key press recenters camera to selected object
 [ ] Icons to represent planets/stars/spacecraft when zoomed out
 [ ] Smooth transition between objects when selecting them
 [ ] API to add and execute burns using simple integrator
@@ -20,3 +20,4 @@
 [ ] Figure out how to detect if user is clicking a symbol
 [ ] When symbol clicked, adjust parameters of the burn
 [ ] Figure out why there are jumps happening between conic sections???
+[ ] ECS transition

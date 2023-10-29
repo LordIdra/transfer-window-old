@@ -1,6 +1,6 @@
 use std::{sync::{Arc, Mutex}, time::Instant};
 
-use eframe::{egui::{Context, CentralPanel, Slider, Ui, Key, InputState, PointerButton}, epaint::{Rgba, PaintCallback, Rect}, Frame, CreationContext, egui_glow::CallbackFn};
+use eframe::{egui::{Context, CentralPanel, Slider, Ui, Key, InputState, PointerButton, include_image, Image}, epaint::{Rgba, PaintCallback, Rect, self}, Frame, CreationContext, egui_glow::CallbackFn};
 use nalgebra_glm::vec2;
 
 use crate::{object::Object, renderer::Renderer, camera::Camera, storage::Storage};
@@ -25,6 +25,8 @@ pub struct App {
 
 impl App {
     pub fn new(creation_context: &CreationContext) -> Self {
+        egui_extras::install_image_loaders(&creation_context.egui_ctx);
+
         let mut storage = Storage::new();
         let sun = Object::new(&mut storage, "sun".to_string(), None, vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0), 0.0);
         let earth = Object::new(&mut storage, "earth".to_string(), Some(sun.clone()), vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0), 0.0);
@@ -79,6 +81,12 @@ impl App {
         }
     }
 
+    fn update_camera_translation(&self, input: &InputState) {
+        if input.key_pressed(Key::R) {
+            self.camera.lock().unwrap().recenter();
+        }
+    }
+
     fn render_underlay(&self, context: &Context, ui: &Ui) {
         let object_vertices = self.storage.get_object_vertices();
         self.object_renderer.lock().unwrap().set_vertices(object_vertices);
@@ -110,25 +118,27 @@ impl App {
         }
 
         ui.label(format!("Hello '{}'", self.name));
+
+        ui.add(Image::new(include_image!("../resources/icons/earth-custom.png")).fit_to_exact_size(epaint::vec2(20.0, 20.0)));
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
         CentralPanel::default().show(context, |ui| {
+            let screen_size = context.screen_rect();
+            context.input(|input| self.update_selected_object(input, screen_size));
+            context.input(|input| self.update_time_step_level(input));
+            context.input(|input| self.update_camera_translation(input));
             self.camera.lock().unwrap().update(&self.storage, context);
+            
             self.render_underlay(context, ui);
             self.render_ui(ui);
             let delta_time = (Instant::now() - self.last_frame).as_secs_f64() * self.get_time_step();
             self.time += delta_time;
             self.storage.update(delta_time);
             self.last_frame = Instant::now();
-
-            let screen_size = context.screen_rect();
             
-            context.input(|input| self.update_time_step_level(input));
-            context.input(move |input| self.update_selected_object(input, screen_size));
-
             context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
         });
     }

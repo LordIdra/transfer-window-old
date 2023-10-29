@@ -34,7 +34,7 @@ impl Camera {
 
     pub fn update(&mut self, storage: &Storage, context: &Context) {
         context.input(|input| {
-            self.selected_position = self.selected.as_ref().map(|selected| storage.get(selected).get_absolute_position(storage));
+            self.selected_position = self.selected.as_ref().map(|selected| storage.get(selected).get_absolute_scaled_position(storage));
 
             if input.pointer.secondary_down() {
                 self.translate(DVec2::new(-input.pointer.delta().x as f64, input.pointer.delta().y as f64));
@@ -94,5 +94,9 @@ impl Camera {
         (translation + DVec2::new(
             (window_coords.x - (screen_size.width() / 2.0)) as f64 / self.zoom,
             ((screen_size.height() / 2.0) - window_coords.y) as f64 / self.zoom)) / SCALE_FACTOR
+    }
+
+    pub fn recenter(&mut self) {
+        self.translation = DVec2::new(0.0, 0.0)
     }
 }
