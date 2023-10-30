@@ -21,3 +21,9 @@
 [ ] When symbol clicked, adjust parameters of the burn
 [ ] Figure out why there are jumps happening between conic sections???
 [ ] ECS transition
+
+ECS:
+- Each component is a representation of state of one part of an entity
+- An entity can have multiple components represented by options of components (not IDs)
+- Vectors of entity IDs act as a fast accessor to the entities that have a certain component
+- 

@@ -1,6 +1,6 @@
 use std::{sync::{Arc, Mutex}, time::Instant};
 
-use eframe::{egui::{Context, CentralPanel, Slider, Ui, Key, InputState, PointerButton, include_image, Image}, epaint::{Rgba, PaintCallback, Rect, self}, Frame, CreationContext, egui_glow::CallbackFn};
+use eframe::{egui::{Context, CentralPanel, Slider, Ui, Key, InputState, PointerButton, include_image, Image, Window, ImageButton, style::WidgetVisuals}, epaint::{Rgba, PaintCallback, Rect, self, Color32, Rounding, Shadow, Stroke}, Frame, CreationContext, egui_glow::CallbackFn, emath::Align2, WindowBuilder};
 use nalgebra_glm::vec2;
 
 use crate::{object::Object, renderer::Renderer, camera::Camera, storage::Storage};
@@ -118,13 +118,38 @@ impl App {
         }
 
         ui.label(format!("Hello '{}'", self.name));
-
-        ui.(Image::new(include_image!("../resources/icons/earth-custom.png")).fit_to_exact_size(epaint::vec2(20.0, 20.0)));
     }
 }
 
 impl eframe::App for App {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
+        context.style_mut(|style| {
+            let rounding = 20.0;
+            let rounding_struct = Rounding { nw: rounding, ne: rounding, sw: rounding, se: rounding };
+
+            style.visuals.window_fill = Color32::TRANSPARENT;
+            style.visuals.window_shadow = Shadow::NONE;
+            style.visuals.window_stroke = Stroke::NONE;
+            style.visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
+            style.visuals.widgets.hovered.weak_bg_fill = Color32::TRANSPARENT;
+            style.visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_white_alpha(150));
+            style.visuals.widgets.hovered.rounding = rounding_struct;
+            style.visuals.widgets.active.bg_fill = Color32::from_white_alpha(100);
+            style.visuals.widgets.active.rounding = rounding_struct;
+        });
+
+        Window::new("")
+            .title_bar(false)
+            .resizable(false)
+            .anchor(Align2::LEFT_TOP, epaint::vec2(100.0, 200.0))
+            .show(context, |ui| {
+                let image = Image::new(include_image!("../resources/icons/earth-custom.png"))
+                    .bg_fill(Color32::TRANSPARENT)
+                    .fit_to_exact_size(epaint::vec2(20.0, 20.0));
+                let image_button = ImageButton::new(image);
+                ui.add(image_button);
+        });
+
         CentralPanel::default().show(context, |ui| {
             let screen_size = context.screen_rect();
             context.input(|input| self.update_selected_object(input, screen_size));

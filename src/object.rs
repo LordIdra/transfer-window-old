@@ -22,7 +22,9 @@ pub struct Object {
     trajectory: RefCell<Trajectory>,
     parent: Option<ObjectId>,
     children: HashSet<ObjectId>,
-    position: DVec2,
+    position_relative_to_parent: DVec2,
+    position_absolute: DVec2,
+    position_relative_to_camera: DVec2,
     velocity: DVec2,
     mass: f64,
     radius: f64,
@@ -32,15 +34,15 @@ pub struct Object {
 
 impl Object {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(storage: &mut Storage, id: String, parent: Option<ObjectId>, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba, time: f64) -> ObjectId {
-        let trajectory = RefCell::new(Trajectory::new(storage, parent.clone(), position, velocity, time));
+    pub fn new(storage: &mut Storage, id: String, parent: Option<ObjectId>, position_relative_to_parent: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba, time: f64) -> ObjectId {
+        let trajectory = RefCell::new(Trajectory::new(storage, parent.clone(), position_relative_to_parent, velocity, time));
         let sphere_of_influence_squared = if mass > SIGNIFICANT_MASS_THRESHOLD {
             trajectory.borrow().get_sphere_of_influence_squared(storage, mass)
         } else {
             None
         };
         let children = HashSet::new();
-        let object = Self { id: id.clone(), trajectory, parent, children, position, velocity, mass, radius, color, sphere_of_influence_squared };
+        let object = Self { id: id.clone(), trajectory, parent, children, position_relative_to_parent, velocity, mass, radius, color, sphere_of_influence_squared };
         storage.add_object(object);
         id
     }
@@ -70,7 +72,7 @@ impl Object {
     }
 
     pub fn get_absolute_position(&self, storage: &Storage) -> DVec2 {
-        self.get_absolute_parent_position(storage) + self.position
+        self.get_absolute_parent_position(storage) + self.position_relative_to_parent
     }
 
     pub fn get_absolute_parent_velocity(&self, storage: &Storage, time: f64) -> DVec2 {
@@ -91,7 +93,7 @@ impl Object {
 
     pub fn get_object_vertices(&self, storage: &Storage) -> Vec<f32> {
         let scaled_radius = self.radius * SCALE_FACTOR;
-        let absolute_scaled_position = (self.get_absolute_parent_position(storage) + self.position) * SCALE_FACTOR;
+        let absolute_scaled_position = (self.get_absolute_parent_position(storage) + self.position_relative_to_parent) * SCALE_FACTOR;
         let mut vertices = vec![];
         let sides = 100; // TODO make this depend on something else ie zoom/translation
         let mut previous_location = absolute_scaled_position + vec2(scaled_radius, 0.0);
@@ -110,7 +112,7 @@ impl Object {
 
     fn update_position_and_velocity(&mut self, new_position: Option<DVec2>, new_velocity: Option<DVec2>) {
         if let Some(position) = new_position {
-            self.position = position;
+            self.position_relative_to_parent = position;
         }
         if let Some(velocity) = new_velocity {
             self.velocity = velocity;
@@ -122,7 +124,7 @@ impl Object {
         let Some(parent_sphere_of_influence_squared) = storage.get(parent).sphere_of_influence_squared else {
             return None;
         };
-        if self.position.magnitude_squared() < parent_sphere_of_influence_squared {
+        if self.position_relative_to_parent.magnitude_squared() < parent_sphere_of_influence_squared {
             return None;
         }
         // We can unwrap since any object with an SOI must also have a parent
@@ -133,7 +135,7 @@ impl Object {
         let highest_acceleration = 0.0;
         let mut object_causing_highest_acceleration = None;
         for object in objects {
-            let acceleration = storage.get(&object).mass * GRAVITATIONAL_CONSTANT / (self.position - storage.get(&object).position).magnitude_squared();
+            let acceleration = storage.get(&object).mass * GRAVITATIONAL_CONSTANT / (self.position_relative_to_parent - storage.get(&object).position_relative_to_parent).magnitude_squared();
             if acceleration > highest_acceleration {
                 object_causing_highest_acceleration = Some(object);
             }
@@ -151,7 +153,7 @@ impl Object {
             let Some(parent_sphere_of_influence_squared) = storage.get(child).sphere_of_influence_squared else {
                 continue
             };
-            if (self.position - storage.get(child).position).magnitude_squared() < parent_sphere_of_influence_squared {
+            if (self.position_relative_to_parent - storage.get(child).position_relative_to_parent).magnitude_squared() < parent_sphere_of_influence_squared {
                 potential_children.push(child.clone());
             }
         }
