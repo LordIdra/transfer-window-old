@@ -119,7 +119,7 @@ impl App {
 
         ui.label(format!("Hello '{}'", self.name));
 
-        ui.add(Image::new(include_image!("../resources/icons/earth-custom.png")).fit_to_exact_size(epaint::vec2(20.0, 20.0)));
+        ui.(Image::new(include_image!("../resources/icons/earth-custom.png")).fit_to_exact_size(epaint::vec2(20.0, 20.0)));
     }
 }
 
