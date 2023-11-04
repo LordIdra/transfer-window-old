@@ -1,15 +1,15 @@
-use app::App;
+use state::State;
 use eframe::{CreationContext, NativeOptions, Renderer, run_native};
 
-mod app;
 mod camera;
-mod storage;
-mod object;
+mod components;
+mod id_storage;
+mod state;
 mod renderer;
-mod util;
+mod systems;
 
 fn create_app(creation_context: &CreationContext<'_>) -> Box<dyn eframe::App> {
-    Box::new(App::new(creation_context))
+    Box::new(State::new(creation_context))
 }
 
 fn main() -> Result<(), eframe::Error> {

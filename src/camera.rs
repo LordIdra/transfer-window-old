@@ -1,14 +1,12 @@
 use eframe::{epaint::{Rect, Pos2}, egui::Context};
 use nalgebra_glm::{DVec2, translate2d, DMat3, scale2d, Mat3, Vec2};
 
-use crate::{app::ObjectId, storage::Storage, util::f64_to_f32_pair, object::SCALE_FACTOR};
+use crate::{state::ObjectId, util::f64_to_f32_pair, object::SCALE_FACTOR};
 
 const ZOOM_SENSITIVITY: f64 = 0.003;
 const SELECT_DISTANCE: f64 = 10.0;
 
 pub struct Camera {
-    selected: Option<ObjectId>, // Yes, we really do have to have both of these options due to baffling design decisions in egui
-    selected_position: Option<DVec2>,
     translation: DVec2,
     zoom: f64,
 }
@@ -16,8 +14,6 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Self {
-            selected: None,
-            selected_position: None,
             translation: DVec2::new(0.0, 0.0),
             zoom: 0.0002,
         }
@@ -27,8 +23,7 @@ impl Camera {
         self.translation += amount / self.zoom;
     }
 
-    pub fn update_selected(&mut self, selected: Option<ObjectId>) {
-        self.selected = selected;
+    pub fn reset_translation(&mut self) {
         self.translation = DVec2::new(0.0, 0.0);
     }
 

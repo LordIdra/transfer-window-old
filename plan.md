@@ -22,8 +22,23 @@
 [ ] Figure out why there are jumps happening between conic sections???
 [ ] ECS transition
 
-ECS:
+ECS
 - Each component is a representation of state of one part of an entity
 - An entity can have multiple components represented by options of components (not IDs)
 - Vectors of entity IDs act as a fast accessor to the entities that have a certain component
-- 
+
+Components
+- PositionComponent (absolute position + position relative to camera)
+- VelocityComponent
+- MassComponent
+- ParentComponent
+- CelestialBodyComponent (radius + color + SOI + children)
+- TrajectoryComponent
+
+Systems
+- CameraUpdateSystem
+- TrajectoryPredictionSystem
+- TrajectoryUpdateSystem
+- TrajectoryRenderSystem
+- CelestialBodyRenderSystem
+- ObjectIconSystem

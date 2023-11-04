@@ -3,7 +3,7 @@ use std::f64::consts::PI;
 use eframe::epaint::Rgba;
 use nalgebra_glm::{Vec3, DVec2};
 
-use crate::{object::conic::{Conic, new_conic}, util::add_triangle, app::ObjectId, storage::Storage};
+use crate::{object::conic::{Conic, new_conic}, util::add_triangle, state::ObjectId, storage::Storage};
 
 use super::{SCALE_FACTOR, visual_orbit_point::VisualOrbitPoint, orbit_point::OrbitPoint, orbit_direction::OrbitDirection};
 

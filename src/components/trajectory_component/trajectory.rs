@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use nalgebra_glm::{vec3, DVec2};
 
-use crate::{storage::Storage, app::ObjectId};
+use crate::{storage::Storage, state::ObjectId};
 
 use super::{orbit::Orbit, Object};
 

@@ -1,29 +1,32 @@
 use std::{sync::{Arc, Mutex}, time::Instant};
 
-use eframe::{egui::{Context, CentralPanel, Slider, Ui, Key, InputState, PointerButton, include_image, Image, Window, ImageButton, style::WidgetVisuals}, epaint::{Rgba, PaintCallback, Rect, self, Color32, Rounding, Shadow, Stroke}, Frame, CreationContext, egui_glow::CallbackFn, emath::Align2, WindowBuilder};
+use eframe::{egui::{Context, CentralPanel, Ui, Key, InputState, PointerButton, include_image, Image, Window, ImageButton}, epaint::{Rgba, PaintCallback, Rect, self, Color32, Rounding, Shadow, Stroke}, Frame, CreationContext, egui_glow::CallbackFn, emath::Align2};
 use nalgebra_glm::vec2;
 
-use crate::{object::Object, renderer::Renderer, camera::Camera, storage::Storage};
+use crate::{object::Object, renderer::Renderer, camera::Camera, id_storage::IdStorage, components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent}};
 
-pub type ObjectId = String;
+pub type Entity = usize;
 
 const MIN_TIME_STEP_LEVELS: i32 = 1;
 const MAX_TIME_STEP_LEVELS: i32 = 8;
 
-pub struct App {
-    name: String,
-    age: i32,
-    time_step_level: i32,
-    time: f64,
-    selected_object: ObjectId,
-    camera: Arc<Mutex<Camera>>,
-    orbit_renderer: Arc<Mutex<Renderer>>,
-    object_renderer: Arc<Mutex<Renderer>>,
-    storage: Storage,
-    last_frame: Instant,
+pub struct State {
+    pub time_step_level: i32,
+    pub time: f64,
+    pub last_frame: Instant,
+    pub selected: Entity,
+    pub camera: Arc<Mutex<Camera>>,
+    pub orbit_renderer: Arc<Mutex<Renderer>>,
+    pub object_renderer: Arc<Mutex<Renderer>>,
+    pub celestial_body_components: IdStorage<CelestialBodyComponent>,
+    pub mass_components: IdStorage<MassComponent>,
+    pub parent_components: IdStorage<ParentComponent>,
+    pub position_components: IdStorage<PositionComponent>,
+    pub trajectory_components: IdStorage<TrajectoryComponent>,
+    pub velocity_component: IdStorage<VelocityComponent>,
 }
 
-impl App {
+impl State {
     pub fn new(creation_context: &CreationContext) -> Self {
         egui_extras::install_image_loaders(&creation_context.egui_ctx);
 
@@ -40,11 +43,9 @@ impl App {
         let camera = Arc::new(Mutex::new(camera));
         
         Self {
-            name: "oh no".to_string(), 
-            age: 0,
             time_step_level: 1,
             time: 0.0,
-            selected_object: spacecraft,
+            selected: spacecraft,
             camera: camera.clone(),
             orbit_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
             object_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
@@ -72,8 +73,8 @@ impl App {
                 let world_position = self.camera.lock().unwrap().window_space_to_world_space(screen_position, screen_size);
                 let max_distance_to_select = self.camera.lock().unwrap().get_max_distance_to_select();
                 if let Some(selected_object) = self.storage.get_selected_object(world_position, max_distance_to_select) {
-                    if self.selected_object != selected_object {
-                        self.selected_object = selected_object.clone();
+                    if self.selected != selected_object {
+                        self.selected = selected_object.clone();
                         self.camera.lock().unwrap().update_selected(Some(selected_object.clone()));
                     }
                 }
@@ -103,25 +104,9 @@ impl App {
 
         ui.painter().add(PaintCallback { rect, callback });
     }
-
-    fn render_ui(&mut self, ui: &mut Ui) {
-        ui.heading("My egui Application");
-        ui.horizontal(|ui| {
-            let name_label = ui.label("Your name: ");
-            ui.text_edit_singleline(&mut self.name)
-                .labelled_by(name_label.id);
-        });
-
-        ui.add(Slider::new(&mut self.age, 0..=120).text("age"));
-        if ui.button("Click each year").clicked() {
-            self.age += 1;
-        }
-
-        ui.label(format!("Hello '{}'", self.name));
-    }
 }
 
-impl eframe::App for App {
+impl eframe::App for State {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
         context.style_mut(|style| {
             let rounding = 20.0;
@@ -150,21 +135,21 @@ impl eframe::App for App {
                 ui.add(image_button);
         });
 
+        let screen_size = context.screen_rect();
+        context.input(|input| self.update_selected_object(input, screen_size));
+        context.input(|input| self.update_time_step_level(input));
+        context.input(|input| self.update_camera_translation(input));
+        self.camera.lock().unwrap().update(&self.storage, context);
+
         CentralPanel::default().show(context, |ui| {
-            let screen_size = context.screen_rect();
-            context.input(|input| self.update_selected_object(input, screen_size));
-            context.input(|input| self.update_time_step_level(input));
-            context.input(|input| self.update_camera_translation(input));
-            self.camera.lock().unwrap().update(&self.storage, context);
-            
             self.render_underlay(context, ui);
-            self.render_ui(ui);
-            let delta_time = (Instant::now() - self.last_frame).as_secs_f64() * self.get_time_step();
-            self.time += delta_time;
-            self.storage.update(delta_time);
-            self.last_frame = Instant::now();
-            
-            context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
         });
+
+        let delta_time = (Instant::now() - self.last_frame).as_secs_f64() * self.get_time_step();
+        self.time += delta_time;
+        self.storage.update(delta_time);
+        self.last_frame = Instant::now();
+            
+        context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
     }
 }
