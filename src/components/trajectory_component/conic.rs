@@ -67,8 +67,6 @@ mod tests {
 
     use nalgebra_glm::vec2;
 
-    use crate::object::orbit_direction::GRAVITATIONAL_CONSTANT;
-
     #[test]
     fn test_semi_major_axis() {
         // https://nssdc.gsfc.nasa.gov/planetary/factsheet/mercuryfact.html

@@ -3,10 +3,12 @@ use eframe::{CreationContext, NativeOptions, Renderer, run_native};
 
 mod camera;
 mod components;
-mod id_storage;
+mod storage;
 mod state;
 mod renderer;
 mod systems;
+mod entity_builder;
+mod util;
 
 fn create_app(creation_context: &CreationContext<'_>) -> Box<dyn eframe::App> {
     Box::new(State::new(creation_context))

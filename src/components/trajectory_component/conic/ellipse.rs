@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::object::orbit_direction::OrbitDirection;
+use crate::components::trajectory_component::orbit_direction::OrbitDirection;
 
 use super::{argument_of_periapsis, Conic, specific_angular_momentum};
 
@@ -123,7 +123,7 @@ impl Conic for Ellipse {
 
 #[cfg(test)]
 mod tests {
-    use crate::object::{orbit_direction::GRAVITATIONAL_CONSTANT, conic::{semi_major_axis, eccentricity}};
+    use crate::components::trajectory_component::{conic::{semi_major_axis, eccentricity}, orbit_direction::GRAVITATIONAL_CONSTANT};
 
     use super::*;
 

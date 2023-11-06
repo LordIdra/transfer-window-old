@@ -2,7 +2,8 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::object::orbit_direction::OrbitDirection;
+
+use crate::components::trajectory_component::orbit_direction::OrbitDirection;
 
 use super::{argument_of_periapsis, Conic, specific_angular_momentum};
 
@@ -100,7 +101,7 @@ impl Conic for Hyperbola {
 mod tests {
     use std::f64::consts::PI;
 
-    use crate::object::{orbit_direction::GRAVITATIONAL_CONSTANT, conic::{semi_major_axis, eccentricity}};
+    use crate::components::trajectory_component::{orbit_direction::GRAVITATIONAL_CONSTANT, conic::{semi_major_axis, eccentricity}};
 
     use super::*;
 
