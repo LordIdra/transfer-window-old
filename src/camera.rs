@@ -30,8 +30,8 @@ impl Camera {
         self.zoom = zoom;
     }
 
-    pub fn set_selected_translation(&mut self, selected_translation: DVec2) {
-        self.selected_translation = selected_translation;
+    pub fn set_selected_translation(&mut self, unscaled_selected_translation: DVec2) {
+        self.selected_translation = unscaled_selected_translation * SCALE_FACTOR;
     }
 
     pub fn get_zoom_matrix(&self, screen_size: Rect) -> Mat3 {
@@ -45,7 +45,7 @@ impl Camera {
         )
     }
 
-    fn get_translation(&self) -> DVec2 {
+    pub fn get_translation(&self) -> DVec2 {
         self.extra_translation + self.selected_translation
     }
 

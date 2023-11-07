@@ -18,13 +18,14 @@ fn update_time_step_level(state: &mut State, context: &Context) {
     });
 }
 
-fn update_delta_time(state: &mut State, context: &Context) {
+fn update_delta_time(state: &mut State) {
     let delta_time = (Instant::now() - state.last_frame).as_secs_f64() * state.get_time_step();
+    state.delta_time = delta_time;
     state.time += delta_time;
     state.last_frame = Instant::now();
 }
 
 pub fn time_step_update_system(state: &mut State, context: &Context) {
     update_time_step_level(state, context);
-    update_delta_time(state, context);
+    update_delta_time(state);
 }

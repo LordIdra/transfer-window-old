@@ -3,12 +3,13 @@ use std::{sync::{Arc, Mutex}, time::Instant};
 use eframe::{egui::Context, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
 
-use crate::{renderer::Renderer, camera::Camera, storage::{entity_allocator::Entity, components::Components}, entity_builder::{add_root_object, add_child_object}};
+use crate::{renderer::Renderer, camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system}, components::Components};
 
 pub struct State {
     pub components: Components,
     pub time_step_level: i32,
     pub time: f64,
+    pub delta_time: f64,
     pub last_frame: Instant,
     pub selected: Entity,
     pub camera: Arc<Mutex<Camera>>,
@@ -19,21 +20,22 @@ pub struct State {
 impl State {
     pub fn new(creation_context: &CreationContext) -> Self {
         egui_extras::install_image_loaders(&creation_context.egui_ctx);
-        let components = Components::new();
+        let mut components = Components::new();
         let sun = Self::init_root_object(&mut components);
-        let object = Self {
-            components: Components::new(),
+        let mut state = Self {
+            components,
             time_step_level: 1,
             time: 0.0,
+            delta_time: 0.0,
             selected: sun,
             camera: Arc::new(Mutex::new(Camera::new())),
             orbit_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
             object_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
             last_frame: Instant::now(),
         };
-        storage.do_full_prediction(0.0);
-        object.init_objects(sun);
-        object
+        state.init_objects(sun);
+        trajectory_prediction_system(&mut state, 0.0);
+        state
     }
 
     fn init_root_object(components: &mut Components) -> Entity {
@@ -41,19 +43,13 @@ impl State {
     }
 
     fn init_objects(&mut self, sun: Entity) {
-        let earth = add_child_object(&mut self.components, "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        add_child_object(&mut self.components, "moon".to_string(), earth, vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        let spacecraft = add_child_object(&mut self.components, "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
+        let earth = add_child_object(&mut self.components, 0.0, "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        add_child_object(&mut self.components, 0.0, "moon".to_string(), earth, vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(0.9891e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
     }
 
     pub fn get_time_step(&self) -> f64 {
         5.0_f64.powi(self.time_step_level)
-    }
-
-    pub fn set_selected(&mut self, selected: Entity) {
-        self.selected = selected;
-        let selected_absolute_position = self.components.position_components.get(&selected).unwrap().get_absolute_position();
-        self.camera.lock().unwrap().set_selected_translation(selected_absolute_position);
     }
 }
 
@@ -86,14 +82,11 @@ impl eframe::App for State {
         //         ui.add(image_button);
         // });
 
-        let screen_size = context.screen_rect();
-        context.input(|input| self.update_selected_object(input, screen_size));
-        context.input(|input| self.update_time_step_level(input));
-        context.input(|input| self.update_camera_translation(input));
-        self.camera.lock().unwrap().update(&self.storage, context);
-
-        self.storage.update(delta_time);
-            
+        time_step_update_system(self, context);
+        object_selection_system(self, context);
+        trajectory_update_system(self);
+        camera_update_system(self, context);
+        underlay_render_system(self, context);
         context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
     }
 }

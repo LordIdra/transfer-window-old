@@ -15,18 +15,17 @@ impl<T> ComponentStorage<T> {
         Self { entries: vec![] }
     }
 
-    pub fn set(&mut self, entity: Entity, value: T) {
+    pub fn set(&mut self, entity: Entity, value: Option<T>) {
         let index = entity.get_index();
         let generation = entity.get_generation();
-        let entry = Some(StorageEntry { value, generation });
+        let entry = value.map(|value| StorageEntry { value, generation });
         if let Some(current_entry) = self.entries.get_mut(index) {
             *current_entry = entry;
-            return;
+        } else if entity.get_index() == self.entries.len() {
+            self.entries.push(entry);
+        } else {
+            panic!("Allocator and storages have desynced somewhere...")
         }
-        for i in 0..(self.entries.len() - index) {
-            self.entries.push(None);
-        }
-        self.entries.push(entry);
     }
 
     pub fn remove(&mut self, entity: Entity) {
@@ -53,7 +52,7 @@ impl<T> ComponentStorage<T> {
         None
     }
 
-    pub fn get_mut(&self, entity: &Entity) -> Option<&mut T> {
+    pub fn get_mut(&mut self, entity: &Entity) -> Option<&mut T> {
         let entry = self.entries
             .get_mut(entity.get_index())
             .expect("Entity index out of range")

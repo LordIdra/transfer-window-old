@@ -1,6 +1,6 @@
-use std::collections::{HashSet, hash_set::Iter};
+use std::collections::HashSet;
 
-use super::components::Components;
+use crate::components::Components;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Entity {
@@ -67,7 +67,7 @@ impl EntityAllocator {
         self.free.push(entity.index);
     }
 
-    pub fn get_entities(&self) -> Iter<'_, Entity> {
-        self.entities.iter()
+    pub fn get_entities(&self) -> HashSet<Entity> {
+        self.entities.clone()
     }
 }

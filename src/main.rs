@@ -7,7 +7,6 @@ mod storage;
 mod state;
 mod renderer;
 mod systems;
-mod entity_builder;
 mod util;
 
 fn create_app(creation_context: &CreationContext<'_>) -> Box<dyn eframe::App> {

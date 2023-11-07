@@ -1,96 +1,113 @@
 use nalgebra_glm::DVec2;
 
-const SIMULATION_TIME_STEP: f64 = 200.0;
-const SIMULATION_TIME_STEPS: i32 = 20000;
+use crate::{state::State, components::trajectory_component::{orbit::Orbit, orbit_direction::GRAVITATIONAL_CONSTANT}, storage::entity_allocator::Entity};
 
-pub fn predict(&mut self, delta_time: f64) {
-    if let Some(orbit) = self.orbits.back_mut() {
-        orbit.predict(delta_time);
-    }
+use super::trajectory_util::{update_parent, update_position_and_velocity, sync_to_trajectory};
+
+const SIMULATION_TIME_STEP: f64 = 100.0;
+const SIMULATION_TIME_STEPS: i32 = 40000;
+
+fn position_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) -> DVec2 {
+    state.components.position_components.get(entity).unwrap().get_absolute_position() - state.components.position_components.get(parent).unwrap().get_absolute_position()
 }
 
-pub fn change_parent(&mut self, components: &Components, entity: Entity, new_parent: Entity, time: f64) {
-    // Switch frames of reference
-    let new_position = components.position_components.get(&entity).unwrap().get_absolute_position() - components.position_components.get(&new_parent).unwrap().get_absolute_position();
-    let new_velocity = components.velocity_components.get(&entity).unwrap().get_velocity()          - components.velocity_components.get(&new_parent).unwrap().get_velocity();
-    let new_orbit = Orbit::new(components, new_parent, vec3(1.0, 0.0, 0.0), new_position, new_velocity, time);
-    self.orbits.push_back(new_orbit);
+fn velocity_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) -> DVec2 {
+    state.components.velocity_components.get(entity).unwrap().get_absolute_velocity() - state.components.velocity_components.get(parent).unwrap().get_absolute_velocity()
 }
 
-pub fn get_sphere_of_influence_squared(&self, components: &Components, mass: f64) -> Option<f64> {
-    // https://en.wikipedia.org/wiki/Sphere_of_influence_(astrodynamics)
-    self.orbits.front().map(|orbit| orbit.get_sphere_of_influence(components, mass).powi(2))
+fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f64) {
+    let new_position = position_relative_to_parent(state, entity, &new_parent);
+    let new_velocity = velocity_relative_to_parent(state, entity, &new_parent);
+    let new_orbit = Orbit::new(&state.components, new_parent, new_position, new_velocity, time);
+    state.components.trajectory_components.get_mut(entity).unwrap().add_orbit(new_orbit);
 }
 
-fn compute_new_parent_upper(&self, storage: &Storage, parent: &ObjectId) -> Option<ObjectId> {
-    // Check if we've left the SOI of our current parent
-    let Some(parent_sphere_of_influence_squared) = storage.get(parent).sphere_of_influence_squared else {
+fn get_sphere_of_influence_squared(state: &State, entity: &Entity) -> Option<f64> {
+    let trajectory = state.components.trajectory_components.get(entity)?;
+    let final_orbit = trajectory.get_final_orbit();
+    let final_parent = final_orbit.get_parent();
+    let semi_major_axis = final_orbit.get_semi_major_axis();
+    let mass = state.components.mass_components.get(entity)?.get_mass();
+    let parent_mass = state.components.mass_components.get(&final_parent)?.get_mass();
+    Some((semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)).powi(2))
+}
+
+fn compute_new_parent_upper(state: &State, entity: &Entity, parent: &Entity) -> Option<Entity> {
+    // Check if we've left the SOI of our parent
+    let parent_sphere_of_influence_squared = get_sphere_of_influence_squared(state, parent)?;
+    if position_relative_to_parent(state, entity, parent).magnitude_squared() < parent_sphere_of_influence_squared {
         return None;
-    };
-    if self.position_relative_to_parent.magnitude_squared() < parent_sphere_of_influence_squared {
-        return None;
     }
-    // We can unwrap since any object with an SOI must also have a parent
-    Some(storage.get(parent).parent.clone().unwrap())
+    state.components.parent_components.get(parent).map(|parent_parent| parent_parent.get_parent())
 }
 
-fn object_causing_highest_acceleration(&self, storage: &Storage, objects: Vec<ObjectId>) -> Option<ObjectId> {
+fn entity_causing_highest_acceleration(state: &State, entity: &Entity, entities: Vec<Entity>) -> Option<Entity> {
     let highest_acceleration = 0.0;
     let mut object_causing_highest_acceleration = None;
-    for object in objects {
-        let acceleration = storage.get(&object).mass * GRAVITATIONAL_CONSTANT / (self.position_relative_to_parent - storage.get(&object).position_relative_to_parent).magnitude_squared();
+    for other_entity in &entities {
+        let position = state.components.position_components.get(entity).unwrap().get_absolute_position();
+        let other_position = state.components.position_components.get(other_entity).unwrap().get_absolute_position();
+        let other_mass = state.components.mass_components.get(other_entity).unwrap().get_mass();
+        let acceleration = other_mass * GRAVITATIONAL_CONSTANT / (position - other_position).magnitude_squared();
         if acceleration > highest_acceleration {
-            object_causing_highest_acceleration = Some(object);
+            object_causing_highest_acceleration = Some(*other_entity);
         }
     }
     object_causing_highest_acceleration
 }
 
-fn compute_new_parent_lower(&self, storage: &Storage, parent: &ObjectId) -> Option<ObjectId> {
+fn compute_new_parent_lower(state: &State, entity: &Entity, parent: &Entity) -> Option<Entity> {
     // Check if we've entered the SOI of any objects with the same parent
     let mut potential_children = vec![];
-    for child in &storage.get(parent).children {
-        if *child == self.id { // Prevents deadlocks
+    for child in state.components.celestial_body_components.get(parent).unwrap().get_children() {
+        if *child == *entity {
             continue;
         }
-        let Some(parent_sphere_of_influence_squared) = storage.get(child).sphere_of_influence_squared else {
-            continue
-        };
-        if (self.position_relative_to_parent - storage.get(child).position_relative_to_parent).magnitude_squared() < parent_sphere_of_influence_squared {
-            potential_children.push(child.clone());
+        if let Some(parent_sphere_of_influence_squared) = get_sphere_of_influence_squared(state, child) {
+            let position = state.components.position_components.get(entity).unwrap().get_absolute_position();
+            let other_position = state.components.position_components.get(child).unwrap().get_absolute_position();
+            if (position - other_position).magnitude_squared() < parent_sphere_of_influence_squared {
+                potential_children.push(*child);
+            }
         }
     }
-    self.object_causing_highest_acceleration(storage, potential_children)
+    entity_causing_highest_acceleration(state, entity, potential_children)
 }
 
 
-fn update_parent_for_prediction(&mut self, storage: &Storage, time: f64) {
-    if let Some(parent) = &self.parent {
-        if let Some(new_parent) = self.compute_new_parent_upper(storage, parent) {
-            self.trajectory.borrow_mut().change_parent(storage, self, new_parent.clone(), time);
-            self.parent = Some(new_parent);
-        } else if let Some(new_parent) = self.compute_new_parent_lower(storage, parent) {
-            self.trajectory.borrow_mut().change_parent(storage, self, new_parent.clone(), time);
-            self.parent = Some(new_parent);
+fn update_parent_for_prediction(state: &mut State, entity: &Entity, time: f64) {
+    if let Some(parent_component) = state.components.parent_components.get(entity) {
+        let parent = parent_component.get_parent();
+        if let Some(new_parent) = compute_new_parent_lower(state, entity, &parent) {
+            change_parent(state, entity, new_parent, time);
+            update_parent(state, entity, &new_parent);
+        } else if let Some(new_parent) = compute_new_parent_upper(state, entity, &parent) {
+            change_parent(state, entity, new_parent, time);
+            update_parent(state, entity, &new_parent);
         }
     }
 }
 
-pub fn update_for_prediction(&mut self, storage: &Storage, delta_time: f64, time: f64) {
-    self.trajectory.borrow_mut().update_for_prediction(delta_time);
-    let new_position = self.trajectory.borrow().get_final_unscaled_position();
-    let new_velocity = self.trajectory.borrow().get_final_velocity();
-    self.update_position_and_velocity(new_position, new_velocity);
-    self.update_parent_for_prediction(storage, time);
+pub fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
+    if let Some(trajectory_component) = state.components.trajectory_components.get_mut(entity) {
+        trajectory_component.predict(SIMULATION_TIME_STEP);
+        let final_orbit = trajectory_component.get_final_orbit();
+        let new_position = final_orbit.get_end_unscaled_position();
+        let new_velocity = final_orbit.get_end_velocity();
+        update_position_and_velocity(state, entity, new_position, new_velocity);
+        update_parent_for_prediction(state, entity, time);
+    }
 }
 
 pub fn trajectory_prediction_system(state: &mut State, start_time: f64) {
     for _ in 0..SIMULATION_TIME_STEPS {
-        for object in self.objects.values() {
-            object.borrow_mut().update_for_prediction(self, SIMULATION_TIME_STEP, start_time);
+        for entity in state.components.entity_allocator.get_entities() {
+            update_for_prediction(state, &entity, start_time);
         }
     }
-    for object in self.objects.values_mut() {
-        object.borrow_mut().reset();
+    for entity in state.components.entity_allocator.get_entities() {
+        if state.components.trajectory_components.get(&entity).is_some() {
+            sync_to_trajectory(state, &entity);
+        }
     }
 }

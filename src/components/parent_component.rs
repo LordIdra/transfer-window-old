@@ -12,4 +12,8 @@ impl ParentComponent {
     pub fn get_parent(&self) -> Entity {
         self.parent
     }
+
+    pub fn set_parent(&mut self, parent: Entity) {
+        self.parent = parent;
+    }
 }

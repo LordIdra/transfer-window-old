@@ -23,8 +23,10 @@ fn add_painter_callback(state: &mut State, context: &Context, ui: &Ui) {
 
 pub fn underlay_render_system(state: &mut State, context: &Context) {
     CentralPanel::default().show(context, |ui| {
-        state.object_renderer.lock().unwrap().set_vertices(get_all_object_vertices(state));
-        state.orbit_renderer.lock().unwrap().set_vertices(get_all_orbit_vertices(state));
+        let object_vertices = get_all_object_vertices(state);
+        let orbit_vertices = get_all_orbit_vertices(state);
+        state.object_renderer.lock().unwrap().set_vertices(object_vertices);
+        state.orbit_renderer.lock().unwrap().set_vertices(orbit_vertices);
         add_painter_callback(state, context, ui);
     });
 }

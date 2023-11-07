@@ -1,7 +1,7 @@
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
-use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent, name_component::NameComponent, sphere_of_influence_component::SphereOfInfluenceComponent}, storage::{entity_allocator::Entity, components::Components}};
+use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent, name_component::NameComponent, Components}, storage::entity_allocator::Entity};
 
 struct EntityBuilder {
     celestial_body_component: Option<CelestialBodyComponent>,
@@ -9,7 +9,6 @@ struct EntityBuilder {
     name_component: Option<NameComponent>,
     parent_component: Option<ParentComponent>,
     position_component: Option<PositionComponent>,
-    sphere_of_influence_component: Option<SphereOfInfluenceComponent>,
     trajectory_component: Option<TrajectoryComponent>,
     velocity_component: Option<VelocityComponent>,
 }
@@ -22,7 +21,6 @@ impl EntityBuilder {
             name_component: None,
             parent_component: None, 
             position_component: None, 
-            sphere_of_influence_component: None,
             trajectory_component: None, 
             velocity_component: None 
         }
@@ -53,11 +51,6 @@ impl EntityBuilder {
         self
     }
 
-    pub fn with_sphere_of_influence_component(mut self, component: SphereOfInfluenceComponent) -> Self {
-        self.sphere_of_influence_component = Some(component);
-        self
-    }
-
     pub fn with_trajectory_component(mut self, component: TrajectoryComponent) -> Self {
         self.trajectory_component = Some(component);
         self
@@ -68,43 +61,49 @@ impl EntityBuilder {
         self
     }
 
-    pub fn build(&self, components: &mut Components) -> Entity {
+    pub fn build(self, components: &mut Components) -> Entity {
+        let EntityBuilder {
+            celestial_body_component,
+            mass_component,
+            name_component,
+            parent_component,
+            position_component,
+            trajectory_component,
+            velocity_component,
+        } = self;
+
         let entity = components.entity_allocator.allocate();
-        if let Some(component) = self.celestial_body_component {
-            components.celestial_body_components.set(entity, component);
-        }
-        if let Some(component) = self.mass_component {
-            components.mass_components.set(entity, component);
-        }
-        if let Some(component) = self.parent_component {
-            components.parent_components.set(entity, component);
-        }
-        if let Some(component) = self.position_component {
-            components.position_components.set(entity, component);
-        }
-        if let Some(component) = self.trajectory_component {
-            components.trajectory_components.set(entity, component);
-        }
-        if let Some(component) = self.velocity_component {
-            components.velocity_components.set(entity, component);
-        }
+        components.celestial_body_components.set(entity, celestial_body_component);
+        components.mass_components.set(entity, mass_component);
+        components.name_components.set(entity, name_component);
+        components.parent_components.set(entity, parent_component);
+        components.position_components.set(entity, position_component);
+        components.trajectory_components.set(entity, trajectory_component);
+        components.velocity_components.set(entity, velocity_component);
         entity
     }
 }
 
-pub fn add_root_object(components: &mut Components, name: String, absolute_position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
+fn base_object_builder(name: String, absolute_position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> EntityBuilder {
     EntityBuilder::new()
         .with_name_component(NameComponent::new(name))
         .with_position_component(PositionComponent::new(absolute_position))
         .with_velocity_component(VelocityComponent::new(velocity))
         .with_mass_component(MassComponent::new(mass))
         .with_celestial_body_component(CelestialBodyComponent::new(radius, color))
-        .build(components)
 }
 
-pub fn add_child_object(components: &mut Components, name: String, parent: Entity, absolute_position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
-    let entity = add_root_object(components, name, absolute_position, velocity, mass, radius, color);
-    components.parent_components.set(entity, ParentComponent::new(parent));
+pub fn add_root_object(components: &mut Components, name: String, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
+    base_object_builder(name, position, velocity, mass, radius, color).build(components)
+}
+
+pub fn add_child_object(components: &mut Components, time: f64, name: String, parent: Entity, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
+    let absolute_position = components.position_components.get(&parent).unwrap().get_absolute_position() + position;
+    let entity = base_object_builder(name, absolute_position, velocity, mass, radius, color)
+        .with_parent_component(ParentComponent::new(parent))
+        .with_trajectory_component(TrajectoryComponent::new(components, parent, position, velocity, time))
+        .build(components);
+    components.parent_components.set(entity, Some(ParentComponent::new(parent)));
     components.celestial_body_components
         .get_mut(&parent)
         .expect("Object's parent must be a celestial body")

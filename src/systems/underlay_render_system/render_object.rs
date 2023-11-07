@@ -5,7 +5,7 @@ use nalgebra_glm::vec2;
 use crate::{state::State, components::{celestial_body_component::CelestialBodyComponent, position_component::PositionComponent}, camera::SCALE_FACTOR, util::add_triangle};
 
 
-fn get_entity_object_vertices(state: &mut State, position_component: &PositionComponent, celestial_body_component: &CelestialBodyComponent) -> Vec<f32> {
+fn get_entity_object_vertices(position_component: &PositionComponent, celestial_body_component: &CelestialBodyComponent) -> Vec<f32> {
     let scaled_radius = celestial_body_component.get_radius() * SCALE_FACTOR;
     let absolute_scaled_position = position_component.get_absolute_position() * SCALE_FACTOR;
     let mut vertices = vec![];
@@ -23,13 +23,13 @@ fn get_entity_object_vertices(state: &mut State, position_component: &PositionCo
 pub fn get_all_object_vertices(state: &mut State) -> Vec<f32> {
     let mut vertices = vec![];
     for entity in state.components.entity_allocator.get_entities() {
-        let Some(position_component) = state.components.position_components.get(entity) else {
+        let Some(position_component) = state.components.position_components.get(&entity) else {
             continue;
         };
-        let Some(celestial_body_component) = state.components.celestial_body_components.get(entity) else {
+        let Some(celestial_body_component) = state.components.celestial_body_components.get(&entity) else {
             continue;
         };
-        vertices.append(&mut get_entity_object_vertices(state, position_component, celestial_body_component));
+        vertices.append(&mut get_entity_object_vertices(position_component, celestial_body_component));
     }
     vertices
 }

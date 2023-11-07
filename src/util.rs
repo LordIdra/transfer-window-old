@@ -1,6 +1,8 @@
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
+use crate::{state::State, storage::entity_allocator::Entity};
+
 pub fn add_triangle(vertices: &mut Vec<f32>, v1: DVec2, v2: DVec2, v3: DVec2, color: Rgba) {
     let v1 = dvec2_to_f32_tuple(v1);
     let v2 = dvec2_to_f32_tuple(v2);
@@ -18,4 +20,14 @@ pub fn f64_to_f32_pair(v: f64) -> (f32, f32) {
     let upper = v as f32;
     let lower = (v - upper as f64) as f32;
     (upper, lower)
+}
+
+pub fn get_root_entities(state: &State) -> Vec<Entity> {
+    let mut entities = vec![];
+    for entity in state.components.entity_allocator.get_entities() {
+        if state.components.celestial_body_components.get(&entity).is_some() && state.components.parent_components.get(&entity).is_some() {
+            entities.push(entity);
+        }
+    }
+    entities
 }

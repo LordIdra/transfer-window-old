@@ -112,8 +112,8 @@ impl Conic for Ellipse {
         self.direction
     }
 
-    fn get_sphere_of_influence(&self, mass: f64, parent_mass: f64) -> f64 {
-        self.semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)
+    fn get_semi_major_axis(&self) -> f64 {
+        self.semi_major_axis
     }
 
     fn get_remaining_orbits(&self, remaining_time: f64) -> i32 {

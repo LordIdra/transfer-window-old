@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use eframe::epaint::Rgba;
 
 use crate::storage::entity_allocator::Entity;
@@ -5,12 +7,12 @@ use crate::storage::entity_allocator::Entity;
 pub struct CelestialBodyComponent {
     radius: f64,
     color: Rgba,
-    children: Vec<Entity>,
+    children: HashSet<Entity>,
 }
 
 impl CelestialBodyComponent {
     pub fn new(radius: f64, color: Rgba) -> Self {
-        let children = Vec::new();
+        let children = HashSet::new();
         Self { radius, color, children }
     }
 
@@ -22,11 +24,15 @@ impl CelestialBodyComponent {
         self.color
     }
 
-    pub fn get_children(&self) -> Vec<Entity> {
-        self.children
+    pub fn get_children(&self) -> &HashSet<Entity> {
+        &self.children
     }
 
     pub fn add_child(&mut self, child: Entity) {
-        self.children.push(child);
+        self.children.insert(child);
+    }
+
+    pub fn remove_child(&mut self, child: &Entity) {
+        self.children.remove(child);
     }
 }
