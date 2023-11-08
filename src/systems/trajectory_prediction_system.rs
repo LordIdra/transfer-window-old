@@ -4,8 +4,8 @@ use crate::{state::State, components::trajectory_component::{orbit::Orbit, orbit
 
 use super::trajectory_util::{update_parent, update_position_and_velocity, sync_to_trajectory};
 
-const SIMULATION_TIME_STEP: f64 = 100.0;
-const SIMULATION_TIME_STEPS: i32 = 40000;
+const SIMULATION_TIME_STEP: f64 = 10.0;
+const SIMULATION_TIME_STEPS: i32 = 400000;
 
 fn position_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) -> DVec2 {
     state.components.position_components.get(entity).unwrap().get_absolute_position() - state.components.position_components.get(parent).unwrap().get_absolute_position()
@@ -18,6 +18,10 @@ fn velocity_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) 
 fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f64) {
     let new_position = position_relative_to_parent(state, entity, &new_parent);
     let new_velocity = velocity_relative_to_parent(state, entity, &new_parent);
+    if let Some(name_component) = state.components.name_components.get(entity) {
+        println!("{} {} {}", name_component.get_name(), state.components.position_components.get(entity).unwrap().get_absolute_position(), 
+        state.components.position_components.get(&new_parent).unwrap().get_absolute_position());
+    }
     let new_orbit = Orbit::new(&state.components, new_parent, new_position, new_velocity, time);
     state.components.trajectory_components.get_mut(entity).unwrap().add_orbit(new_orbit);
 }

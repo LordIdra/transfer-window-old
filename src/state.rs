@@ -45,7 +45,7 @@ impl State {
     fn init_objects(&mut self, sun: Entity) {
         let earth = add_child_object(&mut self.components, 0.0, "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
         add_child_object(&mut self.components, 0.0, "moon".to_string(), earth, vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(0.9891e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
+        add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
     }
 
     pub fn get_time_step(&self) -> f64 {
