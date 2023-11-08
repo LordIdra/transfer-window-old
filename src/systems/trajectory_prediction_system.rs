@@ -19,10 +19,16 @@ fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f
     let new_position = position_relative_to_parent(state, entity, &new_parent);
     let new_velocity = velocity_relative_to_parent(state, entity, &new_parent);
     if let Some(name_component) = state.components.name_components.get(entity) {
-        println!("{} {} {}", name_component.get_name(), state.components.position_components.get(entity).unwrap().get_absolute_position(), 
-        state.components.position_components.get(&new_parent).unwrap().get_absolute_position());
+        if name_component.get_name() == "spacecraft" {
+            println!("1 {}", state.components.position_components.get(entity).unwrap().get_absolute_position());
+        }
     }
     let new_orbit = Orbit::new(&state.components, new_parent, new_position, new_velocity, time);
+    if let Some(name_component) = state.components.name_components.get(entity) {
+        if name_component.get_name() == "spacecraft" {
+            println!("2 {}", state.components.position_components.get(&new_parent).unwrap().get_absolute_position() + new_orbit.get_start_unscaled_position());
+        }
+    }
     state.components.trajectory_components.get_mut(entity).unwrap().add_orbit(new_orbit);
 }
 

@@ -64,6 +64,10 @@ impl Orbit {
         self.conic.get_position(mean_anomaly) * SCALE_FACTOR
     }
 
+    pub fn get_start_unscaled_position(&self) -> DVec2 {
+        self.start_orbit_point.get_unscaled_position()
+    }
+
     pub fn get_current_unscaled_position(&self) -> DVec2 {
         self.current_orbit_point.get_unscaled_position()
     }
