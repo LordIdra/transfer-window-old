@@ -18,17 +18,7 @@ fn velocity_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) 
 fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f64) {
     let new_position = position_relative_to_parent(state, entity, &new_parent);
     let new_velocity = velocity_relative_to_parent(state, entity, &new_parent);
-    if let Some(name_component) = state.components.name_components.get(entity) {
-        if name_component.get_name() == "spacecraft" {
-            println!("1 {}", state.components.position_components.get(entity).unwrap().get_absolute_position());
-        }
-    }
     let new_orbit = Orbit::new(&state.components, new_parent, new_position, new_velocity, time);
-    if let Some(name_component) = state.components.name_components.get(entity) {
-        if name_component.get_name() == "spacecraft" {
-            println!("2 {}", state.components.position_components.get(&new_parent).unwrap().get_absolute_position() + new_orbit.get_start_unscaled_position());
-        }
-    }
     state.components.trajectory_components.get_mut(entity).unwrap().add_orbit(new_orbit);
 }
 
@@ -42,6 +32,9 @@ fn get_sphere_of_influence_squared(state: &State, entity: &Entity) -> Option<f64
     Some((semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)).powi(2))
 }
 
+/// Looks to ascend HIGHER into the entity tree to compute a parent
+/// For example, this could be a spacecraft leaving the Earth's SOI to enter the Sun's SOI
+/// In this case, there's only one possible new parent (ie, the current parent's parent), making this fairly simple
 fn compute_new_parent_upper(state: &State, entity: &Entity, parent: &Entity) -> Option<Entity> {
     // Check if we've left the SOI of our parent
     let parent_sphere_of_influence_squared = get_sphere_of_influence_squared(state, parent)?;
@@ -66,6 +59,11 @@ fn entity_causing_highest_acceleration(state: &State, entity: &Entity, entities:
     object_causing_highest_acceleration
 }
 
+/// Looks to descend LOWER into the entity tree to compute a parent
+/// For example, this could be a spacecraft leaving the Earth's SOI to enter the Moon's SOI
+/// This means there could be multiple entities to check
+/// Also, it's possible we'll be in the SOI of several entities
+/// In this case, we calculate which entity is causing the highest acceleration and choose that one
 fn compute_new_parent_lower(state: &State, entity: &Entity, parent: &Entity) -> Option<Entity> {
     // Check if we've entered the SOI of any objects with the same parent
     let mut potential_children = vec![];
@@ -83,7 +81,6 @@ fn compute_new_parent_lower(state: &State, entity: &Entity, parent: &Entity) -> 
     }
     entity_causing_highest_acceleration(state, entity, potential_children)
 }
-
 
 fn update_parent_for_prediction(state: &mut State, entity: &Entity, time: f64) {
     if let Some(parent_component) = state.components.parent_components.get(entity) {
@@ -115,6 +112,8 @@ pub fn trajectory_prediction_system(state: &mut State, start_time: f64) {
             update_for_prediction(state, &entity, start_time);
         }
     }
+
+    // Reset the position, velocity, and parent of all entities, since they are changed during prediction
     for entity in state.components.entity_allocator.get_entities() {
         if state.components.trajectory_components.get(&entity).is_some() {
             sync_to_trajectory(state, &entity);

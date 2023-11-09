@@ -25,7 +25,7 @@ pub fn f64_to_f32_pair(v: f64) -> (f32, f32) {
 pub fn get_root_entities(state: &State) -> Vec<Entity> {
     let mut entities = vec![];
     for entity in state.components.entity_allocator.get_entities() {
-        if state.components.celestial_body_components.get(&entity).is_some() && state.components.parent_components.get(&entity).is_some() {
+        if state.components.celestial_body_components.get(&entity).is_some() && state.components.parent_components.get(&entity).is_none() {
             entities.push(entity);
         }
     }
