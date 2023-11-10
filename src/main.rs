@@ -5,7 +5,8 @@ mod camera;
 mod components;
 mod storage;
 mod state;
-mod renderer;
+mod rendering;
+mod resources;
 mod systems;
 mod util;
 

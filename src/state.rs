@@ -1,11 +1,12 @@
 use std::{sync::{Arc, Mutex}, time::Instant};
 
-use eframe::{egui::Context, epaint::Rgba, Frame, CreationContext};
+use eframe::{egui::{Context, Window, ImageButton, Image}, epaint::{Rgba, Rounding, Color32, Shadow, Stroke, self}, Frame, CreationContext, emath::Align2};
 use nalgebra_glm::vec2;
 
-use crate::{renderer::Renderer, camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system}, components::Components};
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system}, components::Components, resources::Resources, rendering::geometry_renderer::GeometryRenderer};
 
 pub struct State {
+    pub resources: Resources,
     pub components: Components,
     pub time_step_level: i32,
     pub time: f64,
@@ -13,24 +14,28 @@ pub struct State {
     pub last_frame: Instant,
     pub selected: Entity,
     pub camera: Arc<Mutex<Camera>>,
-    pub orbit_renderer: Arc<Mutex<Renderer>>,
-    pub object_renderer: Arc<Mutex<Renderer>>,
+    pub orbit_renderer: Arc<Mutex<GeometryRenderer>>,
+    pub object_renderer: Arc<Mutex<GeometryRenderer>>,
 }
 
 impl State {
     pub fn new(creation_context: &CreationContext) -> Self {
         egui_extras::install_image_loaders(&creation_context.egui_ctx);
+        let resources = Resources::new();
         let mut components = Components::new();
         let sun = Self::init_root_object(&mut components);
+        let orbit_renderer = Arc::new(Mutex::new(GeometryRenderer::new(creation_context.gl.as_ref().unwrap().clone())));
+        let object_renderer = Arc::new(Mutex::new(GeometryRenderer::new(creation_context.gl.as_ref().unwrap().clone())));
         let mut state = Self {
+            resources,
             components,
             time_step_level: 1,
             time: 0.0,
             delta_time: 0.0,
             selected: sun,
             camera: Arc::new(Mutex::new(Camera::new())),
-            orbit_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
-            object_renderer: Arc::new(Mutex::new(Renderer::new(creation_context.gl.as_ref().unwrap().clone()))),
+            orbit_renderer,
+            object_renderer,
             last_frame: Instant::now(),
         };
         state.init_objects(sun);
@@ -55,32 +60,32 @@ impl State {
 
 impl eframe::App for State {
     fn update(&mut self, context: &Context, _frame: &mut Frame) {
-        // context.style_mut(|style| {
-        //     let rounding = 20.0;
-        //     let rounding_struct = Rounding { nw: rounding, ne: rounding, sw: rounding, se: rounding };
+        context.style_mut(|style| {
+            let rounding = 20.0;
+            let rounding_struct = Rounding { nw: rounding, ne: rounding, sw: rounding, se: rounding };
 
-        //     style.visuals.window_fill = Color32::TRANSPARENT;
-        //     style.visuals.window_shadow = Shadow::NONE;
-        //     style.visuals.window_stroke = Stroke::NONE;
-        //     style.visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
-        //     style.visuals.widgets.hovered.weak_bg_fill = Color32::TRANSPARENT;
-        //     style.visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_white_alpha(150));
-        //     style.visuals.widgets.hovered.rounding = rounding_struct;
-        //     style.visuals.widgets.active.bg_fill = Color32::from_white_alpha(100);
-        //     style.visuals.widgets.active.rounding = rounding_struct;
-        // });
+            style.visuals.window_fill = Color32::TRANSPARENT;
+            style.visuals.window_shadow = Shadow::NONE;
+            style.visuals.window_stroke = Stroke::NONE;
+            style.visuals.widgets.inactive.weak_bg_fill = Color32::TRANSPARENT;
+            style.visuals.widgets.hovered.weak_bg_fill = Color32::TRANSPARENT;
+            style.visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, Color32::from_white_alpha(150));
+            style.visuals.widgets.hovered.rounding = rounding_struct;
+            style.visuals.widgets.active.bg_fill = Color32::from_white_alpha(100);
+            style.visuals.widgets.active.rounding = rounding_struct;
+        });
 
-        // Window::new("")
-        //     .title_bar(false)
-        //     .resizable(false)
-        //     .anchor(Align2::LEFT_TOP, epaint::vec2(100.0, 200.0))
-        //     .show(context, |ui| {
-        //         let image = Image::new(include_image!("../resources/icons/earth-custom.png"))
-        //             .bg_fill(Color32::TRANSPARENT)
-        //             .fit_to_exact_size(epaint::vec2(20.0, 20.0));
-        //         let image_button = ImageButton::new(image);
-        //         ui.add(image_button);
-        // });
+        Window::new("")
+            .title_bar(false)
+            .resizable(false)
+            .anchor(Align2::LEFT_TOP, epaint::vec2(100.0, 200.0))
+            .show(context, |ui| {
+                let image = Image::new(self.resources.get_texture_image("planet.png"))
+                    .bg_fill(Color32::TRANSPARENT)
+                    .fit_to_exact_size(epaint::vec2(20.0, 20.0));
+                let image_button = ImageButton::new(image);
+                ui.add(image_button);
+        });
 
         time_step_update_system(self, context);
         object_selection_system(self, context);

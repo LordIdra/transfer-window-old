@@ -5,10 +5,10 @@
 [x] Select different objects by double clicking near them w/ prioritisation algorithm
 [x] Fix weird camera switch flickering
 [x] Key press recenters camera to selected object
+[ ] Hide orbits of selected object when zoomed in far enough
 [ ] Icons to represent planets/stars/spacecraft when zoomed out
 [ ] API to add and execute burns using simple integrator
 [ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
-[ ] Hide orbits of selected object when zoomed in far enough
 [ ] Highlight point on orbit when hovering near it
 [ ] Clicking when a point is highlighted brings up a menu
 [ ] Add button to menu to warp to that point

@@ -5,25 +5,24 @@ use glow::Context;
 
 use crate::camera::Camera;
 
-use self::{shader_program::ShaderProgram, vertex_array_object::{VertexArrayObject, VertexAttribute}};
+use super::{shader_program::ShaderProgram, vertex_array_object::{VertexArrayObject, VertexAttribute}, texture::Texture};
 
-mod shader_program;
-mod vertex_array_object;
 
-pub struct Renderer {
+
+pub struct IconRenderer {
     program: ShaderProgram,
     vertex_array_object: VertexArrayObject,
 }
 
-impl Renderer {
+impl IconRenderer {
     pub fn new(gl: Arc<Context>) -> Self {
-        let program = ShaderProgram::new(gl.clone(), include_str!("../resources/shaders/geometry.vert"), include_str!("../resources/shaders/geometry.frag"));
+        let program = ShaderProgram::new(gl.clone(), include_str!("../../resources/shaders/icon.vert"), include_str!("../../resources/shaders/icon.frag"));
         let vertex_array_object = VertexArrayObject::new(gl.clone(), vec![
-            VertexAttribute { index: 0, count: 2 },
-            VertexAttribute { index: 1, count: 2 },
-            VertexAttribute { index: 2, count: 4 },
+            VertexAttribute { index: 0, count: 2 }, // x
+            VertexAttribute { index: 1, count: 2 }, // y
+            VertexAttribute { index: 2, count: 4 }, // rgba
+            VertexAttribute { index: 3, count: 2 }, // texture coordinates
         ]);
-        
         Self { program, vertex_array_object }
     }
 
@@ -31,7 +30,8 @@ impl Renderer {
         self.vertex_array_object.data(vertices);
     }
 
-    pub fn render(&self, screen_size: Rect, camera: Arc<Mutex<Camera>>) {
+    pub fn render(&self, screen_size: Rect, camera: Arc<Mutex<Camera>>, texture: Texture) {
+        texture.bind();
         self.program.use_program();
         self.program.uniform_mat3("zoom_matrix", camera.lock().unwrap().get_zoom_matrix(screen_size).as_slice());
         let translation_matrices = camera.lock().unwrap().get_translation_matrices();
