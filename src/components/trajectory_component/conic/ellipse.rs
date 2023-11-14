@@ -116,6 +116,14 @@ impl Conic for Ellipse {
         self.semi_major_axis
     }
 
+    fn get_argument_of_periapsis(&self) -> f64 {
+        self.argument_of_periapsis
+    }
+
+    fn get_eccentricity(&self) -> f64 {
+        self.eccentricity
+    }
+
     fn get_remaining_orbits(&self, remaining_time: f64) -> i32 {
         (remaining_time / self.period) as i32
     }

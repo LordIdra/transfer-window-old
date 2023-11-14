@@ -51,7 +51,7 @@ fn get_visual_orbit_points(state: &State, orbit: &Orbit) -> Vec<VisualOrbitPoint
     let angle_to_rotate_through = orbit.get_remaining_angle();
     for i in 0..=ORBIT_POINTS {
         let angle = orbit.get_current_true_anomaly() + (i as f64 / ORBIT_POINTS as f64) * angle_to_rotate_through;
-        let relative_point_position = orbit.get_scaled_position(angle);
+        let relative_point_position = orbit.get_position_from_mean_anomaly(angle) * SCALE_FACTOR;
         let absolute_position = absolute_parent_position + relative_point_position;
         let displacement_direction = relative_point_position.normalize();
         visual_orbit_points.push(VisualOrbitPoint { absolute_position, displacement_direction });

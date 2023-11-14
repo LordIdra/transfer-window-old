@@ -56,6 +56,8 @@ pub trait Conic: Debug + Send {
     fn get_velocity(&self, position: DVec2, theta: f64) -> DVec2;
     fn get_direction(&self) -> OrbitDirection;
     fn get_semi_major_axis(&self) -> f64;
+    fn get_argument_of_periapsis(&self) -> f64;
+    fn get_eccentricity(&self) -> f64;
     fn get_remaining_orbits(&self, remaining_time: f64) -> i32;
 }
 

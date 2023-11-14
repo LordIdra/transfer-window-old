@@ -3,7 +3,7 @@ use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap};
 use eframe::{egui::{Context, Window, ImageButton, Image}, epaint::{Rgba, Rounding, Color32, Shadow, Stroke, self}, Frame, CreationContext, emath::Align2};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_click_system::orbit_click_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 const ICON_NAMES: [&str; 4] = ["star", "planet", "moon", "spacecraft"];
 
@@ -104,6 +104,7 @@ impl eframe::App for State {
         time_step_update_system(self, context);
         object_selection_system(self, context);
         icon_precedence_system(self);
+        orbit_click_system(self, context);
         trajectory_update_system(self);
         camera_update_system(self, context);
         underlay_render_system(self, context);

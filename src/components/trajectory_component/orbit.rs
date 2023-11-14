@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::DVec2;
 
-use crate::{storage::entity_allocator::Entity, camera::SCALE_FACTOR, components::Components};
+use crate::{storage::entity_allocator::Entity, components::Components};
 
 use super::{conic::{Conic, new_conic}, orbit_point::OrbitPoint, orbit_direction::OrbitDirection};
 
@@ -56,23 +56,31 @@ impl Orbit {
         self.conic.get_semi_major_axis()
     }
 
+    pub fn get_arugment_of_periapsis(&self) -> f64 {
+        self.conic.get_argument_of_periapsis()
+    }
+
+    pub fn get_eccentricity(&self) -> f64 {
+        self.conic.get_eccentricity()
+    }
+
     pub fn is_finished(&self) -> bool {
         self.current_orbit_point.is_after(&self.end_orbit_point)
     }
 
-    pub fn get_scaled_position(&self, mean_anomaly: f64) -> DVec2 {
-        self.conic.get_position(mean_anomaly) * SCALE_FACTOR
+    pub fn get_position_from_mean_anomaly(&self, mean_anomaly: f64) -> DVec2 {
+        self.conic.get_position(mean_anomaly)
     }
 
-    pub fn get_start_unscaled_position(&self) -> DVec2 {
+    pub fn get_start_position(&self) -> DVec2 {
         self.start_orbit_point.get_unscaled_position()
     }
 
-    pub fn get_current_unscaled_position(&self) -> DVec2 {
+    pub fn get_current_position(&self) -> DVec2 {
         self.current_orbit_point.get_unscaled_position()
     }
 
-    pub fn get_end_unscaled_position(&self) -> DVec2 {
+    pub fn get_end_position(&self) -> DVec2 {
         self.end_orbit_point.get_unscaled_position()
     }
 

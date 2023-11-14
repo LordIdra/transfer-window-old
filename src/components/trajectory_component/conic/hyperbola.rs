@@ -92,6 +92,14 @@ impl Conic for Hyperbola {
         self.semi_major_axis
     }
 
+    fn get_argument_of_periapsis(&self) -> f64 {
+        self.argument_of_periapsis
+    }
+
+    fn get_eccentricity(&self) -> f64 {
+        self.eccentricity
+    }
+
     fn get_remaining_orbits(&self, _: f64) -> i32 {
         0 // Hyperbola can never complete an entire orbit
     }

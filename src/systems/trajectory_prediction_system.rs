@@ -99,7 +99,7 @@ pub fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
     if let Some(trajectory_component) = state.components.trajectory_components.get_mut(entity) {
         trajectory_component.predict(SIMULATION_TIME_STEP);
         let final_orbit = trajectory_component.get_final_orbit();
-        let new_position = final_orbit.get_end_unscaled_position();
+        let new_position = final_orbit.get_end_position();
         let new_velocity = final_orbit.get_end_velocity();
         update_position_and_velocity(state, entity, new_position, new_velocity);
         update_parent_for_prediction(state, entity, time);
