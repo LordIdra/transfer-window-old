@@ -9,13 +9,15 @@ use super::{shader_program::ShaderProgram, vertex_array_object::{VertexArrayObje
 
 
 
-pub struct IconRenderer {
+pub struct TextureRenderer {
+    name: String,
     program: ShaderProgram,
     vertex_array_object: VertexArrayObject,
+    texture: Texture,
 }
 
-impl IconRenderer {
-    pub fn new(gl: Arc<Context>) -> Self {
+impl TextureRenderer {
+    pub fn new(gl: Arc<Context>, texture: Texture, name: String) -> Self {
         let program = ShaderProgram::new(gl.clone(), include_str!("../../resources/shaders/icon.vert"), include_str!("../../resources/shaders/icon.frag"));
         let vertex_array_object = VertexArrayObject::new(gl.clone(), vec![
             VertexAttribute { index: 0, count: 2 }, // x
@@ -23,15 +25,19 @@ impl IconRenderer {
             VertexAttribute { index: 2, count: 4 }, // rgba
             VertexAttribute { index: 3, count: 2 }, // texture coordinates
         ]);
-        Self { program, vertex_array_object }
+        Self { name, program, vertex_array_object, texture }
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone()
     }
 
     pub fn set_vertices(&mut self, vertices: Vec<f32>) {
         self.vertex_array_object.data(vertices);
     }
 
-    pub fn render(&self, screen_size: Rect, camera: Arc<Mutex<Camera>>, texture: Texture) {
-        texture.bind();
+    pub fn render(&self, screen_size: Rect, camera: Arc<Mutex<Camera>>) {
+        self.texture.bind();
         self.program.use_program();
         self.program.uniform_mat3("zoom_matrix", camera.lock().unwrap().get_zoom_matrix(screen_size).as_slice());
         let translation_matrices = camera.lock().unwrap().get_translation_matrices();

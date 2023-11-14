@@ -5,7 +5,7 @@ use crate::util::f64_to_f32_pair;
 
 pub const SCALE_FACTOR: f64 = 1.0 / 1000.0;
 
-const SELECT_DISTANCE: f64 = 10.0;
+const SELECT_DISTANCE: f64 = 11.0;
 
 pub struct Camera {
     extra_translation: DVec2,

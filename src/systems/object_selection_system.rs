@@ -1,21 +1,9 @@
 use eframe::egui::{PointerButton, Context};
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, storage::entity_allocator::Entity, util::get_root_entities};
+use crate::{state::State, storage::entity_allocator::Entity, util::get_root_entities, components::icon_component::IconState};
 
-/// Recursively get all entities at a specific depth in the entity tree
-fn get_all_entities_at_layer(state: &State, layer: i32, entities: &Vec<Entity>) -> Vec<Entity> {
-    // Base case; we're at the destination layer
-    if layer == 0 {
-        return entities.clone();
-    }
-
-    let mut new_entities = vec![];
-    for entity in entities {
-        new_entities.extend(state.components.celestial_body_components.get(entity).unwrap().get_children());
-    }
-    new_entities
-}
+use super::util::get_all_entities_at_layer;
 
 fn get_closest_entity_to_point(state: &State, position: DVec2, entities: &Vec<Entity>) -> (Option<Entity>, f64) {
     let mut closest_distance_squared = f64::MAX;
@@ -55,26 +43,50 @@ fn breadth_first_radius_search(state: &State, position: DVec2, max_distance_to_s
     }
 }
 
+fn update_icons(state: &mut State, selected: &Option<Entity>) {
+    for entity in &state.components.entity_allocator.get_entities() {
+        if let Some(icon_component) = state.components.icon_components.get_mut(entity) {
+            // If entity is being hovered
+            if let Some(selected) = selected {
+                if *entity == *selected {
+                    icon_component.set_state(IconState::Hovered);
+                    continue;
+                }
+            }
+
+            // If entity is actively selected
+            if *entity == state.selected {
+                icon_component.set_state(IconState::Selected);
+                continue;
+            }
+
+            // If entity is not being hoveered and is not actively selected
+            icon_component.set_state(IconState::None)
+        }
+    }
+}
+
 pub fn object_selection_system(state: &mut State, context: &Context) {
     let screen_rect = context.screen_rect();
     context.input(|input| {
-        if !input.pointer.button_double_clicked(PointerButton::Primary) {
-            return;
-        };
         let Some(screen_position) = input.pointer.latest_pos() else {
             return;
         };
         let world_position = state.camera.lock().unwrap().window_space_to_world_space(screen_position, screen_rect);
         // This is necessary because we're about to compute distances in world spaces, and the maximum distance in world space to select depends on zoom
         let max_distance_to_select = state.camera.lock().unwrap().get_max_distance_to_select();
-        let Some(selected) = breadth_first_radius_search(state, world_position, max_distance_to_select.powi(2)) else {
-            return;
+        let selected = breadth_first_radius_search(state, world_position, max_distance_to_select.powi(2));
+
+        update_icons(state, &selected);
+
+        if let Some(selected) = selected {
+            // If we're changing the selected object, recenter the camera to focus on that object
+            if input.pointer.button_double_clicked(PointerButton::Primary) && selected != state.selected {
+                state.selected = selected;
+                state.camera.lock().unwrap().recenter();
+            }
         };
 
-        // If we're changing the selected object, recenter the camera to focus on that object
-        if selected != state.selected {
-            state.selected = selected;
-            state.camera.lock().unwrap().recenter();
-        }
+        
     });
 }

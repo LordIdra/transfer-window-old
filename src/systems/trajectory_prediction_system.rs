@@ -2,7 +2,7 @@ use nalgebra_glm::DVec2;
 
 use crate::{state::State, components::trajectory_component::{orbit::Orbit, orbit_direction::GRAVITATIONAL_CONSTANT}, storage::entity_allocator::Entity};
 
-use super::trajectory_util::{update_parent, update_position_and_velocity, sync_to_trajectory};
+use super::util::{update_parent, update_position_and_velocity, sync_to_trajectory};
 
 const SIMULATION_TIME_STEP: f64 = 10.0;
 const SIMULATION_TIME_STEPS: i32 = 400000;

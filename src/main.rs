@@ -17,7 +17,7 @@ fn create_app(creation_context: &CreationContext<'_>) -> Box<dyn eframe::App> {
 fn main() -> Result<(), eframe::Error> {
     let options = NativeOptions {
         renderer: Renderer::Glow,
-        multisampling: 4,
+        multisampling: 16,
         ..Default::default()
     };
     

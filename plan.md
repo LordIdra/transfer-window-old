@@ -6,7 +6,9 @@
 [x] Fix weird camera switch flickering
 [x] Key press recenters camera to selected object
 [ ] Hide orbits of selected object when zoomed in far enough
-[ ] Icons to represent planets/stars/spacecraft when zoomed out
+[x] Icons to represent planets/stars/spacecraft when zoomed out
+[x] Icon precedence algorithm
+[x] Selected icon takes precedence over all others
 [ ] API to add and execute burns using simple integrator
 [ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [ ] Highlight point on orbit when hovering near it

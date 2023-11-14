@@ -1,6 +1,6 @@
 use crate::{state::State, storage::entity_allocator::Entity, util::get_root_entities};
 
-use super::trajectory_util::sync_to_trajectory;
+use super::util::sync_to_trajectory;
 
 /// Recursive function that:
 /// 1) Updates the position, velocity, and parent of the entity in accordance with its current trajectory
