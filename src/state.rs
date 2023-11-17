@@ -1,11 +1,9 @@
-use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap};
+use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::PI};
 
 use eframe::{egui::{Context, Window, ImageButton, Image}, epaint::{Rgba, Rounding, Color32, Shadow, Stroke, self}, Frame, CreationContext, emath::Align2};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_click_system::orbit_click_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
-
-const ICON_NAMES: [&str; 4] = ["star", "planet", "moon", "spacecraft"];
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::time_step_update_system, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_selection_system::{orbit_click_system, ClickPointTempInfo}}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 pub struct State {
     pub resources: Resources,
@@ -14,11 +12,12 @@ pub struct State {
     pub time: f64,
     pub delta_time: f64,
     pub last_frame: Instant,
-    pub selected: Entity,
+    pub selected_entity: Entity,
+    pub orbit_click_point: Option<ClickPointTempInfo>,
     pub camera: Arc<Mutex<Camera>>,
     pub orbit_renderer: Arc<Mutex<GeometryRenderer>>,
     pub object_renderer: Arc<Mutex<GeometryRenderer>>,
-    pub icon_renderers: Arc<Mutex<HashMap<String, TextureRenderer>>>,
+    pub texture_renderers: Arc<Mutex<HashMap<String, TextureRenderer>>>,
 }
 
 impl State {
@@ -30,7 +29,7 @@ impl State {
         let gl = creation_context.gl.as_ref().unwrap().clone();
         let orbit_renderer = Arc::new(Mutex::new(GeometryRenderer::new(gl.clone())));
         let object_renderer = Arc::new(Mutex::new(GeometryRenderer::new(gl.clone())));
-        let icon_renderers = Self::init_icon_renderers(&gl, &mut resources);
+        let icon_renderers = Self::init_texture_renderers(&gl, &mut resources);
         let mut state = Self {
             resources,
             components,
@@ -38,11 +37,12 @@ impl State {
             time: 0.0,
             delta_time: 0.0,
             last_frame: Instant::now(),
-            selected: sun,
+            selected_entity: sun,
+            orbit_click_point: None,
             camera: Arc::new(Mutex::new(Camera::new())),
             orbit_renderer,
             object_renderer,
-            icon_renderers,
+            texture_renderers: icon_renderers,
         };
         state.init_objects(sun);
         trajectory_prediction_system(&mut state, 0.0);
@@ -53,17 +53,20 @@ impl State {
         add_root_object(components, "star".to_string(), "sun".to_string(), vec2(0.0, 0.0), vec2(0.0, 0.0), 1.9885e30, 6.957e8, Rgba::from_rgba_unmultiplied(1.0, 1.0, 0.3, 1.0))
     }
 
-    fn init_icon_renderers(gl: &Arc<glow::Context>, resources: &mut Resources) -> Arc<Mutex<HashMap<String, TextureRenderer>>> {
-        let mut icon_renderers = HashMap::new();
-        for icon_name in ICON_NAMES {
-            icon_renderers.insert(icon_name.to_string(), TextureRenderer::new(gl.clone(), resources.get_gl_texture(gl.clone(), icon_name).clone(), icon_name.to_string()));
+    fn init_texture_renderers(gl: &Arc<glow::Context>, resources: &mut Resources) -> Arc<Mutex<HashMap<String, TextureRenderer>>> {
+        let mut texture_renderers = HashMap::new();
+        for texture_name in resources.get_texture_names().clone() {
+            texture_renderers.insert(texture_name.to_string(), TextureRenderer::new(gl.clone(), resources.get_gl_texture(gl.clone(), texture_name.as_str()).clone(), texture_name));
         }
-        Arc::new(Mutex::new(icon_renderers))
+        Arc::new(Mutex::new(texture_renderers))
     }
 
     fn init_objects(&mut self, sun: Entity) {
-        let earth = add_child_object(&mut self.components, 0.0, "planet".to_string(), "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.929e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        add_child_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, vec2(0.4055e9, 0.0), vec2(0.0, -0.970e3), 7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        let earth = add_child_object(&mut self.components, 0.0, "planet".to_string(), "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.729e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        add_child_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
+            //vec2(0.4055e9 * f64::cos(2.0), 0.4055e9 * f64::sin(2.0)), vec2(0.970e3 * f64::cos(2.0 + PI / 2.0), 0.970e3 * f64::sin(2.0 + PI / 2.0)), 
+            vec2(0.4055e9 * f64::cos(0.0), 0.4055e9 * f64::sin(0.0)), vec2(-1.403e3 * f64::cos(0.0 + PI / 2.0), -1.403e3 * f64::sin(0.0 + PI / 2.0)), 
+            7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
         //add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
     }
 
@@ -102,11 +105,11 @@ impl eframe::App for State {
         });
 
         time_step_update_system(self, context);
-        object_selection_system(self, context);
         icon_precedence_system(self);
-        orbit_click_system(self, context);
+        object_selection_system(self, context);
         trajectory_update_system(self);
         camera_update_system(self, context);
+        orbit_click_system(self, context);
         underlay_render_system(self, context);
         context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
     }

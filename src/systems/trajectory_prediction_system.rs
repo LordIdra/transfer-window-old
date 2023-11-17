@@ -4,7 +4,7 @@ use crate::{state::State, components::trajectory_component::{orbit::Orbit, orbit
 
 use super::util::{update_parent, update_position_and_velocity, sync_to_trajectory};
 
-const SIMULATION_TIME_STEP: f64 = 10.0;
+const SIMULATION_TIME_STEP: f64 = 40.0;
 const SIMULATION_TIME_STEPS: i32 = 400000;
 
 fn position_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) -> DVec2 {

@@ -1,10 +1,16 @@
 use std::f64::consts::PI;
 
-use nalgebra_glm::DVec2;
+use nalgebra_glm::{DVec2, vec2};
 
 use crate::{storage::entity_allocator::Entity, components::Components};
 
 use super::{conic::{Conic, new_conic}, orbit_point::OrbitPoint, orbit_direction::OrbitDirection};
+
+fn normalize_angle(mut theta: f64) -> f64 {
+    while theta < 0.0      { theta += 2.0 * PI }
+    while theta > 2.0 * PI { theta -= 2.0 * PI }
+    theta
+}
 
 pub struct Orbit {
     parent: Entity,
@@ -30,7 +36,7 @@ impl Orbit {
             return 2.0 * PI;
         }
 
-        let mut remaining_angle = self.end_orbit_point.get_true_anomaly() - self.current_orbit_point.get_true_anomaly();
+        let mut remaining_angle = self.end_orbit_point.get_theta() - self.current_orbit_point.get_theta();
         if let OrbitDirection::Clockwise = self.conic.get_direction() {
             if remaining_angle > 0.0 {
                 remaining_angle -= 2.0 * PI
@@ -56,6 +62,10 @@ impl Orbit {
         self.conic.get_semi_major_axis()
     }
 
+    pub fn get_semi_minor_axis(&self) -> f64 {
+        self.conic.get_semi_minor_axis()
+    }
+
     pub fn get_arugment_of_periapsis(&self) -> f64 {
         self.conic.get_argument_of_periapsis()
     }
@@ -68,8 +78,16 @@ impl Orbit {
         self.current_orbit_point.is_after(&self.end_orbit_point)
     }
 
-    pub fn get_position_from_mean_anomaly(&self, mean_anomaly: f64) -> DVec2 {
-        self.conic.get_position(mean_anomaly)
+    pub fn get_position_from_theta(&self, theta: f64) -> DVec2 {
+        self.conic.get_position(theta)
+    }
+
+    pub fn get_time_since_periapsis(&self, theta: f64) -> f64 {
+        self.conic.get_time_since_periapsis(theta)
+    }
+
+    pub fn is_time_within_orbit(&self, time_since_periapsis: f64) -> bool {
+        self.conic.is_time_between_points(&self.current_orbit_point, &self.end_orbit_point, time_since_periapsis)
     }
 
     pub fn get_start_position(&self) -> DVec2 {
@@ -93,7 +111,11 @@ impl Orbit {
     }
 
     pub fn get_current_true_anomaly(&self) -> f64 {
-        self.current_orbit_point.get_true_anomaly()
+        self.current_orbit_point.get_theta()
+    }
+
+    pub fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
+        self.conic.solve_for_closest_point(p)
     }
 
     pub fn predict(&mut self, delta_time: f64) {

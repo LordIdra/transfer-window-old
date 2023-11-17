@@ -28,7 +28,7 @@ impl OrbitPoint {
         Self { theta, time, time_since_periapsis, position, velocity }
     }
 
-    pub fn get_true_anomaly(&self) -> f64 {
+    pub fn get_theta(&self) -> f64 {
         self.theta
     }
 
@@ -42,6 +42,10 @@ impl OrbitPoint {
 
     pub fn get_time(&self) -> f64 {
         self.time
+    }
+
+    pub fn get_time_since_periapsis(&self) -> f64 {
+        self.time_since_periapsis
     }
 
     pub fn is_after(&self, other: &OrbitPoint) -> bool {

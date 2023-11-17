@@ -3,9 +3,9 @@ use std::f64::consts::PI;
 use nalgebra_glm::{vec2, DVec2};
 
 
-use crate::components::trajectory_component::orbit_direction::OrbitDirection;
+use crate::components::trajectory_component::{orbit_direction::OrbitDirection, orbit_point::OrbitPoint};
 
-use super::{argument_of_periapsis, Conic, specific_angular_momentum};
+use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
 fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64) -> f64 {
     let mut eccentric_anomaly = mean_anomaly;
@@ -92,6 +92,10 @@ impl Conic for Hyperbola {
         self.semi_major_axis
     }
 
+    fn get_semi_minor_axis(&self) -> f64 {
+        self.semi_major_axis * f64::sqrt(self.eccentricity.powi(2) - 1.0)
+    }
+
     fn get_argument_of_periapsis(&self) -> f64 {
         self.argument_of_periapsis
     }
@@ -103,6 +107,53 @@ impl Conic for Hyperbola {
     fn get_remaining_orbits(&self, _: f64) -> i32 {
         0 // Hyperbola can never complete an entire orbit
     }
+
+    /// This solver actually kinda... doesn't work...
+    /// But as we get closer to the line the solution gets more accurate
+    /// So this actually works fine for our purposes despite being broken (lol)
+    fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {  
+        let px = f64::abs(p[0]);
+        let py = f64::abs(p[1]);
+
+        let a = self.semi_major_axis;
+        let b = self.get_semi_minor_axis();
+    
+        let mut t = -0.05;
+    
+        for _ in 0..8 {
+            let x = -a * f64::cosh(t);
+            let y = -b * f64::sinh(t);
+    
+            let ex =  (a*a + b*b) * f64::cosh(t).powi(3) / a;
+            let ey = -(b*b + a*a) * f64::sinh(t).powi(3) / b;
+    
+            let rx = x - ex;
+            let ry = y - ey;
+    
+            let qx = px - ex;
+            let qy = py - ey;
+    
+            let r = vec2(ry, rx).magnitude();
+            let q = vec2(qy, qx).magnitude();
+    
+            let delta_c = r * f64::asinh((rx*qy - ry*qx)/(r*q));
+            let delta_t = delta_c / f64::sqrt(a.powi(2) * f64::sinh(t).powi(2) + b.powi(2) * f64::cosh(t).powi(2));
+    
+            t += delta_t;
+            t = f64::min(PI / 2.0, f64::max(0.0, t))
+        }
+    
+        vec2(copysign(a * f64::cosh(t), p[0]), copysign(b * f64::sinh(t), p[1]))
+    }
+
+    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time_since_periapsis: f64) -> bool {
+        if let OrbitDirection::AntiClockwise = self.direction {
+            time_since_periapsis > start.get_time_since_periapsis() && time_since_periapsis < end.get_time_since_periapsis()
+        } else {
+            time_since_periapsis < -start.get_time_since_periapsis() && time_since_periapsis > -end.get_time_since_periapsis()
+        }
+    }
+    
 }
 
 #[cfg(test)]

@@ -11,7 +11,7 @@
 [x] Selected icon takes precedence over all others
 [ ] API to add and execute burns using simple integrator
 [ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
-[ ] Highlight point on orbit when hovering near it
+[x] Highlight point on orbit when hovering near it
 [ ] Clicking when a point is highlighted brings up a menu
 [ ] Add button to menu to warp to that point
 [ ] Add button that creates a new burn at that point

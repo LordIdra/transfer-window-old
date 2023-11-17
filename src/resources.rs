@@ -1,6 +1,6 @@
-use std::{fs::{self, DirEntry}, sync::Arc};
+use std::{fs::{self, DirEntry, ReadDir}, sync::Arc};
 
-use eframe::{epaint::ahash::HashMap, egui::ImageSource};
+use eframe::{epaint::ahash::{HashMap, HashSet}, egui::ImageSource};
 use glow::Context;
 use image::GenericImageView;
 
@@ -14,18 +14,29 @@ struct Texture {
 }
 
 pub struct Resources {
+    texture_names: Vec<String>,
     textures: HashMap<String, Texture>,
 }
 
 impl Resources {
     pub fn new() -> Self {
-        let textures = fs::read_dir("resources/textures")
-            .expect("Unable to find textures directory")
-            .map(|entry| entry.expect("Failed to read file"))
+        let texture_names = Self::get_entries("resources/textures".to_string())
+            .into_iter()
+            .map(|entry| Self::get_entry_name(&entry))
+            .collect();
+        let textures = Self::get_entries("resources/textures".to_string())
+            .into_iter()
             .map(|entry| (Self::get_entry_name(&entry), entry))
             .map(|entry| (entry.0, Self::load_texture(entry.1)))
             .collect();
-        Resources { textures }
+        Resources { texture_names, textures }
+    }
+
+    fn get_entries(directory: String) -> Vec<DirEntry> {
+        fs::read_dir(directory)
+            .expect("Failed to read directory")
+            .map(|entry| entry.expect("Failed to read file"))
+            .collect()
     }
 
     fn get_entry_name(entry: &DirEntry) -> String {
@@ -41,6 +52,10 @@ impl Resources {
         let image = ImageSource::Uri(uri.into());
         let gl_texture = None;
         Texture { size, bytes, image, gl_texture }
+    }
+
+    pub fn get_texture_names(&self) -> &Vec<String> {
+        &self.texture_names
     }
 
     pub fn get_texture_image(&self, name: &str) -> ImageSource {

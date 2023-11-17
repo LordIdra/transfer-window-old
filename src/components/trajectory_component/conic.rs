@@ -4,7 +4,7 @@ use nalgebra_glm::{vec2, DVec2};
 
 use self::{ellipse::Ellipse, hyperbola::Hyperbola};
 
-use super::orbit_direction::{OrbitDirection, GRAVITATIONAL_CONSTANT};
+use super::{orbit_direction::{OrbitDirection, GRAVITATIONAL_CONSTANT}, orbit_point::OrbitPoint};
 
 mod ellipse;
 mod hyperbola;
@@ -36,6 +36,14 @@ fn specific_angular_momentum(position: DVec2, velocity: DVec2) -> f64 {
     position.magnitude() * transverse_velocity(position, velocity)
 }
 
+fn copysign(value: f64, sign: f64) -> f64 {
+    if sign < 0.0 {
+        -value.abs()
+    } else {
+        value.abs()
+    }
+}
+
 pub fn new_conic(parent_mass: f64, position: DVec2, velocity: DVec2) -> Box<dyn Conic> {
     let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * parent_mass;
     let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
@@ -56,9 +64,12 @@ pub trait Conic: Debug + Send {
     fn get_velocity(&self, position: DVec2, theta: f64) -> DVec2;
     fn get_direction(&self) -> OrbitDirection;
     fn get_semi_major_axis(&self) -> f64;
+    fn get_semi_minor_axis(&self) -> f64;
     fn get_argument_of_periapsis(&self) -> f64;
     fn get_eccentricity(&self) -> f64;
     fn get_remaining_orbits(&self, remaining_time: f64) -> i32;
+    fn solve_for_closest_point(&self, p: DVec2) -> DVec2;
+    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time_since_periapsis: f64) -> bool;
 }
 
 #[cfg(test)]

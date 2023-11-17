@@ -2,9 +2,9 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::components::trajectory_component::orbit_direction::OrbitDirection;
+use crate::components::trajectory_component::{orbit_direction::OrbitDirection, orbit_point::OrbitPoint};
 
-use super::{argument_of_periapsis, Conic, specific_angular_momentum};
+use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
 fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
     2.0 * PI * f64::sqrt(semi_major_axis.powi(3) / standard_gravitational_parameter)
@@ -116,6 +116,10 @@ impl Conic for Ellipse {
         self.semi_major_axis
     }
 
+    fn get_semi_minor_axis(&self) -> f64 {
+        self.semi_major_axis * f64::sqrt(1.0 - self.eccentricity.powi(2))
+    }
+
     fn get_argument_of_periapsis(&self) -> f64 {
         self.argument_of_periapsis
     }
@@ -126,6 +130,55 @@ impl Conic for Ellipse {
 
     fn get_remaining_orbits(&self, remaining_time: f64) -> i32 {
         (remaining_time / self.period) as i32
+    }
+
+    /// https://stackoverflow.com/a/46007540
+    fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
+        let px = f64::abs(p[0]);
+        let py = f64::abs(p[1]);
+
+        let a = self.semi_major_axis;
+        let b = self.get_semi_minor_axis();
+
+        let mut t = PI / 4.0;
+
+        for _ in 0..8 {
+            let x = a * f64::cos(t);
+            let y = b * f64::sin(t);
+
+            let ex = (a*a - b*b) * f64::cos(t).powi(3) / a;
+            let ey = (b*b - a*a) * f64::sin(t).powi(3) / b;
+
+            let rx = x - ex;
+            let ry = y - ey;
+
+            let qx = px - ex;
+            let qy = py - ey;
+
+            let r = vec2(ry, rx).magnitude();
+            let q = vec2(qy, qx).magnitude();
+
+            let delta_c = r * f64::asin((rx*qy - ry*qx)/(r*q));
+            let delta_t = delta_c / f64::sqrt(a.powi(2) * f64::sin(t).powi(2) + b.powi(2) * f64::cos(t).powi(2));
+
+            t += delta_t;
+            t = f64::min(PI / 2.0, f64::max(0.0, t))
+        }
+
+        vec2(copysign(a * f64::cos(t), p[0]), copysign(b * f64::sin(t), p[1]))
+    }
+
+    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time_since_periapsis: f64) -> bool {
+        if time_since_periapsis > start.get_time_since_periapsis() && time_since_periapsis < end.get_time_since_periapsis() {
+            return true
+        }
+        if time_since_periapsis + self.period > start.get_time_since_periapsis() && time_since_periapsis + self.period < end.get_time_since_periapsis() {
+            return true;
+        }
+        if time_since_periapsis - self.period > start.get_time_since_periapsis() && time_since_periapsis - self.period < end.get_time_since_periapsis() {
+            return true;
+        }
+        false
     }
 }
 

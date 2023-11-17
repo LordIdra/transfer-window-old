@@ -39,13 +39,7 @@ pub fn sync_to_trajectory(state: &mut State, entity: &Entity) {
 }
 
 
-/// Recursively get all entities at a specific depth in the entity tree
-pub fn get_all_entities_at_layer(state: &State, layer: i32, entities: &Vec<Entity>) -> Vec<Entity> {
-    // Base case; we're at the destination layer
-    if layer == 0 {
-        return entities.clone();
-    }
-
+pub fn get_all_entity_children(state: &State, entities: &Vec<Entity>) -> Vec<Entity> {
     let mut new_entities = vec![];
     for entity in entities {
         new_entities.extend(state.components.celestial_body_components.get(entity).unwrap().get_children());

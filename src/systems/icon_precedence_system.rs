@@ -1,6 +1,6 @@
 use crate::{state::State, storage::entity_allocator::Entity, util::get_root_entities};
 
-use super::util::get_all_entities_at_layer;
+use super::util::get_all_entity_children;
 
 fn entities_overlap(state: &mut State, entity: &Entity, other_entity: &Entity) -> bool {
     let closest_allowed_distance = state.camera.lock().unwrap().get_max_distance_to_select() * 2.0;
@@ -54,15 +54,13 @@ fn do_icon_precedence_for_layer(state: &mut State, entities_at_layer: &Vec<Entit
 /// In each layer, if the parent is hidden, all the children are hidden
 /// Otherwise, we check the distance of the entity to all other children of its parent to determine whether it should be hidden
 pub fn icon_precedence_system(state: &mut State) {
-    let mut layer = 0;
-    let mut entities_at_layer = get_root_entities(state);
+    let mut entities = get_root_entities(state);
     loop {
-        entities_at_layer = get_all_entities_at_layer(state, layer, &entities_at_layer);
-        if entities_at_layer.is_empty() {
+        if entities.is_empty() {
             // We've reached the final layer, since it contains no more entities, so no selected entity has been found
             return;
         }
-        do_icon_precedence_for_layer(state, &entities_at_layer);
-        layer += 1;
+        do_icon_precedence_for_layer(state, &entities);
+        entities = get_all_entity_children(state, &entities);
     }
 }

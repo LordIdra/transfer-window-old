@@ -9,7 +9,7 @@ const ZOOM_SENSITIVITY: f64 = 0.003;
 /// ...but it needs to be accessed in a callback (ie multithreaded context) (where state can't be accessed)
 /// Solution: Store the position of the selected entity in the camera and update each frame
 fn update_selected_translation(state: &mut State) {
-    let selected_absolute_position = state.components.position_components.get(&state.selected).unwrap().get_absolute_position();
+    let selected_absolute_position = state.components.position_components.get(&state.selected_entity).unwrap().get_absolute_position();
     state.camera.lock().unwrap().set_selected_translation(selected_absolute_position);
 }
 
