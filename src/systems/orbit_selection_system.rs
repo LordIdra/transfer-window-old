@@ -1,36 +1,46 @@
+use std::{rc::Rc, cell::RefCell};
+
 use eframe::{egui::{Context, InputState}, epaint::{Pos2, Rect, Rgba}};
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::{state::State, components::trajectory_component::orbit::Orbit, util::add_textured_square, camera::SCALE_FACTOR};
+use crate::{state::State, components::trajectory_component::orbit::Orbit, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity};
 
 const SELECTION_CIRCLE_SIZE: f64 = 5.0;
 
-#[derive(Clone)]
 struct ClickPointTempInfo {
     absolute_position: DVec2,
     distance: f64,
 }
 
-struct ClickPoint {
-    
+pub struct ClickPoint {
+    entity: Entity,
+    orbit: Rc<RefCell<Orbit>>,
+    time_since_periapsis: f64,
 }
 
-fn test_orbit_clicked(state: &State, orbit: &Orbit, click_position: DVec2, max_distance_to_select: f64) -> Option<ClickPointTempInfo> {
-    let parent = orbit.get_parent();
+impl ClickPoint {
+    pub fn get_position(state: &State, click_point: &ClickPoint) -> DVec2 {
+        click_point.orbit.borrow().get_position_from_time_since_periapsis(click_point.time_since_periapsis)
+    }
+}
+
+fn test_orbit_clicked(state: &State, orbit: &Rc<RefCell<Orbit>>, click_position: DVec2, max_distance_to_select: f64) -> Option<ClickPoint> {
+    let parent = orbit.borrow().get_parent();
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position();
-    let relative_nominal_position = orbit.get_position_from_theta(orbit.get_arugment_of_periapsis());
-    let nominal_position_to_center_vector = -orbit.get_semi_major_axis() * vec2(f64::cos(orbit.get_arugment_of_periapsis()), f64::sin(orbit.get_arugment_of_periapsis()));
+    let relative_nominal_position = orbit.borrow().get_position_from_theta(orbit.borrow().get_arugment_of_periapsis());
+    let nominal_position_to_center_vector = -orbit.borrow().get_semi_major_axis() * vec2(f64::cos(orbit.borrow().get_arugment_of_periapsis()), f64::sin(orbit.borrow().get_arugment_of_periapsis()));
     let center = absolute_parent_position + relative_nominal_position + nominal_position_to_center_vector;
     let click_position_relative_to_center = click_position - center;
-    let closest_point_relative_to_center = orbit.solve_for_closest_point(click_position_relative_to_center);
+    let closest_point_relative_to_center = orbit.borrow().solve_for_closest_point(click_position_relative_to_center);
     let closest_point_relative_to_parent = (center + closest_point_relative_to_center) - absolute_parent_position;
     let theta_relative_to_parent = f64::atan2(closest_point_relative_to_parent.y, closest_point_relative_to_parent.x);
-    let time_since_periapsis = orbit.get_time_since_periapsis(theta_relative_to_parent);
-    let closest_point_relative_to_parent = orbit.get_position_from_theta(theta_relative_to_parent);
+    let time_since_periapsis = orbit.borrow().get_time_since_periapsis(theta_relative_to_parent);
+    let closest_point_relative_to_parent = orbit.borrow().get_position_from_theta(theta_relative_to_parent);
     let closest_point = absolute_parent_position + closest_point_relative_to_parent;
     let distance = (click_position - closest_point).magnitude();
-    if orbit.is_time_within_orbit(time_since_periapsis) && distance < max_distance_to_select {
-       Some(ClickPointTempInfo { absolute_position: closest_point, distance })
+    let entity = orbit.borrow().
+    if orbit.borrow().is_time_within_orbit(time_since_periapsis) && distance < max_distance_to_select {
+       Some(ClickPoint {  })
     } else {
        None
     }
@@ -62,7 +72,7 @@ fn click_point_overlaps_any_icon(state: &State, click_point: &ClickPointTempInfo
     false
 }
 
-fn get_click_point(state: &mut State, screen_size: Rect, position: Pos2) -> Option<ClickPointTempInfo> {
+fn get_click_point(state: &mut State, screen_size: Rect, position: Pos2) -> Option<ClickPoint> {
     let position = state.camera.lock().unwrap().window_space_to_world_space(position, screen_size);
     let max_distance_to_select = state.camera.lock().unwrap().get_max_distance_to_select();
     let mut click_points = vec![];
@@ -71,7 +81,7 @@ fn get_click_point(state: &mut State, screen_size: Rect, position: Pos2) -> Opti
             for orbit in trajectory_component.get_orbits() {
                 let click_point = test_orbit_clicked(state, orbit, position, max_distance_to_select);
                 if let Some(click_point) = click_point {
-                    click_points.push(click_point);
+                    click_points.push(ClickPoint { entity, orbit,  });
                 }
             }
         }

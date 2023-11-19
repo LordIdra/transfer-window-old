@@ -1,3 +1,5 @@
+use std::cell::Ref;
+
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
@@ -44,7 +46,7 @@ fn add_orbit_line(vertices: &mut Vec<f32>, previous_point: &VisualOrbitPoint, ne
     add_triangle(vertices, v2, v3, v4, rgba);
 }
 
-fn get_visual_orbit_points(state: &State, orbit: &Orbit) -> Vec<VisualOrbitPoint> {
+fn get_visual_orbit_points(state: &State, orbit: Ref<Orbit>) -> Vec<VisualOrbitPoint> {
     let parent = orbit.get_parent();
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position() * SCALE_FACTOR;
     let mut visual_orbit_points = vec![];
@@ -59,7 +61,7 @@ fn get_visual_orbit_points(state: &State, orbit: &Orbit) -> Vec<VisualOrbitPoint
     visual_orbit_points
 }
 
-fn get_entity_orbit_vertices(state: &State, orbit: &Orbit, orbit_index: usize) -> Vec<f32> {
+fn get_entity_orbit_vertices(state: &State, orbit: Ref<Orbit>, orbit_index: usize) -> Vec<f32> {
     let zoom = state.camera.lock().unwrap().get_zoom();
     let points = get_visual_orbit_points(state, orbit);
     let mut previous_point = None;
@@ -81,7 +83,7 @@ pub fn get_all_orbit_vertices(state: &mut State) -> Vec<f32> {
     for entity in state.components.entity_allocator.get_entities() {
         if let Some(trajectory_component) = state.components.trajectory_components.get(&entity) {
             for (orbit_index, orbit) in trajectory_component.get_orbits().iter().enumerate() {
-                vertices.append(&mut get_entity_orbit_vertices(state, orbit, orbit_index));
+                vertices.append(&mut get_entity_orbit_vertices(state, orbit.borrow(), orbit_index));
             }
         }
     }

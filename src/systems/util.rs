@@ -31,9 +31,9 @@ pub fn update_position_and_velocity(state: &mut State, entity: &Entity, new_rela
 pub fn sync_to_trajectory(state: &mut State, entity: &Entity) {
     let trajectory_component = state.components.trajectory_components.get(entity).unwrap();
     let current_orbit = trajectory_component.get_current_orbit();
-    let new_position = current_orbit.get_current_position();
-    let new_velocity = current_orbit.get_current_velocity();
-    let new_parent = current_orbit.get_parent();
+    let new_position = current_orbit.borrow().get_current_position();
+    let new_velocity = current_orbit.borrow().get_current_velocity();
+    let new_parent = current_orbit.borrow().get_parent();
     update_parent(state, entity, &new_parent);
     update_position_and_velocity(state, entity, new_position, new_velocity);
 }

@@ -25,8 +25,8 @@ fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f
 fn get_sphere_of_influence_squared(state: &State, entity: &Entity) -> Option<f64> {
     let trajectory = state.components.trajectory_components.get(entity)?;
     let final_orbit = trajectory.get_final_orbit();
-    let final_parent = final_orbit.get_parent();
-    let semi_major_axis = final_orbit.get_semi_major_axis();
+    let final_parent = final_orbit.borrow().get_parent();
+    let semi_major_axis = final_orbit.borrow().get_semi_major_axis();
     let mass = state.components.mass_components.get(entity)?.get_mass();
     let parent_mass = state.components.mass_components.get(&final_parent)?.get_mass();
     Some((semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)).powi(2))
@@ -99,8 +99,8 @@ pub fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
     if let Some(trajectory_component) = state.components.trajectory_components.get_mut(entity) {
         trajectory_component.predict(SIMULATION_TIME_STEP);
         let final_orbit = trajectory_component.get_final_orbit();
-        let new_position = final_orbit.get_end_position();
-        let new_velocity = final_orbit.get_end_velocity();
+        let new_position = final_orbit.borrow().get_end_position();
+        let new_velocity = final_orbit.borrow().get_end_velocity();
         update_position_and_velocity(state, entity, new_position, new_velocity);
         update_parent_for_prediction(state, entity, time);
     }

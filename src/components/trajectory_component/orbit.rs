@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use nalgebra_glm::{DVec2, vec2};
+use nalgebra_glm::DVec2;
 
 use crate::{storage::entity_allocator::Entity, components::Components};
 
@@ -84,6 +84,11 @@ impl Orbit {
 
     pub fn get_time_since_periapsis(&self, theta: f64) -> f64 {
         self.conic.get_time_since_periapsis(theta)
+    }
+
+    pub fn get_position_from_time_since_periapsis(&self, time_since_periapsis: f64) -> DVec2 {
+        let theta = self.conic.get_theta_from_time_since_periapsis(time_since_periapsis);
+        self.conic.get_position(theta)
     }
 
     pub fn is_time_within_orbit(&self, time_since_periapsis: f64) -> bool {
