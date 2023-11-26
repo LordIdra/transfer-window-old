@@ -42,7 +42,9 @@ pub fn sync_to_trajectory(state: &mut State, entity: &Entity) {
 pub fn get_all_entity_children(state: &State, entities: &Vec<Entity>) -> Vec<Entity> {
     let mut new_entities = vec![];
     for entity in entities {
-        new_entities.extend(state.components.celestial_body_components.get(entity).unwrap().get_children());
+        if let Some(celestial_body_component) = state.components.celestial_body_components.get(entity) {
+            new_entities.extend(celestial_body_component.get_children());
+        }
     }
     new_entities
 }

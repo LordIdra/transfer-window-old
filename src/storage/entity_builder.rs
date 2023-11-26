@@ -93,7 +93,7 @@ impl EntityBuilder {
     }
 }
 
-fn base_object_builder(type_name: String, name: String, absolute_position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> EntityBuilder {
+fn base_object_builder(type_name: String, name: String, absolute_position: DVec2, velocity: DVec2, mass: f64) -> EntityBuilder {
     let icon_size = 0.01;
     EntityBuilder::new()
         .with_name_component(NameComponent::new(name))
@@ -101,16 +101,32 @@ fn base_object_builder(type_name: String, name: String, absolute_position: DVec2
         .with_position_component(PositionComponent::new(absolute_position))
         .with_velocity_component(VelocityComponent::new(velocity))
         .with_mass_component(MassComponent::new(mass))
-        .with_celestial_body_component(CelestialBodyComponent::new(radius, color))
 }
 
 pub fn add_root_object(components: &mut Components, type_name: String, name: String, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
-    base_object_builder(type_name, name, position, velocity, mass, radius, color).build(components)
+    base_object_builder(type_name, name, position, velocity, mass)
+        .with_celestial_body_component(CelestialBodyComponent::new(radius, color))
+        .build(components)
 }
 
-pub fn add_child_object(components: &mut Components, time: f64, type_name: String, name: String, parent: Entity, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
+pub fn add_child_celestial_object(components: &mut Components, time: f64, type_name: String, name: String, parent: Entity, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
     let absolute_position = components.position_components.get(&parent).unwrap().get_absolute_position() + position;
-    let entity = base_object_builder(type_name, name, absolute_position, velocity, mass, radius, color)
+    let entity = base_object_builder(type_name, name, absolute_position, velocity, mass)
+        .with_parent_component(ParentComponent::new(parent))
+        .with_celestial_body_component(CelestialBodyComponent::new(radius, color))
+        .with_trajectory_component(TrajectoryComponent::new(components, parent, position, velocity, time))
+        .build(components);
+    components.parent_components.set(entity, Some(ParentComponent::new(parent)));
+    components.celestial_body_components
+        .get_mut(&parent)
+        .expect("Object's parent must be a celestial body")
+        .add_child(entity);
+    entity
+}
+
+pub fn add_child_object(components: &mut Components, time: f64, type_name: String, name: String, parent: Entity, position: DVec2, velocity: DVec2, mass: f64) -> Entity {
+    let absolute_position = components.position_components.get(&parent).unwrap().get_absolute_position() + position;
+    let entity = base_object_builder(type_name, name, absolute_position, velocity, mass)
         .with_parent_component(ParentComponent::new(parent))
         .with_trajectory_component(TrajectoryComponent::new(components, parent, position, velocity, time))
         .build(components);

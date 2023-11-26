@@ -3,8 +3,9 @@ use std::cell::Ref;
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, util::add_triangle, camera::SCALE_FACTOR, components::trajectory_component::orbit::Orbit};
+use crate::{state::State, util::add_triangle, camera::SCALE_FACTOR, components::trajectory_component::orbit::Orbit, storage::entity_allocator::Entity};
 
+const MAX_SIZE_TO_RENDER_ORBIT: f64 = 5.0;
 const ORBIT_POINTS: usize = 256;
 const ORBIT_PATH_MAX_ALPHA: f32 = 1.0;
 const ORBIT_PATH_RADIUS_DELTA: f64 = 0.6;
@@ -78,12 +79,24 @@ fn get_entity_orbit_vertices(state: &State, orbit: Ref<Orbit>, orbit_index: usiz
     vertices
 }
 
+pub fn should_display_orbit(state: &State, entity: Entity) -> bool {
+    if let Some(celestial_body_component) = state.components.celestial_body_components.get(&entity) {
+        let screen_size = celestial_body_component.get_radius() * state.camera.lock().unwrap().get_zoom() * SCALE_FACTOR;
+        println!("{}", screen_size);
+        screen_size < MAX_SIZE_TO_RENDER_ORBIT
+    } else {
+        true
+    }
+}
+
 pub fn get_all_orbit_vertices(state: &mut State) -> Vec<f32> {
     let mut vertices = vec![];
     for entity in state.components.entity_allocator.get_entities() {
         if let Some(trajectory_component) = state.components.trajectory_components.get(&entity) {
-            for (orbit_index, orbit) in trajectory_component.get_orbits().iter().enumerate() {
-                vertices.append(&mut get_entity_orbit_vertices(state, orbit.borrow(), orbit_index));
+            if should_display_orbit(state, entity) {
+                for (orbit_index, orbit) in trajectory_component.get_orbits().iter().enumerate() {
+                    vertices.append(&mut get_entity_orbit_vertices(state, orbit.borrow(), orbit_index));
+                }
             }
         }
     }

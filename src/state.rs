@@ -3,7 +3,7 @@ use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::
 use eframe::{egui::{Context, Ui}, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{trajectory_prediction_system::trajectory_prediction_system, camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 pub struct State {
     pub resources: Resources,
@@ -68,12 +68,12 @@ impl State {
     }
 
     fn init_objects(&mut self, sun: Entity) {
-        let earth = add_child_object(&mut self.components, 0.0, "planet".to_string(), "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.729e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
-        add_child_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
+        let earth = add_child_celestial_object(&mut self.components, 0.0, "planet".to_string(), "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.729e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+        add_child_celestial_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
             vec2(0.4055e9 * f64::cos(2.0), 0.4055e9 * f64::sin(2.0)), vec2(0.970e3 * f64::cos(2.0 + PI / 2.0), 0.970e3 * f64::sin(2.0 + PI / 2.0)), 
             //vec2(0.4055e9 * f64::cos(30.0), 0.4055e9 * f64::sin(30.0)), vec2(-1.303e3 * f64::cos(30.0 + PI / 2.0), -1.303e3 * f64::sin(30.0 + PI / 2.0)), 
             7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(-0.987e4, 0.0), 1.0e3, 1.0e5, Rgba::from_rgba_unmultiplied(0.9, 0.3, 0.3, 1.0));
+        add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(-0.987e4, 0.0), 1.0e3);
     }
 
     pub fn get_time_step(&self) -> f64 {
