@@ -46,11 +46,13 @@ impl TrajectoryComponent {
         }
     }
 
-    pub fn update(&mut self, delta_time: f64) {
+    pub fn update(&mut self, time: f64, delta_time: f64) {
         if let Some(orbit) = self.orbits.front_mut() { 
             orbit.borrow_mut().update(delta_time);
             if orbit.borrow().is_finished() {
+                let overshot_time = orbit.borrow().get_overshot_time(time);
                 self.orbits.pop_front();
+                self.orbits.front().unwrap().borrow_mut().update(overshot_time);
             }
         }
     }

@@ -9,18 +9,28 @@
 [x] Icons to represent planets/stars/spacecraft when zoomed out
 [x] Icon precedence algorithm
 [x] Selected icon takes precedence over all others
-[ ] API to add and execute burns using simple integrator
-[ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [x] Highlight point on orbit when hovering near it
-[ ] Clicking when a point is highlighted brings up a menu
-[ ] Add button to menu to warp to that point
-[ ] Add button that creates a new burn at that point
-[ ] Figure out how to orbit direction symbols for adjusting burn
+[x] Clicking when a point is highlighted brings up a menu
+[x] Add button to menu to warp to that point
+[x] Add button that creates a new burn at that point
+[x] Figure out what time we need to warp to when warp button pressed
+[x] Algorithm to warp to the specific point
+[x] Find out why error gets larger with time in warp
+[x] Allow warping over multiple orbits
+[ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is clicking a symbol
+[ ] API to add and execute burns using simple integrator
+[ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [ ] When symbol clicked, adjust parameters of the burn
-[ ] Figure out why there are jumps happening between conic sections???
+[x] Figure out why there are jumps happening between conic sections???
 [x] ECS transition
+
+Technical debt tracker
+[ ] Janky method to find how many orbits completed in elliptical orbit (just floordiv or smth instead - can be method)
+[x] Better method for hyperbola Kepler equation
+[x] check get_time_since_last_periapsis nonsense is actually needed
+[x] Kepler solver failing to converge
 
 ECS
 - Each component is a representation of state of one part of an entity

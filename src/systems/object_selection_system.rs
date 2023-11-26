@@ -69,6 +69,10 @@ fn update_icons(state: &mut State, selected: &Option<Entity>) {
 }
 
 pub fn object_selection_system(state: &mut State, context: &Context) {
+    if state.mouse_over_any_element {
+        return;
+    }
+
     let screen_rect = context.screen_rect();
     context.input(|input| {
         let Some(screen_position) = input.pointer.latest_pos() else {

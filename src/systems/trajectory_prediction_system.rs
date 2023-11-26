@@ -5,7 +5,7 @@ use crate::{state::State, components::trajectory_component::{orbit::Orbit, orbit
 use super::util::{update_parent, update_position_and_velocity, sync_to_trajectory};
 
 const SIMULATION_TIME_STEP: f64 = 40.0;
-const SIMULATION_TIME_STEPS: i32 = 400000;
+const SIMULATION_TIME_STEPS: i32 = 200000;
 
 fn position_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) -> DVec2 {
     state.components.position_components.get(entity).unwrap().get_absolute_position() - state.components.position_components.get(parent).unwrap().get_absolute_position()
@@ -102,15 +102,18 @@ pub fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
         let new_position = final_orbit.borrow().get_end_position();
         let new_velocity = final_orbit.borrow().get_end_velocity();
         update_position_and_velocity(state, entity, new_position, new_velocity);
-        update_parent_for_prediction(state, entity, time);
+        // We add SIMULATION_TIME_STEP here because we've just updated position and velocity, so the time step has actually already increased
+        update_parent_for_prediction(state, entity, time + SIMULATION_TIME_STEP);
     }
 }
 
-pub fn trajectory_prediction_system(state: &mut State, start_time: f64) {
+pub fn trajectory_prediction_system(state: &mut State) {
+    let mut time = 0.0;
     for _ in 0..SIMULATION_TIME_STEPS {
         for entity in state.components.entity_allocator.get_entities() {
-            update_for_prediction(state, &entity, start_time);
+            update_for_prediction(state, &entity, time);
         }
+        time += SIMULATION_TIME_STEP;
     }
 
     // Reset the position, velocity, and parent of all entities, since they are changed during prediction

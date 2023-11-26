@@ -1,6 +1,6 @@
-use std::{fs::{self, DirEntry, ReadDir}, sync::Arc};
+use std::{fs::{self, DirEntry}, sync::Arc};
 
-use eframe::{epaint::ahash::{HashMap, HashSet}, egui::ImageSource};
+use eframe::{epaint::ahash::HashMap, egui::ImageSource};
 use glow::Context;
 use image::GenericImageView;
 

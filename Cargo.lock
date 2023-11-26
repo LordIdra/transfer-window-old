@@ -2653,6 +2653,7 @@ dependencies = [
  "glow",
  "image",
  "nalgebra-glm",
+ "rand",
 ]
 
 [[package]]

@@ -60,9 +60,11 @@ pub fn new_conic(parent_mass: f64, position: DVec2, velocity: DVec2) -> Box<dyn 
 pub trait Conic: Debug + Send {
     fn get_theta_from_time_since_periapsis(&self, time: f64) -> f64;
     fn get_time_since_periapsis(&self, theta: f64) -> f64;
+    fn get_time_since_last_periapsis(&self, orbit_point: &OrbitPoint) -> f64;
     fn get_position(&self, theta: f64) -> DVec2;
     fn get_velocity(&self, position: DVec2, theta: f64) -> DVec2;
     fn get_direction(&self) -> OrbitDirection;
+    fn get_period(&self) -> Option<f64>;
     fn get_semi_major_axis(&self) -> f64;
     fn get_semi_minor_axis(&self) -> f64;
     fn get_argument_of_periapsis(&self) -> f64;

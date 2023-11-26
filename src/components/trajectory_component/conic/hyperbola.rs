@@ -1,16 +1,31 @@
 use std::f64::consts::PI;
 
 use nalgebra_glm::{vec2, DVec2};
+use rand::Rng;
 
 
 use crate::components::trajectory_component::{orbit_direction::OrbitDirection, orbit_point::OrbitPoint};
 
 use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
-fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64) -> f64 {
-    let mut eccentric_anomaly = mean_anomaly;
+fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
+    let max_delta_squared = (1.0e-7_f64).powi(2);
+    let max_attempts = 500;
+    let mut eccentric_anomaly = mean_anomaly + start_offset;
+    let mut attempts = 0;
     for _ in 0..1000 {
-        eccentric_anomaly = eccentric_anomaly - (eccentricity * f64::sinh(eccentric_anomaly) - eccentric_anomaly - mean_anomaly) / (eccentricity * f64::cosh(eccentric_anomaly) - 1.0);
+        let delta = -(eccentricity * f64::sinh(eccentric_anomaly) - eccentric_anomaly - mean_anomaly) / (eccentricity * f64::cosh(eccentric_anomaly) - 1.0);
+        if delta.powi(2) < max_delta_squared {
+            break;
+        }
+        if attempts > max_attempts {
+            // Try with different start value
+            let mut rng = rand::thread_rng();
+            let start_offset = (rng.gen::<f64>() - 0.5) * 5.0;
+            return solve_kepler_equation(eccentricity, mean_anomaly, start_offset)
+        }
+        eccentric_anomaly += delta;
+        attempts += 1;
     }
     eccentric_anomaly
 }
@@ -37,14 +52,8 @@ impl Conic for Hyperbola {
     fn get_theta_from_time_since_periapsis(&self, time_since_periapsis: f64) -> f64 {
         let x = self.standard_gravitational_parameter.powi(2) / self.specific_angular_momentum.powi(3);
         let mean_anomaly = x * time_since_periapsis * (self.eccentricity.powi(2) - 1.0).powf(3.0 / 2.0);
-        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly);
-        let mut true_anomaly = 2.0 * f64::atan(f64::sqrt((self.eccentricity + 1.0) / (self.eccentricity - 1.0)) * f64::tanh(eccentric_anomaly / 2.0));
-        if let OrbitDirection::Clockwise = self.direction {
-            true_anomaly = -true_anomaly;
-        }
-        if let OrbitDirection::Clockwise = self.direction {
-            true_anomaly = -true_anomaly;
-        }
+        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
+        let true_anomaly = 2.0 * f64::atan(f64::sqrt((self.eccentricity + 1.0) / (self.eccentricity - 1.0)) * f64::tanh(eccentric_anomaly / 2.0));
         let mut theta = true_anomaly + self.argument_of_periapsis;
         while theta > PI {
             theta -= 2.0 * PI;
@@ -58,12 +67,13 @@ impl Conic for Hyperbola {
     fn get_time_since_periapsis(&self, theta: f64) -> f64 {
         let true_anomaly = theta - self.argument_of_periapsis;
         let eccentric_anomaly = 2.0 * f64::atanh(f64::sqrt((self.eccentricity - 1.0) / (self.eccentricity + 1.0)) * f64::tan(true_anomaly / 2.0));
-        let mut mean_anomaly = self.eccentricity * f64::sinh(eccentric_anomaly) - eccentric_anomaly;
-        if let OrbitDirection::Clockwise = self.direction {
-            mean_anomaly = -mean_anomaly;
-        }
+        let mean_anomaly = self.eccentricity * f64::sinh(eccentric_anomaly) - eccentric_anomaly;
         let x = self.specific_angular_momentum.powi(3) / self.standard_gravitational_parameter.powi(2);
         mean_anomaly * x / (self.eccentricity.powi(2) - 1.0).powf(3.0 / 2.0)
+    }
+
+    fn get_time_since_last_periapsis(&self, orbit_point: &OrbitPoint) -> f64 {
+        orbit_point.get_time_since_periapsis()
     }
 
     fn get_position(&self, theta: f64) -> DVec2 {
@@ -111,7 +121,7 @@ impl Conic for Hyperbola {
     /// This solver actually kinda... doesn't work...
     /// But as we get closer to the line the solution gets more accurate
     /// So this actually works fine for our purposes despite being broken (lol)
-    fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {  
+    fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
         let px = f64::abs(p[0]);
         let py = f64::abs(p[1]);
 
@@ -146,14 +156,13 @@ impl Conic for Hyperbola {
         vec2(copysign(a * f64::cosh(t), p[0]), copysign(b * f64::sinh(t), p[1]))
     }
 
-    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time_since_periapsis: f64) -> bool {
-        if let OrbitDirection::AntiClockwise = self.direction {
-            time_since_periapsis > start.get_time_since_periapsis() && time_since_periapsis < end.get_time_since_periapsis()
-        } else {
-            time_since_periapsis < -start.get_time_since_periapsis() && time_since_periapsis > -end.get_time_since_periapsis()
-        }
+    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time: f64) -> bool {
+        time > start.get_time() && time < end.get_time()
     }
-    
+
+    fn get_period(&self) -> Option<f64> {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -165,7 +174,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_time_from_true_anomaly() {
+    fn test_time_from_true_anomaly_1() {
         let position = vec2(6678100.0,  0.0);
         let velocity = vec2(0.0, 15000.0);
         let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.972e24;
@@ -176,6 +185,21 @@ mod tests {
         let theta = f64::to_radians(100.0);
         let time = hyperbola.get_time_since_periapsis(theta);
         let expected_time = 1.15 * 60.0 * 60.0;
+        assert!((time - expected_time).abs() < 3.0)
+    }
+
+    #[test]
+    fn test_time_from_true_anomaly_2() {
+        let position = vec2(6678100.0,  0.0);
+        let velocity = vec2(0.0, 15000.0);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.972e24;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        let hyperbola = Hyperbola::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
+        let theta = f64::to_radians(-100.0);
+        let time = hyperbola.get_time_since_periapsis(theta);
+        let expected_time = -1.15 * 60.0 * 60.0;
         assert!((time - expected_time).abs() < 3.0)
     }
 
@@ -210,6 +234,21 @@ mod tests {
 
     #[test]
     fn test_theta_from_time_since_periapsis_3() {
+        let position = vec2(6678100.0,  0.0);
+        let velocity = vec2(0.0, 15000.0);
+        let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 5.972e24;
+        let semi_major_axis = semi_major_axis(position, velocity, standard_gravitational_parameter);
+        let eccentricity = eccentricity(position, velocity, standard_gravitational_parameter, semi_major_axis);
+        let direction = OrbitDirection::from_position_and_velocity(position, velocity);
+        let hyperbola = Hyperbola::new(position, velocity, standard_gravitational_parameter, semi_major_axis, eccentricity, direction);
+        let time = -4.15 * 60.0 * 60.0;
+        let theta = hyperbola.get_theta_from_time_since_periapsis(time);
+        let expected_theta = f64::to_radians(-107.78);
+        assert!((theta - expected_theta).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_theta_from_time_since_periapsis_4() {
         let position = vec2(-33839778.563934326, -31862122.134700775);
         let velocity = vec2(1187.3296202582328, 268.8766709200928);
         let standard_gravitational_parameter = GRAVITATIONAL_CONSTANT * 7.346e22;

@@ -1,6 +1,7 @@
 use std::f64::consts::PI;
 
 use nalgebra_glm::{vec2, DVec2};
+use rand::Rng;
 
 use crate::components::trajectory_component::{orbit_direction::OrbitDirection, orbit_point::OrbitPoint};
 
@@ -9,20 +10,28 @@ use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
     2.0 * PI * f64::sqrt(semi_major_axis.powi(3) / standard_gravitational_parameter)
 }
-
-fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64) -> f64 {
+fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
+    let max_delta_squared = (1.0e-7_f64).powi(2);
+    let max_attempts = 500;
     // Choosing an initial seed: https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html#S5
-    // Yes, they're actually serious about that 0.999999 thing
-    let mut eccentric_anomaly = mean_anomaly
+    // Yes, they're actually serious about that 0.999999 thing (lmao)
+    let mut eccentric_anomaly = mean_anomaly + start_offset
         + (0.999999 * 4.0 * eccentricity * mean_anomaly * (PI - mean_anomaly))
         / (8.0 * eccentricity * mean_anomaly + 4.0 * eccentricity * (eccentricity - PI) + PI.powi(2));
-    let max_delta_squared = (1.0e-7_f64).powi(2); // todo better value for this
+    let mut attempts = 0;
     loop {
         let delta = -(eccentric_anomaly - eccentricity * f64::sin(eccentric_anomaly) - mean_anomaly) / (1.0 - eccentricity * f64::cos(eccentric_anomaly));
         if delta.powi(2) < max_delta_squared {
             break;
         }
+        if attempts > max_attempts {
+            // Try with different start value
+            let mut rng = rand::thread_rng();
+            let start_offset = (rng.gen::<f64>() - 0.5) * 5.0;
+            return solve_kepler_equation(eccentricity, mean_anomaly, start_offset)
+        }
         eccentric_anomaly += delta;
+        attempts += 1;
     }
     eccentric_anomaly
 }
@@ -49,11 +58,10 @@ impl Ellipse {
 impl Conic for Ellipse {
     fn get_theta_from_time_since_periapsis(&self, time_since_periapsis: f64) -> f64 {
         let mean_anomaly = (2.0 * PI * time_since_periapsis) / self.period;
-        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly);
+        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
         let mut true_anomaly = 2.0 * f64::atan(f64::sqrt((1.0 + self.eccentricity) / (1.0 - self.eccentricity)) * f64::tan(eccentric_anomaly / 2.0));
         // The sign of atan flips halfway through the orbit
         // So we need to add 2pi halfway through the orbit to keep things consistent
-        //true_anomaly += (time_since_periapsis / self.period + 0.5).floor() * 2.0 * PI;
         if let OrbitDirection::Clockwise = self.direction {
             true_anomaly = -true_anomaly;
         }
@@ -75,6 +83,10 @@ impl Conic for Ellipse {
             mean_anomaly = -mean_anomaly;
         }
         mean_anomaly * self.period / (2.0 * PI)
+    }
+
+    fn get_time_since_last_periapsis(&self, orbit_point: &OrbitPoint) -> f64 {
+        orbit_point.get_time_since_periapsis()
     }
 
     fn get_position(&self, theta: f64) -> DVec2 {
@@ -142,7 +154,7 @@ impl Conic for Ellipse {
 
         let mut t = PI / 4.0;
 
-        for _ in 0..8 {
+        for _ in 0..80 {
             let x = a * f64::cos(t);
             let y = b * f64::sin(t);
 
@@ -158,7 +170,7 @@ impl Conic for Ellipse {
             let r = vec2(ry, rx).magnitude();
             let q = vec2(qy, qx).magnitude();
 
-            let delta_c = r * f64::asin((rx*qy - ry*qx)/(r*q));
+            let delta_c = r * f64::asin((rx*qy - ry*qx) / (r*q));
             let delta_t = delta_c / f64::sqrt(a.powi(2) * f64::sin(t).powi(2) + b.powi(2) * f64::cos(t).powi(2));
 
             t += delta_t;
@@ -168,17 +180,12 @@ impl Conic for Ellipse {
         vec2(copysign(a * f64::cos(t), p[0]), copysign(b * f64::sin(t), p[1]))
     }
 
-    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time_since_periapsis: f64) -> bool {
-        if time_since_periapsis > start.get_time_since_periapsis() && time_since_periapsis < end.get_time_since_periapsis() {
-            return true
-        }
-        if time_since_periapsis + self.period > start.get_time_since_periapsis() && time_since_periapsis + self.period < end.get_time_since_periapsis() {
-            return true;
-        }
-        if time_since_periapsis - self.period > start.get_time_since_periapsis() && time_since_periapsis - self.period < end.get_time_since_periapsis() {
-            return true;
-        }
-        false
+    fn is_time_between_points(&self, start: &OrbitPoint, end: &OrbitPoint, time: f64) -> bool {
+        time > start.get_time() && time < end.get_time()
+    }
+
+    fn get_period(&self) -> Option<f64> {
+        Some(self.period)
     }
 }
 
