@@ -20,14 +20,14 @@ impl Segment {
 
     pub fn predict(&mut self, delta_time: f64) {
         match self {
-            Segment::Burn(_) => todo!(),
+            Segment::Burn(_) => panic!("Attempt to update a burn segment for prediction"),
             Segment::Orbit(orbit) => orbit.borrow_mut().predict(delta_time),
         }
     }
 
     pub fn is_finished(&self) -> bool {
         match self {
-            Segment::Burn(_) => todo!(),
+            Segment::Burn(burn) => burn.borrow().is_finished(),
             Segment::Orbit(orbit) => orbit.borrow().is_finished(),
         }
     }

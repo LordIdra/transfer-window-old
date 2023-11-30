@@ -52,9 +52,16 @@ impl Burn {
 
     pub fn get_point_at_time(&self, time: f64) -> BurnPoint {
         let time_after_start = time - self.get_start_time();
-        let closest_previous_point = self.points.get((time_after_start / TIME_STEP) as usize).expect("Attempt to get point after burn has finished");
-        let delta_time = time_after_start % TIME_STEP;
-        closest_previous_point.next(delta_time)
+        if let Some(closest_previous_point) = self.points.get((time_after_start / TIME_STEP) as usize) {
+            let delta_time = time_after_start % TIME_STEP;
+            closest_previous_point.next(delta_time)
+        } else {
+            self.points.last().unwrap().clone()
+        }
+    }
+
+    pub fn is_finished(&self) -> bool {
+        self.current_point.get_time() > self.points.last().unwrap().get_time()
     }
 
     pub fn update(&mut self, delta_time: f64) {

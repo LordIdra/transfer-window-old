@@ -105,7 +105,7 @@ pub fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
                 // We should never encounter this situation:
                 // 1) Celestial objects cannot perform burns so the SOIs of other objects at points in time remain unchanged
                 // 2) We are only going to start predictions *after* burns
-                // Just work with temporarily incorrect information if we do
+                panic!("Attempt to update a burn segment for prediction")
             },
             Segment::Orbit(orbit) => {
                 let new_position = orbit.borrow().get_end_position();
