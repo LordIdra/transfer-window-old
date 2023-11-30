@@ -1,6 +1,6 @@
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, storage::entity_allocator::Entity};
+use crate::{state::State, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
 /// So... why is this an entire function? Surely we can just find the parent component and use that to set the new parent?
 /// Well, the problem with that is that the old parent will still have the entity in its children
@@ -30,12 +30,16 @@ pub fn update_position_and_velocity(state: &mut State, entity: &Entity, new_rela
 /// Sync the position, velocity, and parent of the entity to the position, velocity, and parent of the current orbit
 pub fn sync_to_trajectory(state: &mut State, entity: &Entity) {
     let trajectory_component = state.components.trajectory_components.get(entity).unwrap();
-    let current_orbit = trajectory_component.get_current_orbit();
-    let new_position = current_orbit.borrow().get_current_position();
-    let new_velocity = current_orbit.borrow().get_current_velocity();
-    let new_parent = current_orbit.borrow().get_parent();
-    update_parent(state, entity, &new_parent);
-    update_position_and_velocity(state, entity, new_position, new_velocity);
+    match trajectory_component.get_current_segment() {
+        Segment::Burn(_) => todo!(),
+        Segment::Orbit(orbit) => {
+            let new_position = orbit.borrow().get_current_position();
+            let new_velocity = orbit.borrow().get_current_velocity();
+            let new_parent = orbit.borrow().get_parent();
+            update_parent(state, entity, &new_parent);
+            update_position_and_velocity(state, entity, new_position, new_velocity);
+        }
+    }
 }
 
 

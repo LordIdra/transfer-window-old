@@ -1,6 +1,8 @@
+use std::{rc::Rc, cell::RefCell};
+
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, components::trajectory_component::{orbit::Orbit, orbit_direction::GRAVITATIONAL_CONSTANT}, storage::entity_allocator::Entity};
+use crate::{state::State, storage::entity_allocator::Entity, components::trajectory_component::segment::{orbit::{Orbit, orbit_direction::GRAVITATIONAL_CONSTANT}, Segment}};
 
 use super::util::{update_parent, update_position_and_velocity, sync_to_trajectory};
 
@@ -19,17 +21,17 @@ fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f
     let new_position = position_relative_to_parent(state, entity, &new_parent);
     let new_velocity = velocity_relative_to_parent(state, entity, &new_parent);
     let new_orbit = Orbit::new(&state.components, new_parent, new_position, new_velocity, time);
-    state.components.trajectory_components.get_mut(entity).unwrap().add_orbit(new_orbit);
+    state.components.trajectory_components.get_mut(entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(new_orbit))));
 }
 
-fn get_sphere_of_influence_squared(state: &State, entity: &Entity) -> Option<f64> {
+fn get_sphere_of_influence(state: &State, entity: &Entity) -> Option<f64> {
     let trajectory = state.components.trajectory_components.get(entity)?;
-    let final_orbit = trajectory.get_final_orbit();
+    let final_orbit = trajectory.get_final_segment().as_orbit();
     let final_parent = final_orbit.borrow().get_parent();
     let semi_major_axis = final_orbit.borrow().get_semi_major_axis();
     let mass = state.components.mass_components.get(entity)?.get_mass();
     let parent_mass = state.components.mass_components.get(&final_parent)?.get_mass();
-    Some((semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)).powi(2))
+    Some(semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0))
 }
 
 /// Looks to ascend HIGHER into the entity tree to compute a parent
@@ -37,8 +39,8 @@ fn get_sphere_of_influence_squared(state: &State, entity: &Entity) -> Option<f64
 /// In this case, there's only one possible new parent (ie, the current parent's parent), making this fairly simple
 fn compute_new_parent_upper(state: &State, entity: &Entity, parent: &Entity) -> Option<Entity> {
     // Check if we've left the SOI of our parent
-    let parent_sphere_of_influence_squared = get_sphere_of_influence_squared(state, parent)?;
-    if position_relative_to_parent(state, entity, parent).magnitude_squared() < parent_sphere_of_influence_squared {
+    let parent_sphere_of_influence_squared = get_sphere_of_influence(state, parent)?;
+    if position_relative_to_parent(state, entity, parent).magnitude() < parent_sphere_of_influence_squared {
         return None;
     }
     state.components.parent_components.get(parent).map(|parent_parent| parent_parent.get_parent())
@@ -71,10 +73,10 @@ fn compute_new_parent_lower(state: &State, entity: &Entity, parent: &Entity) -> 
         if *child == *entity {
             continue;
         }
-        if let Some(parent_sphere_of_influence_squared) = get_sphere_of_influence_squared(state, child) {
+        if let Some(parent_sphere_of_influence) = get_sphere_of_influence(state, child) {
             let position = state.components.position_components.get(entity).unwrap().get_absolute_position();
             let other_position = state.components.position_components.get(child).unwrap().get_absolute_position();
-            if (position - other_position).magnitude_squared() < parent_sphere_of_influence_squared {
+            if (position - other_position).magnitude() < parent_sphere_of_influence {
                 potential_children.push(*child);
             }
         }
@@ -98,11 +100,19 @@ fn update_parent_for_prediction(state: &mut State, entity: &Entity, time: f64) {
 pub fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
     if let Some(trajectory_component) = state.components.trajectory_components.get_mut(entity) {
         trajectory_component.predict(SIMULATION_TIME_STEP);
-        let final_orbit = trajectory_component.get_final_orbit();
-        let new_position = final_orbit.borrow().get_end_position();
-        let new_velocity = final_orbit.borrow().get_end_velocity();
-        update_position_and_velocity(state, entity, new_position, new_velocity);
-        // We add SIMULATION_TIME_STEP here because we've just updated position and velocity, so the time step has actually already increased
+        match trajectory_component.get_final_segment() {
+            Segment::Burn(_) => {
+                // We should never encounter this situation:
+                // 1) Celestial objects cannot perform burns so the SOIs of other objects at points in time remain unchanged
+                // 2) We are only going to start predictions *after* burns
+                // Just work with temporarily incorrect information if we do
+            },
+            Segment::Orbit(orbit) => {
+                let new_position = orbit.borrow().get_end_position();
+                let new_velocity = orbit.borrow().get_end_velocity();
+                update_position_and_velocity(state, entity, new_position, new_velocity);
+            }
+        }
         update_parent_for_prediction(state, entity, time + SIMULATION_TIME_STEP);
     }
 }

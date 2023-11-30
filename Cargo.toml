@@ -16,3 +16,7 @@ features = ["jpeg", "png"]
 [dependencies.egui_extras]
 version = "0.23.0"
 features = ["all_loaders"]
+
+[profile.dev]
+opt-level = 3
+debug=true

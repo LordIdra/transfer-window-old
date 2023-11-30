@@ -78,7 +78,7 @@ impl State {
 
     pub fn get_time_step(&self) -> f64 {
         match self.time_step_description {
-            TimeStepDescription::Level(level) => 5.0_f64.powi(level),
+            TimeStepDescription::Level(level) => 5.0_f64.powi(level-1),
             TimeStepDescription::Raw(raw) => raw,
         }
     }

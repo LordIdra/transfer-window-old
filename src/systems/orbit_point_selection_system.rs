@@ -3,7 +3,7 @@ use std::{rc::Rc, cell::RefCell};
 use eframe::{egui::{Context, InputState}, epaint::{Pos2, Rect, Rgba}};
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::{state::State, components::trajectory_component::orbit::Orbit, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity};
+use crate::{state::State, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity, components::trajectory_component::segment::{orbit::Orbit, Segment}};
 
 const SELECTION_CIRCLE_SIZE: f64 = 5.0;
 
@@ -102,10 +102,12 @@ fn get_click_point(state: &mut State, screen_size: Rect, position: Pos2) -> Opti
     let mut click_points = vec![];
     for entity in &state.components.entity_allocator.get_entities() {
         if let Some(trajectory_component) = state.components.trajectory_components.get(&entity) {
-            for orbit in trajectory_component.get_orbits() {
-                let click_point = test_orbit_clicked(state, entity, orbit, position, max_distance_to_select);
-                if let Some(click_point) = click_point {
-                    click_points.push(click_point);
+            for segment in trajectory_component.get_segments() {
+                if let Segment::Orbit(orbit) = segment {
+                    let click_point = test_orbit_clicked(state, entity, orbit, position, max_distance_to_select);
+                    if let Some(click_point) = click_point {
+                        click_points.push(click_point);
+                    }
                 }
             }
         }
