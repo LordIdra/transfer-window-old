@@ -32,7 +32,7 @@ impl OrbitPoint {
         self.theta
     }
 
-    pub fn get_unscaled_position(&self) -> DVec2 {
+    pub fn get_position(&self) -> DVec2 {
         self.position
     }
 

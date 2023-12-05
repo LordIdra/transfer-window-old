@@ -15,7 +15,8 @@ fn create_burn(state: &mut State) {
     let time = state.orbit_click_point.as_ref().unwrap().get_time();
     let entity = state.orbit_click_point.as_ref().unwrap().get_entity();
     let trajectory_component = state.components.trajectory_components.get_mut(&entity).unwrap();
-    let final_orbit = trajectory_component.get_final_segment().as_orbit();
+    let final_segment = trajectory_component.get_final_segment();
+    let final_orbit = final_segment.as_orbit();
     let parent = final_orbit.borrow().get_parent();
     let velocity_direction = final_orbit.borrow().get_end_velocity().normalize();
     trajectory_component.remove_segments_after(time);
@@ -62,20 +63,23 @@ fn format_time(time: f64) -> String {
 
 fn draw_toolbar(state: &mut State, ui: &mut Ui) {
     ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
-        let burn_image = Image::new(state.resources.get_texture_image("burn"))
-            .bg_fill(Color32::TRANSPARENT)
-            .fit_to_exact_size(epaint::vec2(15.0, 15.0));
-        let burn_button = ImageButton::new(burn_image);
-        if ui.add(burn_button).clicked() {
-            create_burn(state);
-        }
-
         let warp_image = Image::new(state.resources.get_texture_image("warp-here"))
             .bg_fill(Color32::TRANSPARENT)
             .fit_to_exact_size(epaint::vec2(15.0, 15.0));
         let warp_button = ImageButton::new(warp_image);
         if ui.add(warp_button).clicked() {
             warp_to_point(state);
+        }
+
+        let entity = state.orbit_click_point.as_ref().unwrap().get_entity();
+        if state.components.celestial_body_components.get(&entity).is_none() {
+            let burn_image = Image::new(state.resources.get_texture_image("burn"))
+                .bg_fill(Color32::TRANSPARENT)
+                .fit_to_exact_size(epaint::vec2(15.0, 15.0));
+            let burn_button = ImageButton::new(burn_image);
+            if ui.add(burn_button).clicked() {
+                create_burn(state);
+            }
         }
     });
 

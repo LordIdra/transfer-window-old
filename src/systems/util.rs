@@ -28,18 +28,29 @@ pub fn update_position_and_velocity(state: &mut State, entity: &Entity, new_rela
 }
 
 /// Sync the position, velocity, and parent of the entity to the position, velocity, and parent of the current orbit
+pub fn sync_to_segment(state: &mut State, segment: Segment, entity: &Entity) {
+    let new_position = segment.get_current_position();
+    let new_velocity = segment.get_current_velocity();
+    let new_parent = segment.get_parent();
+    update_parent(state, entity, &new_parent);
+    update_position_and_velocity(state, entity, new_position, new_velocity);
+}
+
 pub fn sync_to_trajectory(state: &mut State, entity: &Entity) {
-    let trajectory_component = state.components.trajectory_components.get(entity).unwrap();
-    match trajectory_component.get_current_segment() {
-        Segment::Burn(_) => todo!(),
-        Segment::Orbit(orbit) => {
-            let new_position = orbit.borrow().get_current_position();
-            let new_velocity = orbit.borrow().get_current_velocity();
-            let new_parent = orbit.borrow().get_parent();
-            update_parent(state, entity, &new_parent);
-            update_position_and_velocity(state, entity, new_position, new_velocity);
+    let segment = state.components.trajectory_components.get(entity).unwrap().get_current_segment();
+    sync_to_segment(state, segment, entity);
+}
+
+
+pub fn get_segment_at_time(state: &State, entity: &Entity, time: f64) -> Segment {
+    for segment in state.components.trajectory_components.get(entity).unwrap().get_segments() {
+        let start_time = segment.as_orbit().borrow().get_start_time();
+        let end_time = segment.as_orbit().borrow().get_end_time();
+        if time >= start_time && time <= end_time {
+            return segment.clone();
         }
     }
+    panic!("Failed to move to time; no trajectory segment contains the requested time")
 }
 
 

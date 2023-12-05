@@ -1,10 +1,15 @@
 use std::{rc::Rc, cell::RefCell};
 
+use nalgebra_glm::DVec2;
+
+use crate::storage::entity_allocator::Entity;
+
 use self::{orbit::Orbit, burn::Burn};
 
 pub mod burn;
 pub mod orbit;
 
+#[derive(Clone)]
 pub enum Segment {
     Burn(Rc<RefCell<Burn>>),
     Orbit(Rc<RefCell<Orbit>>)
@@ -34,8 +39,28 @@ impl Segment {
 
     pub fn get_overshot_time(&self, time: f64) -> f64 {
         match self {
-            Segment::Burn(_) => todo!(),
+            Segment::Burn(burn) => burn.borrow().get_overshot_time(time),
             Segment::Orbit(orbit) => orbit.borrow().get_overshot_time(time),
+        }
+    }
+
+    pub fn get_current_position(&self) -> DVec2 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_current_position(),
+            Segment::Orbit(orbit) => orbit.borrow().get_current_position(),
+        }
+    }
+
+    pub fn get_current_velocity(&self) -> DVec2 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_current_velocity(),
+            Segment::Orbit(orbit) => orbit.borrow().get_current_velocity(),
+        }
+    }
+    pub fn get_parent(&self) -> Entity {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_parent(),
+            Segment::Orbit(orbit) => orbit.borrow().get_parent(),
         }
     }
 
@@ -43,6 +68,27 @@ impl Segment {
         match self {
             Segment::Burn(_) => panic!("Attempted to get non-orbit segment as orbit"),
             Segment::Orbit(orbit) => orbit,
+        }
+    }
+
+    pub fn get_start_time(&self) -> f64 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_start_time(),
+            Segment::Orbit(orbit) => orbit.borrow().get_start_time(),
+        }
+    }
+
+    pub fn get_end_time(&self) -> f64 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_end_time(),
+            Segment::Orbit(orbit) => orbit.borrow().get_end_time(),
+        }
+    }
+
+    pub fn reset(&self) {
+        match self {
+            Segment::Burn(burn) => burn.borrow_mut().reset(),
+            Segment::Orbit(orbit) => orbit.borrow_mut().reset(),
         }
     }
 }

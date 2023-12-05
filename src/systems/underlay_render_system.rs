@@ -4,11 +4,11 @@ use eframe::{egui::{Context, Ui, CentralPanel}, epaint::PaintCallback, egui_glow
 
 use crate::state::State;
 
-use self::{render_orbit::get_all_orbit_vertices, render_object::get_all_object_vertices, render_icons::get_all_icon_vertices};
+use self::{render_segment::get_all_segment_vertices, render_object::get_all_object_vertices, render_icons::get_all_icon_vertices};
 
 mod render_icons;
 mod render_object;
-mod render_orbit;
+mod render_segment;
 
 const ICON_NAMES: [&str; 4] = ["star", "planet", "moon", "spacecraft"];
 
@@ -31,7 +31,7 @@ fn add_painter_callback(state: &mut State, context: &Context, ui: &Ui) {
 pub fn underlay_render_system(state: &mut State, context: &Context) {
     CentralPanel::default().show(context, |ui| {
         let object_vertices = get_all_object_vertices(state);
-        let orbit_vertices = get_all_orbit_vertices(state, context);
+        let orbit_vertices = get_all_segment_vertices(state);
         state.object_renderer.lock().unwrap().set_vertices(object_vertices);
         state.orbit_renderer.lock().unwrap().set_vertices(orbit_vertices);
         let texture_renderers_arc = state.texture_renderers.clone();

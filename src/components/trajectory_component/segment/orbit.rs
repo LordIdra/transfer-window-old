@@ -107,11 +107,11 @@ impl Orbit {
     }
 
     pub fn get_current_position(&self) -> DVec2 {
-        self.current_point.get_unscaled_position()
+        self.current_point.get_position()
     }
 
     pub fn get_end_position(&self) -> DVec2 {
-        self.end_point.get_unscaled_position()
+        self.end_point.get_position()
     }
 
     pub fn get_end_time(&self) -> f64 {
@@ -132,6 +132,10 @@ impl Orbit {
 
     pub fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
         self.conic.solve_for_closest_point(p)
+    }
+
+    pub fn reset(&mut self) {
+        self.current_point = self.start_point.clone();
     }
 
     pub fn trim_to_end_at(&mut self, time: f64) {

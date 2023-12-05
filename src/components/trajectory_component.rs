@@ -25,12 +25,12 @@ impl TrajectoryComponent {
         &self.segments
     }
 
-    pub fn get_current_segment(&self) -> &Segment {
-        self.segments.front().unwrap()
+    pub fn get_current_segment(&self) -> Segment {
+        self.segments.front().unwrap().clone()
     }
 
-    pub fn get_final_segment(&self) -> &Segment {
-        self.segments.back().unwrap()
+    pub fn get_final_segment(&self) -> Segment {
+        self.segments.back().unwrap().clone()
     }
 
     pub fn add_segment(&mut self, segment: Segment) {
@@ -72,6 +72,4 @@ impl TrajectoryComponent {
             }
         }
     }
-
-    // 1) 
 }

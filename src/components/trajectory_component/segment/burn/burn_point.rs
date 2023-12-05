@@ -12,7 +12,8 @@ pub struct BurnPoint {
 
 impl BurnPoint {
     pub fn new(state: &State, entity: Entity, parent: Entity, time: f64) -> Self {
-        let previous_orbit = state.components.trajectory_components.get(&entity).unwrap().get_final_segment().as_orbit();
+        let segment = state.components.trajectory_components.get(&entity).unwrap().get_final_segment();
+        let previous_orbit = segment.as_orbit();
         let position = previous_orbit.borrow().get_end_position();
         let velocity = previous_orbit.borrow().get_end_velocity();
         let parent_mass = state.components.mass_components.get(&parent).unwrap().get_mass();

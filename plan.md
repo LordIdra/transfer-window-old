@@ -21,13 +21,15 @@ Fetaure tracker
 [x] Orbit tessellation
 [x] Add time in toolbar
 [x] Move toolbar to better location
+[X] Draw burn segments
+[x] Better algorithm for segment colors
+[x] API to add and execute burns using simple integrator
+[ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
 [ ] Icon to indicate burn position
 [ ] Snap to burn icon instead of orbit point
-[ ] API to add and execute burns using simple integrator
-[ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [ ] When symbol clicked, adjust parameters of the burn
 
 I am going to quit coding and go live in a hut in the woods tracker
@@ -43,6 +45,7 @@ Technical debt tracker
 [x] Would be better for Segment to store rc-refcell-xyz
 [ ] Spacecraft can't change SOI while performing burn
 [ ] Spacecraft burns aren't included in predictions
+[ ] Use perpendicular to velocity vector rather than displacement direction for visual points
 
 ECS
 - Each component is a representation of state of one part of an entity
