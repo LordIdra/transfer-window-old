@@ -3,7 +3,7 @@ use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::
 use eframe::{egui::{Context, Ui}, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::celestial_body_prediction::predict_celestial_objects}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_objects, spacecraft_prediction::predict_spacecraft_objects}}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 pub struct State {
     pub resources: Resources,
@@ -52,6 +52,7 @@ impl State {
         };
         state.init_objects(sun);
         predict_celestial_objects(&mut state, 10000000.0);
+        predict_spacecraft_objects(&mut state, 10000000.0);
         state
     }
 

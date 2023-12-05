@@ -2,7 +2,7 @@ use crate::{state::State, storage::entity_allocator::Entity, systems::util::{get
 
 use super::util::is_spacecraft;
 
-fn sync_entity_to_time(state: &mut State, entity: &Entity, time: f64) {
+pub fn sync_entity_to_time(state: &mut State, entity: &Entity, time: f64) {
     let mut segment = get_segment_at_time(state, entity, time);
     let delta_time = time - segment.get_start_time();
     segment.reset();

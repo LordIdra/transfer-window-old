@@ -1,18 +1,18 @@
-use crate::{state::State, systems::util::{sync_to_trajectory, update_position_and_velocity}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
+use crate::{state::State, systems::util::{sync_to_trajectory, update_position_and_velocity, get_segment_at_time}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
-use super::{util::{is_spacecraft, update_parent_for_prediction, SoiFunction}, sync::sync_celestial_bodies_to_time};
+use super::{util::{is_spacecraft, update_parent_for_prediction, SoiFunction}, sync::{sync_celestial_bodies_to_time, sync_entity_to_time}};
 
 const SIMULATION_TIME_STEP: f64 = 40.0;
 
 fn make_soi_function(time: f64) -> SoiFunction {
-    Box::new(|state: &State, entity: &Entity| {
-        let trajectory = state.components.trajectory_components.get(entity)?;
-        let final_segment = trajectory.get_final_segment(); // TODO TOMORROW GET THE CURRENT SEGMENT RATHER THAN FINAL. ORBIT POINT DOES NOT MATTER SINCE WE JUST NEED THE SMA AND PARENT (-> MASS)
-        let final_orbit = final_segment.as_orbit();
-        let final_parent = final_orbit.borrow().get_parent();
-        let semi_major_axis = final_orbit.borrow().get_semi_major_axis();
+    Box::new(move |state: &State, entity: &Entity| {
+        let segment = get_segment_at_time(state, entity, time);
+        let orbit = segment.as_orbit();
+        let parent = orbit.borrow().get_parent();
+        let semi_major_axis = orbit.borrow().get_semi_major_axis();
         let mass = state.components.mass_components.get(entity)?.get_mass();
-        let parent_mass = state.components.mass_components.get(&final_parent)?.get_mass();
+        let parent_mass = state.components.mass_components.get(&parent)?.get_mass();
+        println!("sma {}", semi_major_axis);
         Some(semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0))
     })
 }
@@ -57,6 +57,7 @@ pub fn predict_spacecraft_objects(state: &mut State, end_time: f64) {
     // Reset the position, velocity, and parent of all entities, since they are changed during prediction
     for entity in state.components.entity_allocator.get_entities() {
         if is_spacecraft(state, entity) {
+            sync_entity_to_time(state, &entity, state.time);
             sync_to_trajectory(state, &entity);
         }
     }
