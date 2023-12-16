@@ -39,17 +39,20 @@ impl Burn {
         Self { parent, tangent_direction, tangent_dv, normal_dv, current_point: start_point, points }
     }
 
-    pub fn get_total_dv(&self) -> f64 {
-        10000.0 //f64::sqrt(self.tangent_dv.powi(2) + self.normal_dv.powi(2))
-    }
-
-    pub fn get_duration(&self) -> f64 {
-        let acceleration = 2.0; // this will eventually depend on the spacecraft - ie rocket equation time :)
-        self.get_total_dv() / acceleration
-    }
-
     pub fn get_start_time(&self) -> f64 {
         self.points.first().unwrap().get_time()
+    }
+
+    pub fn get_start_position(&self) -> DVec2 {
+        self.points.first().unwrap().get_position()
+    }
+
+    pub fn get_start_velocity(&self) -> DVec2 {
+        self.points.first().unwrap().get_velocity()
+    }
+
+    pub fn get_current_time(&self) -> f64 {
+        self.current_point.get_time()
     }
 
     pub fn get_current_position(&self) -> DVec2 {
@@ -62,6 +65,23 @@ impl Burn {
 
     pub fn get_end_time(&self) -> f64 {
         self.points.last().unwrap().get_time()
+    }
+
+    pub fn get_end_position(&self) -> DVec2 {
+        self.points.first().unwrap().get_position()
+    }
+
+    pub fn get_end_velocity(&self) -> DVec2 {
+        self.points.first().unwrap().get_velocity()
+    }
+
+    pub fn get_total_dv(&self) -> f64 {
+        10000.0 //f64::sqrt(self.tangent_dv.powi(2) + self.normal_dv.powi(2))
+    }
+
+    pub fn get_duration(&self) -> f64 {
+        let acceleration = 2.0; // this will eventually depend on the spacecraft - ie rocket equation time :)
+        self.get_total_dv() / acceleration
     }
 
     pub fn get_parent(&self) -> Entity {

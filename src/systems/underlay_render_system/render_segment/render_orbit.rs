@@ -4,7 +4,7 @@ use crate::{state::State, components::trajectory_component::segment::orbit::Orbi
 
 use super::{util::{add_orbit_line, get_entity_color}, visual_segment_point::VisualOrbitPoint};
 
-const ORBIT_MAX_ALPHA: f32 = 0.6;
+const ORBIT_MAX_ALPHA: f32 = 0.3;
 const TESSELLATION_THRESHOLD: f64 = 5000.0;
 
 // struct ScreenLines {

@@ -3,7 +3,7 @@ use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::
 use eframe::{egui::{Context, Ui}, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_objects, spacecraft_prediction::predict_spacecraft_objects}}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, object_selection_system::object_selection_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_objects, spacecraft_prediction::predict_all_spacecraft}, debug_system::debug_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 pub struct State {
     pub resources: Resources,
@@ -11,6 +11,7 @@ pub struct State {
     pub mouse_over_any_element_cache: bool,
     pub mouse_over_any_element: bool,
     pub time_step_description: TimeStepDescription,
+    pub debug_mode: bool,
     pub time: f64,
     pub delta_time: f64,
     pub last_frame: Instant,
@@ -39,6 +40,7 @@ impl State {
             mouse_over_any_element_cache: false,
             mouse_over_any_element: false,
             time_step_description: TimeStepDescription::Level(1),
+            debug_mode: false,
             time: 0.0,
             delta_time: 0.0,
             last_frame: Instant::now(),
@@ -52,7 +54,7 @@ impl State {
         };
         state.init_objects(sun);
         predict_celestial_objects(&mut state, 10000000.0);
-        predict_spacecraft_objects(&mut state, 10000000.0);
+        predict_all_spacecraft(&mut state, 10000000.0);
         state
     }
 
@@ -74,7 +76,8 @@ impl State {
             vec2(0.4055e9 * f64::cos(2.0), 0.4055e9 * f64::sin(2.0)), vec2(0.970e3 * f64::cos(2.0 + PI / 2.0), 0.970e3 * f64::sin(2.0 + PI / 2.0)), 
             //vec2(0.4055e9 * f64::cos(30.0), 0.4055e9 * f64::sin(30.0)), vec2(-1.303e3 * f64::cos(30.0 + PI / 2.0), -1.303e3 * f64::sin(30.0 + PI / 2.0)), 
             7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(-0.987e4, 0.0), 1.0e3);
+        let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(-0.987e4, 0.0), 1.0e3);
+        self.selected_entity = spacecraft;
     }
 
     pub fn get_time_step(&self) -> f64 {
@@ -101,6 +104,7 @@ impl eframe::App for State {
         trajectory_update_system(self);
         camera_update_system(self, context);
         orbit_click_system(self, context);
+        debug_system(self, context);
         orbit_point_toolbar_system(self, context);
         underlay_render_system(self, context);
         was_mouse_over_any_element_last_frame_system(self);

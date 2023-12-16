@@ -1,4 +1,5 @@
 pub mod camera_update_system;
+pub mod debug_system;
 pub mod delta_time_update_system;
 pub mod icon_precedence_system;
 pub mod mouse_over_any_element_system;

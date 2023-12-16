@@ -6,14 +6,6 @@ use crate::{state::State, storage::entity_allocator::Entity, components::traject
 
 pub type SoiFunction = Box<dyn Fn(&State, &Entity) -> Option<f64>>;
 
-pub fn is_celestial_body(state: &State, entity: Entity) -> bool {
-    state.components.trajectory_components.get(&entity).is_some() && state.components.celestial_body_components.get(&entity).is_some()
-}
-
-pub fn is_spacecraft(state: &State, entity: Entity) -> bool {
-    state.components.trajectory_components.get(&entity).is_some() && state.components.celestial_body_components.get(&entity).is_none()
-}
-
 fn position_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) -> DVec2 {
     state.components.position_components.get(entity).unwrap().get_absolute_position()- state.components.position_components.get(parent).unwrap().get_absolute_position()
 }

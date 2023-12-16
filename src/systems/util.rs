@@ -63,3 +63,64 @@ pub fn get_all_entity_children(state: &State, entities: &Vec<Entity>) -> Vec<Ent
     }
     new_entities
 }
+
+pub fn format_time(time: f64) -> String {
+    let years_quotient = f64::floor(time / (360.0 * 24.0 * 60.0 * 60.0));
+    let years_remainder = time % (360.0 * 24.0 * 60.0 * 60.0);
+    let days_quotient = f64::floor(years_remainder / (24.0 * 60.0 * 60.0));
+    let days_remainder = years_remainder % (24.0 * 60.0 * 60.0);
+    let hours_quotient = f64::floor(days_remainder / (60.0 * 60.0));
+    let hours_remainder = days_remainder % (60.0 * 60.0);
+    let minutes_quotient = f64::floor(hours_remainder / 60.0);
+    let seconds = f64::round(hours_remainder % 60.0);
+    if years_quotient != 0.0 {
+        "".to_string()
+            + years_quotient.to_string().as_str() + "y"
+            + days_quotient.to_string().as_str() + "d"
+            + hours_quotient.to_string().as_str() + "h"
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else if days_quotient != 0.0 {
+        "".to_string()
+            + days_quotient.to_string().as_str() + "d"
+            + hours_quotient.to_string().as_str() + "h"
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else if hours_quotient != 0.0 {
+        "".to_string()
+            + hours_quotient.to_string().as_str() + "h"
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else if minutes_quotient != 0.0 {
+        "".to_string()
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else {
+        "".to_string()
+            + seconds.to_string().as_str() + "s"
+    }
+}
+
+pub fn is_celestial_body(state: &State, entity: Entity) -> bool {
+    state.components.trajectory_components.get(&entity).is_some() && state.components.celestial_body_components.get(&entity).is_some()
+}
+
+pub fn is_spacecraft(state: &State, entity: Entity) -> bool {
+    state.components.trajectory_components.get(&entity).is_some() && state.components.celestial_body_components.get(&entity).is_none()
+}
+
+pub fn sync_entity_to_time(state: &mut State, entity: &Entity, time: f64) {
+    let mut segment = get_segment_at_time(state, entity, time);
+    let delta_time = time - segment.get_start_time();
+    segment.reset();
+    segment.update(delta_time);
+    sync_to_segment(state, segment, entity)
+}
+
+pub fn sync_celestial_bodies_to_time(state: &mut State, time: f64) {
+    for entity in state.components.entity_allocator.get_entities() {
+        if is_celestial_body(state, entity) {
+            sync_entity_to_time(state, &entity, time);
+        }
+    }
+}

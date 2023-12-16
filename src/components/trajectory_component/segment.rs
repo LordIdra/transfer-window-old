@@ -85,6 +85,26 @@ impl Segment {
         }
     }
 
+    pub fn get_position_at_time(&self, time: f64) -> DVec2 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_point_at_time(time).get_position(),
+            Segment::Orbit(orbit) => {
+                let theta = orbit.borrow().get_theta_from_time(time);
+                orbit.borrow().get_position_from_theta(theta)
+            }
+        }
+    }
+
+    pub fn get_velocity_at_time(&self, time: f64) -> DVec2 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_point_at_time(time).get_velocity(),
+            Segment::Orbit(orbit) => {
+                let theta = orbit.borrow().get_theta_from_time(time);
+                orbit.borrow().get_velocity_from_theta(theta)
+            }
+        }
+    }
+
     pub fn reset(&self) {
         match self {
             Segment::Burn(burn) => burn.borrow_mut().reset(),

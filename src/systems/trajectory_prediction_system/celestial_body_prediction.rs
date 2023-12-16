@@ -1,6 +1,6 @@
-use crate::{components::trajectory_component::segment::Segment, state::State, storage::entity_allocator::Entity, systems::util::{update_position_and_velocity, sync_to_trajectory}};
+use crate::{components::trajectory_component::segment::Segment, state::State, storage::entity_allocator::Entity, systems::util::{update_position_and_velocity, sync_to_trajectory, is_celestial_body}};
 
-use super::util::{is_celestial_body, update_parent_for_prediction};
+use super::util::update_parent_for_prediction;
 
 const SIMULATION_TIME_STEP: f64 = 40.0;
 

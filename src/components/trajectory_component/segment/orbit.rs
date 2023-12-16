@@ -28,6 +28,46 @@ impl Orbit {
         Self { parent, conic, start_point, end_point, current_point }
     }
 
+    pub fn get_start_time(&self) -> f64 {
+        self.start_point.get_time()
+    }
+
+    pub fn get_start_position(&self) -> DVec2 {
+        self.start_point.get_position()
+    }
+    
+    pub fn get_start_velocity(&self) -> DVec2 {
+        self.start_point.get_velocity()
+    }
+
+    pub fn get_current_time(&self) -> f64 {
+        self.current_point.get_time()
+    }
+
+    pub fn get_current_position(&self) -> DVec2 {
+        self.current_point.get_position()
+    }
+
+    pub fn get_current_velocity(&self) -> DVec2 {
+        self.current_point.get_velocity()
+    }
+
+    pub fn get_current_true_anomaly(&self) -> f64 {
+        self.current_point.get_theta()
+    }
+
+    pub fn get_end_time(&self) -> f64 {
+        self.end_point.get_time()
+    }
+
+    pub fn get_end_position(&self) -> DVec2 {
+        self.end_point.get_position()
+    }
+    
+    pub fn get_end_velocity(&self) -> DVec2 {
+        self.end_point.get_velocity()
+    }
+
     pub fn get_remaining_angle(&self) -> f64 {
         // If we have any full orbits remaining, only return up to 2pi
         if self.get_remaining_orbits() > 0 {
@@ -48,7 +88,7 @@ impl Orbit {
         }
     }
 
-    fn get_remaining_orbits(&self) -> i32 {
+    pub fn get_remaining_orbits(&self) -> i32 {
         self.conic.get_remaining_orbits(self.end_point.get_time() - self.current_point.get_time())
     }
 
@@ -64,6 +104,10 @@ impl Orbit {
         self.conic.get_semi_minor_axis()
     }
 
+    pub fn get_eccentricity(&self) -> f64 {
+        self.conic.get_eccentricity()
+    }
+
     pub fn get_arugment_of_periapsis(&self) -> f64 {
         self.conic.get_argument_of_periapsis()
     }
@@ -74,6 +118,10 @@ impl Orbit {
 
     pub fn get_position_from_theta(&self, theta: f64) -> DVec2 {
         self.conic.get_position(theta)
+    }
+
+    pub fn get_velocity_from_theta(&self, theta: f64) -> DVec2 {
+        self.conic.get_velocity(self.get_position_from_theta(theta), theta)
     }
 
     pub fn get_time_since_periapsis(&self, theta: f64) -> f64 {
@@ -102,32 +150,13 @@ impl Orbit {
         self.conic.is_time_between_points(&self.current_point, &self.end_point, time)
     }
 
-    pub fn get_start_time(&self) -> f64 {
-        self.start_point.get_time()
+    pub fn get_direction(&self) -> OrbitDirection {
+        self.conic.get_direction()
     }
 
-    pub fn get_current_position(&self) -> DVec2 {
-        self.current_point.get_position()
-    }
-
-    pub fn get_end_position(&self) -> DVec2 {
-        self.end_point.get_position()
-    }
-
-    pub fn get_end_time(&self) -> f64 {
-        self.end_point.get_time()
-    }
-
-    pub fn get_current_velocity(&self) -> DVec2 {
-        self.current_point.get_velocity()
-    }
-    
-    pub fn get_end_velocity(&self) -> DVec2 {
-        self.end_point.get_velocity()
-    }
-
-    pub fn get_current_true_anomaly(&self) -> f64 {
-        self.current_point.get_theta()
+    pub fn get_theta_from_time(&self, time: f64) -> f64 {
+        let time_since_periapsis = time - self.get_periapsis_time();
+        self.conic.get_theta_from_time_since_periapsis(time_since_periapsis)
     }
 
     pub fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
@@ -139,9 +168,7 @@ impl Orbit {
     }
 
     pub fn trim_to_end_at(&mut self, time: f64) {
-        let time_since_periapsis = time - self.get_periapsis_time();
-        let theta = self.conic.get_theta_from_time_since_periapsis(time_since_periapsis);
-        let position = self.conic.get_position(theta);
+        let position = self.conic.get_position(self.get_theta_from_time(time));
         self.end_point = OrbitPoint::new(&*self.conic, position, time);
     }
 

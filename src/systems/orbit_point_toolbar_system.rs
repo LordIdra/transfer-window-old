@@ -2,9 +2,9 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{egui::{Context, Window, Image, ImageButton, Ui, Layout, Label}, emath::{Align2, Align}, epaint::{self, Color32, Rounding, Shadow, Stroke}};
 
-use crate::{state::State, components::trajectory_component::segment::{Segment, burn::Burn}};
+use crate::{state::State, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::util::get_segment_at_time};
 
-use super::warp_update_system::WarpDescription;
+use super::{warp_update_system::WarpDescription, util::format_time, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft};
 
 fn warp_to_point(state: &mut State) {
     let click_point = state.orbit_click_point.as_ref().unwrap();
@@ -14,54 +14,29 @@ fn warp_to_point(state: &mut State) {
 fn create_burn(state: &mut State) {
     let time = state.orbit_click_point.as_ref().unwrap().get_time();
     let entity = state.orbit_click_point.as_ref().unwrap().get_entity();
-    let trajectory_component = state.components.trajectory_components.get_mut(&entity).unwrap();
-    let final_segment = trajectory_component.get_final_segment();
-    let final_orbit = final_segment.as_orbit();
-    let parent = final_orbit.borrow().get_parent();
-    let velocity_direction = final_orbit.borrow().get_end_velocity().normalize();
-    trajectory_component.remove_segments_after(time);
-    let burn_segment = Segment::Burn(Rc::new(RefCell::new(Burn::new(&state, entity, parent, velocity_direction, time))));
-    state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(burn_segment);
+    let segment_containing_burn = get_segment_at_time(state, &entity, time);
+    let orbit_containing_burn = segment_containing_burn.as_orbit();
+    let parent = orbit_containing_burn.borrow().get_parent();
+    let velocity_direction = orbit_containing_burn.borrow().get_end_velocity().normalize();
+    state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(time);
+    let burn = Burn::new(&state, entity, parent, velocity_direction, time);
+
+    // sync_celestial_bodies_to_time(state, burn.get_end_time());
+    // let orbit_start_position = state.components.position_components.get(&entity).unwrap().get_absolute_position();
+    // let orbit_start_velocity = state.components.velocity_components.get(&entity).unwrap().get_absolute_velocity();
+    
+    let orbit_start_time = burn.get_end_time();
+    let orbit = Orbit::new(&state.components, parent, burn.get_end_position(), burn.get_end_velocity(), burn.get_end_time());
+
+    state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Burn(Rc::new(RefCell::new(burn))));
+    state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));
+
+    predict_spacecraft(state, entity, orbit_start_time, 10000000.0)
 }
 
-fn format_time(time: f64) -> String {
-    let years_quotient = f64::floor(time / (360.0 * 24.0 * 60.0 * 60.0));
-    let years_remainder = time % (360.0 * 24.0 * 60.0 * 60.0);
-    let days_quotient = f64::floor(years_remainder / (24.0 * 60.0 * 60.0));
-    let days_remainder = years_remainder % (24.0 * 60.0 * 60.0);
-    let hours_quotient = f64::floor(days_remainder / (60.0 * 60.0));
-    let hours_remainder = days_remainder % (60.0 * 60.0);
-    let minutes_quotient = f64::floor(hours_remainder / 60.0);
-    let seconds = f64::round(hours_remainder % 60.0);
-    if years_quotient != 0.0 {
-        "T-".to_string()
-            + years_quotient.to_string().as_str() + "y"
-            + days_quotient.to_string().as_str() + "d"
-            + hours_quotient.to_string().as_str() + "h"
-            + minutes_quotient.to_string().as_str() + "m"
-            + seconds.to_string().as_str() + "s"
-    } else if days_quotient != 0.0 {
-        "T-".to_string()
-            + days_quotient.to_string().as_str() + "d"
-            + hours_quotient.to_string().as_str() + "h"
-            + minutes_quotient.to_string().as_str() + "m"
-            + seconds.to_string().as_str() + "s"
-    } else if hours_quotient != 0.0 {
-        "T-".to_string()
-            + hours_quotient.to_string().as_str() + "h"
-            + minutes_quotient.to_string().as_str() + "m"
-            + seconds.to_string().as_str() + "s"
-    } else if minutes_quotient != 0.0 {
-        "T-".to_string()
-            + minutes_quotient.to_string().as_str() + "m"
-            + seconds.to_string().as_str() + "s"
-    } else {
-        "T-".to_string()
-            + seconds.to_string().as_str() + "s"
-    }
-}
 
-fn draw_toolbar(state: &mut State, ui: &mut Ui) {
+
+fn draw(state: &mut State, ui: &mut Ui) {
     ui.with_layout(Layout::left_to_right(Align::Min), |ui| {
         let warp_image = Image::new(state.resources.get_texture_image("warp-here"))
             .bg_fill(Color32::TRANSPARENT)
@@ -84,7 +59,7 @@ fn draw_toolbar(state: &mut State, ui: &mut Ui) {
     });
 
     let remaining_time = state.orbit_click_point.as_ref().unwrap().get_time() - state.time;
-    ui.add(Label::new(format_time(remaining_time)));
+    ui.add(Label::new("T-".to_string() + format_time(remaining_time).as_str()));
 
     state.register_ui(ui);
 }
@@ -113,5 +88,5 @@ pub fn orbit_point_toolbar_system(state: &mut State, context: &Context) {
         .title_bar(false)
         .resizable(false)
         .anchor(Align2::LEFT_TOP, epaint::vec2(0.0, 0.0));
-    window.show(context, |ui| draw_toolbar(state, ui));
+    window.show(context, |ui| draw(state, ui));
 }
