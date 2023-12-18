@@ -68,7 +68,7 @@ fn update_icons(state: &mut State, selected: &Option<Entity>) {
     }
 }
 
-pub fn object_selection_system(state: &mut State, context: &Context) {
+pub fn icon_click_system(state: &mut State, context: &Context) {
     if state.mouse_over_any_element {
         return;
     }
@@ -91,8 +91,6 @@ pub fn object_selection_system(state: &mut State, context: &Context) {
                 state.selected_entity = selected;
                 state.camera.lock().unwrap().recenter();
             }
-        };
-
-        
+        };        
     });
 }

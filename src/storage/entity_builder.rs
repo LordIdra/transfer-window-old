@@ -1,7 +1,7 @@
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
-use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent, name_component::NameComponent, Components, icon_component::IconComponent}, storage::entity_allocator::Entity};
+use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent, name_component::NameComponent, Components, icon_component::{IconComponent, IconType}}, storage::entity_allocator::Entity};
 
 struct EntityBuilder {
     celestial_body_component: Option<CelestialBodyComponent>,
@@ -97,7 +97,7 @@ fn base_object_builder(type_name: String, name: String, absolute_position: DVec2
     let icon_size = 0.01;
     EntityBuilder::new()
         .with_name_component(NameComponent::new(name))
-        .with_icon_component(IconComponent::new(type_name, icon_size))
+        .with_icon_component(IconComponent::new(absolute_position, IconType::ObjectIcon, type_name, icon_size))
         .with_position_component(PositionComponent::new(absolute_position))
         .with_velocity_component(VelocityComponent::new(velocity))
         .with_mass_component(MassComponent::new(mass))

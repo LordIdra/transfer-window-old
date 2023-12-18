@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{components::Components, state::State};
+use crate::components::Components;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Entity {

@@ -2,9 +2,7 @@ use std::collections::HashSet;
 
 use eframe::epaint::Rgba;
 
-use crate::{storage::entity_allocator::Entity, state::State};
-
-use super::Components;
+use crate::storage::entity_allocator::Entity;
 
 pub struct CelestialBodyComponent {
     radius: f64,

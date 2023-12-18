@@ -1,6 +1,6 @@
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment, util::get_root_entities};
+use crate::{state::State, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
 /// So... why is this an entire function? Surely we can just find the parent component and use that to set the new parent?
 /// Well, the problem with that is that the old parent will still have the entity in its children
