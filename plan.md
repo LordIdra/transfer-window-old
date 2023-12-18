@@ -25,6 +25,7 @@ Fetaure tracker
 [x] Better algorithm for segment colors
 [x] API to add and execute burns using simple integrator
 [x] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
+[x] Fix tail thing
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
@@ -37,7 +38,7 @@ I am going to quit coding and go live in a hut in the woods tracker
 [x] What the fuck is happening with the deterministic prediction algorithm behaving non-deterministically (SOLVED IT)
 [ ] Ultra sophisticated tessellation initial point algorithm (fml)
 
-Technical debt tracker
+Bugs + technical debt tracker
 [x] Better method for hyperbola Kepler equation
 [x] check get_time_since_last_periapsis nonsense is actually needed
 [x] Kepler solver failing to converge
@@ -46,6 +47,7 @@ Technical debt tracker
 [ ] Spacecraft can't change SOI while performing burn
 [ ] Spacecraft burns aren't included in predictions
 [ ] Use perpendicular to velocity vector rather than displacement direction for visual points
+[x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 ECS
 - Each component is a representation of state of one part of an entity

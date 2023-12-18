@@ -90,7 +90,6 @@ impl Burn {
 
     pub fn get_point_at_time(&self, time: f64) -> BurnPoint {
         let time_after_start = time - self.get_start_time();
-        //println!("{} {}", time_after_start, self.points.len());
         if let Some(closest_previous_point) = self.points.get((time_after_start / TIME_STEP) as usize) {
             let delta_time = time_after_start % TIME_STEP;
             closest_previous_point.next(delta_time)

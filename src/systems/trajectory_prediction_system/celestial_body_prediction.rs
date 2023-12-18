@@ -1,6 +1,6 @@
 use eframe::epaint::ahash::{HashSet, HashSetExt};
 
-use crate::{components::trajectory_component::segment::Segment, state::State, storage::entity_allocator::Entity, systems::util::{update_position_and_velocity, sync_to_trajectory, is_celestial_body_with_trajectory, is_root_object}, util::get_root_entities};
+use crate::{components::trajectory_component::segment::Segment, state::State, storage::entity_allocator::Entity, systems::util::{update_position_and_velocity, sync_to_trajectory, is_celestial_body_with_trajectory, sync_celestial_bodies_to_time}, util::get_root_entities};
 
 use super::util::update_parent_for_prediction;
 
@@ -47,7 +47,7 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
             update_position_and_velocity(state, &entity, new_position, new_velocity);
         }
     }
-    update_parent_for_prediction(state, Box::new(get_sphere_of_influence), &entity, time, None);
+    update_parent_for_prediction(state, Box::new(get_sphere_of_influence), entity, time, None);
 }
 
 pub fn predict_celestial_bodies(state: &mut State, end_time: f64) {
@@ -64,9 +64,5 @@ pub fn predict_celestial_bodies(state: &mut State, end_time: f64) {
     }
 
     // Reset the position, velocity, and parent of all entities, since they are changed during prediction
-    for entity in state.components.entity_allocator.get_entities() {
-        if is_celestial_body_with_trajectory(state, entity) {
-            sync_to_trajectory(state, &entity);
-        }
-    }
+    sync_celestial_bodies_to_time(state, state.time);
 }

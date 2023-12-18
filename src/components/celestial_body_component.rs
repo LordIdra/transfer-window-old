@@ -2,7 +2,9 @@ use std::collections::HashSet;
 
 use eframe::epaint::Rgba;
 
-use crate::storage::entity_allocator::Entity;
+use crate::{storage::entity_allocator::Entity, state::State};
+
+use super::Components;
 
 pub struct CelestialBodyComponent {
     radius: f64,
@@ -28,11 +30,11 @@ impl CelestialBodyComponent {
         &self.children
     }
 
-    pub fn add_child(&mut self, child: Entity) {
-        self.children.insert(child);
+    pub fn add_child(&mut self, child_to_add: Entity) {
+        self.children.insert(child_to_add);
     }
 
-    pub fn remove_child(&mut self, child: &Entity) {
-        self.children.remove(child);
+    pub fn remove_child(&mut self, child_to_remove: Entity) {
+        self.children.remove(&child_to_remove);
     }
 }

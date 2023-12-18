@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::PI};
+use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::PI, cmp::Ordering};
 
 use eframe::{egui::{Context, Ui}, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
@@ -78,9 +78,6 @@ impl State {
             7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
         let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(-0.987e4, 0.0), 1.0e3);
         self.selected_entity = spacecraft;
-        for entity in self.components.entity_allocator.get_entities() {
-            println!("{}", self.components.name_components.get(&entity).unwrap().get_name());
-        }
     }
 
     pub fn get_time_step(&self) -> f64 {
@@ -94,6 +91,23 @@ impl State {
         if ui.ui_contains_pointer() {
             self.mouse_over_any_element_cache = true;
         }
+    }
+
+    /// Sorted from highest to lowest mass
+    pub fn get_entities_sorted_by_mass(&self) -> Vec<Entity> {
+        let mut entities: Vec<Entity> = self.components.entity_allocator.get_entities().into_iter().collect();
+        entities.sort_by(|a, b| {
+            let mass_a = self.components.mass_components.get(a).unwrap().get_mass();
+            let mass_b = self.components.mass_components.get(b).unwrap().get_mass();
+            if mass_a > mass_b {
+                Ordering::Less
+            } else if mass_a < mass_b {
+                Ordering::Greater
+            } else {
+                Ordering::Equal
+            }
+        });
+        entities
     }
 }
 

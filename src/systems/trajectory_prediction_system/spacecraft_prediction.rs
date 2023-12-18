@@ -1,4 +1,4 @@
-use crate::{state::State, systems::util::{update_position_and_velocity, get_segment_at_time, is_spacecraft_with_trajectory, sync_celestial_bodies_to_time, sync_entity_to_time}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
+use crate::{state::State, systems::util::{update_position_and_velocity, get_segment_at_time, is_spacecraft_with_trajectory, sync_celestial_bodies_to_time, sync_entity_to_time, update_parent}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
 use super::util::{SoiFunction, update_parent_for_prediction};
 
@@ -20,8 +20,8 @@ fn make_soi_function(time: f64) -> SoiFunction {
     })
 }
 
-fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
-    let trajectory_component = state.components.trajectory_components.get_mut(entity).unwrap();
+fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
+    let trajectory_component = state.components.trajectory_components.get_mut(&entity).unwrap();
     trajectory_component.predict(SIMULATION_TIME_STEP);
     let x;
     match trajectory_component.get_final_segment() {
@@ -29,15 +29,15 @@ fn update_for_prediction(state: &mut State, entity: &Entity, time: f64) {
             todo!()
         }
         Segment::Orbit(orbit) => {
-            // let new_parent = orbit.borrow().get_parent();
-            // update_parent(state, entity, &new_parent);
+            let new_parent = orbit.borrow().get_parent();
+            update_parent(state, entity, &new_parent);
             let new_position = orbit.borrow().get_end_position();
             let new_velocity = orbit.borrow().get_end_velocity();
-            update_position_and_velocity(state, entity, new_position, new_velocity);
-            x = orbit.borrow().get_end_position()
+            update_position_and_velocity(state, &entity, new_position, new_velocity);
+            x = orbit.borrow().get_end_position();
         }
     }
-    update_parent_for_prediction(state, make_soi_function(time), entity, time, Some(x));
+    update_parent_for_prediction(state, make_soi_function(time + SIMULATION_TIME_STEP), entity, time + SIMULATION_TIME_STEP, Some(x));
 }
 
 pub fn predict_spacecraft(state: &mut State, entity: Entity, start_time: f64, end_time: f64) {
@@ -48,11 +48,11 @@ pub fn predict_spacecraft(state: &mut State, entity: Entity, start_time: f64, en
 
     for _ in 0..time_steps {
         sync_celestial_bodies_to_time(state, time);
-        update_for_prediction(state, &entity, time);
+        update_for_prediction(state, entity, time);
         time += SIMULATION_TIME_STEP;
     }
 
-    sync_entity_to_time(state, &entity, state.time);
+    sync_entity_to_time(state, entity, state.time);
     sync_celestial_bodies_to_time(state, state.time);
 }
 
@@ -67,10 +67,10 @@ pub fn predict_all_spacecraft(state: &mut State, end_time: f64) {
     }
 
     for _ in 0..time_steps {
-        sync_celestial_bodies_to_time(state, time);
+        sync_celestial_bodies_to_time(state, time + SIMULATION_TIME_STEP);
         for entity in state.components.entity_allocator.get_entities() {
             if is_spacecraft_with_trajectory(state, entity) {
-                update_for_prediction(state, &entity, time);
+                update_for_prediction(state, entity, time);
             }
         }
         time += SIMULATION_TIME_STEP;
@@ -78,7 +78,7 @@ pub fn predict_all_spacecraft(state: &mut State, end_time: f64) {
 
     for entity in state.components.entity_allocator.get_entities() {
         if state.components.trajectory_components.get(&entity).is_some() {
-            sync_entity_to_time(state, &entity, state.time);
+            sync_entity_to_time(state, entity, state.time);
         }
     }
 }
