@@ -68,11 +68,11 @@ impl Burn {
     }
 
     pub fn get_end_position(&self) -> DVec2 {
-        self.points.first().unwrap().get_position()
+        self.points.last().unwrap().get_position()
     }
 
     pub fn get_end_velocity(&self) -> DVec2 {
-        self.points.first().unwrap().get_velocity()
+        self.points.last().unwrap().get_velocity()
     }
 
     pub fn get_total_dv(&self) -> f64 {

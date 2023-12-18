@@ -101,12 +101,16 @@ pub fn format_time(time: f64) -> String {
     }
 }
 
-pub fn is_celestial_body(state: &State, entity: Entity) -> bool {
+pub fn is_celestial_body_with_trajectory(state: &State, entity: Entity) -> bool {
     state.components.trajectory_components.get(&entity).is_some() && state.components.celestial_body_components.get(&entity).is_some()
 }
 
-pub fn is_spacecraft(state: &State, entity: Entity) -> bool {
+pub fn is_spacecraft_with_trajectory(state: &State, entity: Entity) -> bool {
     state.components.trajectory_components.get(&entity).is_some() && state.components.celestial_body_components.get(&entity).is_none()
+}
+
+pub fn is_root_object(state: &State, entity: &Entity) -> bool {
+    state.components.celestial_body_components.get(&entity).is_some() && state.components.parent_components.get(&entity).is_none()
 }
 
 pub fn sync_entity_to_time(state: &mut State, entity: &Entity, time: f64) {
@@ -119,7 +123,7 @@ pub fn sync_entity_to_time(state: &mut State, entity: &Entity, time: f64) {
 
 pub fn sync_celestial_bodies_to_time(state: &mut State, time: f64) {
     for entity in state.components.entity_allocator.get_entities() {
-        if is_celestial_body(state, entity) {
+        if is_celestial_body_with_trajectory(state, entity) {
             sync_entity_to_time(state, &entity, time);
         }
     }

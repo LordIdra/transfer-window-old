@@ -20,13 +20,8 @@ fn create_burn(state: &mut State) {
     let velocity_direction = orbit_containing_burn.borrow().get_end_velocity().normalize();
     state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(time);
     let burn = Burn::new(&state, entity, parent, velocity_direction, time);
-
-    // sync_celestial_bodies_to_time(state, burn.get_end_time());
-    // let orbit_start_position = state.components.position_components.get(&entity).unwrap().get_absolute_position();
-    // let orbit_start_velocity = state.components.velocity_components.get(&entity).unwrap().get_absolute_velocity();
-    
     let orbit_start_time = burn.get_end_time();
-    let orbit = Orbit::new(&state.components, parent, burn.get_end_position(), burn.get_end_velocity(), burn.get_end_time());
+    let orbit = Orbit::new(&state.components, parent, burn.get_end_position(), burn.get_end_velocity(), orbit_start_time);
 
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Burn(Rc::new(RefCell::new(burn))));
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));

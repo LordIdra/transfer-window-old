@@ -5,7 +5,7 @@ use crate::{components::trajectory_component::segment::burn::Burn, state::State,
 use super::{util::{add_orbit_line, get_entity_color}, visual_segment_point::VisualBurnPoint};
 
 const BURN_PATH_MAX_ALPHA: f32 = 1.0;
-const POINTS_PER_SECOND: f64 = 50.0;
+const POINTS_PER_SECOND: f64 = 0.5;
 
 fn create_visual_orbit_point(burn: &Burn, absolute_parent_position: DVec2, time: f64) -> VisualBurnPoint {
     let relative_point_position = burn.get_point_at_time(time).get_position() * SCALE_FACTOR;
@@ -19,7 +19,7 @@ fn get_visual_burn_points(state: &State, burn: &Burn) -> Vec<VisualBurnPoint> {
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position() * SCALE_FACTOR;
     let mut visual_points = vec![];
     let start_time = f64::max(burn.get_start_time(), state.time);
-    let points = (burn.get_end_time() - start_time * POINTS_PER_SECOND) as i32 + 1;
+    let points = ((burn.get_end_time() - start_time) * POINTS_PER_SECOND) as i32 + 1;
     for i in 0..points {
         let time = start_time + (i as f64 / points as f64) * burn.get_duration();
         visual_points.push(create_visual_orbit_point(burn, absolute_parent_position, time));

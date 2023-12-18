@@ -24,7 +24,7 @@ Fetaure tracker
 [X] Draw burn segments
 [x] Better algorithm for segment colors
 [x] API to add and execute burns using simple integrator
-[ ] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
+[x] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
@@ -34,7 +34,7 @@ Fetaure tracker
 
 I am going to quit coding and go live in a hut in the woods tracker
 [x] Wtf is up with being able to flip the zoom negative how the hell is that shit possible (it seems to have just gone away???)
-[ ] What the fuck is happening with the deterministic prediction algorithm behaving non-deterministically (?????????????????/)
+[x] What the fuck is happening with the deterministic prediction algorithm behaving non-deterministically (SOLVED IT)
 [ ] Ultra sophisticated tessellation initial point algorithm (fml)
 
 Technical debt tracker
