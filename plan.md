@@ -26,11 +26,12 @@ Fetaure tracker
 [x] API to add and execute burns using simple integrator
 [x] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [x] Fix tail thing
+[ ] Icon to indicate burn position
+[ ] Snap to burn icon instead of orbit point
+[ ] Possibility to select burn (more enums :D)
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
-[ ] Icon to indicate burn position
-[ ] Snap to burn icon instead of orbit point
 [ ] When symbol clicked, adjust parameters of the burn
 
 I am going to quit coding and go live in a hut in the woods tracker
@@ -42,11 +43,10 @@ Bugs + technical debt tracker
 [x] Better method for hyperbola Kepler equation
 [x] check get_time_since_last_periapsis nonsense is actually needed
 [x] Kepler solver failing to converge
-[ ] Janky method to find how many orbits completed in elliptical orbit (just floordiv or smth instead - can be method)
+[x] Janky method to find how many orbits completed in elliptical orbit (just floordiv or smth instead - can be method)
 [x] Would be better for Segment to store rc-refcell-xyz
 [ ] Spacecraft can't change SOI while performing burn
 [ ] Spacecraft burns aren't included in predictions
-[ ] Use perpendicular to velocity vector rather than displacement direction for visual points
 [x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 ECS

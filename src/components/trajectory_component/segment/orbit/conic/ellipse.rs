@@ -65,14 +65,8 @@ impl Conic for Ellipse {
         if let OrbitDirection::Clockwise = self.direction {
             true_anomaly = -true_anomaly;
         }
-        let mut theta = true_anomaly + self.argument_of_periapsis;
-        while theta > PI {
-            theta -= 2.0 * PI;
-        }
-        while theta < -PI {
-            theta += 2.0 * PI;
-        }
-        theta
+        let theta = true_anomaly + self.argument_of_periapsis;
+        theta % (2.0 * PI)
     }
 
     fn get_time_since_periapsis(&self, theta: f64) -> f64 {

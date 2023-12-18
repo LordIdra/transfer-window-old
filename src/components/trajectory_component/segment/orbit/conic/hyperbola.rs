@@ -53,14 +53,8 @@ impl Conic for Hyperbola {
         let mean_anomaly = x * time_since_periapsis * (self.eccentricity.powi(2) - 1.0).powf(3.0 / 2.0);
         let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
         let true_anomaly = 2.0 * f64::atan(f64::sqrt((self.eccentricity + 1.0) / (self.eccentricity - 1.0)) * f64::tanh(eccentric_anomaly / 2.0));
-        let mut theta = true_anomaly + self.argument_of_periapsis;
-        while theta > PI {
-            theta -= 2.0 * PI;
-        }
-        while theta < -PI {
-            theta += 2.0 * PI;
-        }
-        theta
+        let theta = true_anomaly + self.argument_of_periapsis;
+        theta % (2.0 * PI)
     }
 
     fn get_time_since_periapsis(&self, theta: f64) -> f64 {

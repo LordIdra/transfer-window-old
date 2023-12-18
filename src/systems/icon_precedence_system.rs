@@ -36,11 +36,7 @@ fn do_icon_precedence_for_layer(state: &mut State, entities_at_layer: &Vec<Entit
     for entity in entities_at_layer {
         if let Some(parent_component) = state.components.parent_components.get(entity) {
             let parent_visible = state.components.icon_components.get(&parent_component.get_parent()).unwrap().is_visible();
-            if !parent_visible {
-                state.components.icon_components.get_mut(entity).unwrap().set_visible(false);
-                continue;
-            }
-            let is_visible = !is_icon_overlapping(state, entity, entities_at_layer);
+            let is_visible = parent_visible && !is_icon_overlapping(state, entity, entities_at_layer);
             state.components.icon_components.get_mut(entity).unwrap().set_visible(is_visible);
         }
     }
