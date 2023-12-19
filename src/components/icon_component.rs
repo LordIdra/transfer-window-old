@@ -1,12 +1,30 @@
-use nalgebra_glm::DVec2;
+use std::{cell::RefCell, rc::Rc};
 
-#[derive(Clone, Copy)]
+use eframe::epaint::Rgba;
+
+use super::trajectory_component::segment::burn::Burn;
+
+#[derive(Clone)]
 pub enum IconType {
     ObjectIcon,
-    BurnIcon,
+    BurnIcon(Rc<RefCell<Burn>>),
 }
 
-#[derive(Clone, Copy)]
+impl IconType {
+    pub fn takes_precedence_over(&self, other: IconType) -> bool {
+        match self {
+            IconType::ObjectIcon => match other {
+                IconType::ObjectIcon => true,
+                IconType::BurnIcon(_) => true,
+            },
+            IconType::BurnIcon(_) => match other {
+                IconType::ObjectIcon => false,
+                IconType::BurnIcon(_) => true,
+            },
+        }
+    }
+}
+
 pub enum IconState {
     None,
     Hovered,
@@ -15,26 +33,22 @@ pub enum IconState {
 
 pub struct IconComponent {
     visible: bool,
-    position: DVec2,
     state: IconState,
-    icon_type: IconType,
-    icon_name: String,
-    icon_size: f64,
+    _type: IconType,
+    color: Rgba,
+    name: String,
+    size: f64,
 }
 
 impl IconComponent {
-    pub fn new(position: DVec2, icon_type: IconType, icon_name: String, icon_size: f64) -> Self {
+    pub fn new(_type: IconType, color: Rgba, name: String, size: f64) -> Self {
         let shown = true;
         let state = IconState::None;
-        Self { visible: shown, position, state, icon_type, icon_name, icon_size }
+        Self { visible: shown, state, _type, color, name, size }
     }
 
     pub fn set_visible(&mut self, visible: bool) {
         self.visible = visible;
-    }
-
-    pub fn set_position(&mut self, position: DVec2) {
-        self.position = position;
     }
 
     pub fn set_state(&mut self, state: IconState) {
@@ -45,23 +59,23 @@ impl IconComponent {
         self.visible
     }
 
-    pub fn get_position(&self) -> DVec2 {
-        self.position
-    }
-
     pub fn get_state(&self) -> &IconState {
         &self.state
     }
 
-    pub fn get_icon_type(&self) -> IconType {
-        self.icon_type
+    pub fn get_type(&self) -> IconType {
+        self._type.clone()
     }
 
-    pub fn get_icon_name(&self) -> &String {
-        &self.icon_name
+    pub fn get_color(&self) -> Rgba {
+        self.color
     }
 
-    pub fn get_icon_size(&self, zoom: f64) -> f64 {
-        self.icon_size / zoom
+    pub fn get_name(&self) -> &String {
+        &self.name
+    }
+
+    pub fn get_size(&self, zoom: f64) -> f64 {
+        self.size / zoom
     }
 }

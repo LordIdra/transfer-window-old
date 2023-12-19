@@ -68,6 +68,7 @@ fn draw_orbit(state: &mut State, ui: &mut Ui, orbit: &Orbit) {
     ui.label(format!("Semi-minor axis: {:.5e}", orbit.get_semi_minor_axis()));
     ui.label(format!("Semi-minor axis: {:.5}", orbit.get_eccentricity()));
     ui.label(format!("Argument of periapsis: {:.5e}", orbit.get_arugment_of_periapsis()));
+    ui.label(format!("Remaining angle: {:.5e}", orbit.get_remaining_angle()));
     ui.collapsing("Start", |ui| draw_absolute_point(state, ui, orbit.get_parent(), orbit.get_start_time(), orbit.get_start_position(), orbit.get_start_velocity()));
     ui.collapsing("Current", |ui| draw_absolute_point(state, ui, orbit.get_parent(), orbit.get_current_time(), orbit.get_current_position(), orbit.get_current_velocity()));
     ui.collapsing("End", |ui| draw_absolute_point(state, ui, orbit.get_parent(), orbit.get_end_time(), orbit.get_end_position(), orbit.get_end_velocity()));
@@ -88,7 +89,7 @@ fn draw_trajectory(state: &mut State, ui: &mut Ui, segments: VecDeque<Segment>) 
 }
 
 pub fn selected(state: &mut State, ui: &mut Ui) {
-    let entity = state.selected_entity.clone();
+    let entity = state.selected_object.clone();
     let absolute_position = state.components.position_components.get(&entity).unwrap().get_absolute_position();
     let absolute_velocity = state.components.velocity_components.get(&entity).unwrap().get_absolute_velocity();
     let relative_position = state.components.trajectory_components.get(&entity).unwrap().get_current_segment().get_current_position();

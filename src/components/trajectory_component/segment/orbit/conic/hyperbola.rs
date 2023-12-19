@@ -123,7 +123,7 @@ impl Conic for Hyperbola {
     
         let mut t = -0.05;
     
-        for _ in 0..8 {
+        for _ in 0..80 {
             let x = -a * f64::cosh(t);
             let y = -b * f64::sinh(t);
     
@@ -143,8 +143,8 @@ impl Conic for Hyperbola {
             let delta_t = delta_c / f64::sqrt(a.powi(2) * f64::sinh(t).powi(2) + b.powi(2) * f64::cosh(t).powi(2));
     
             t += delta_t;
-            t = f64::min(PI / 2.0, f64::max(0.0, t))
         }
+        println!("{}", t);
     
         vec2(copysign(a * f64::cosh(t), p[0]), copysign(b * f64::sinh(t), p[1]))
     }

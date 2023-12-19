@@ -1,4 +1,4 @@
-use crate::storage::{entity_allocator::EntityAllocator, index_storage::ComponentStorage};
+use crate::storage::{entity_allocator::{EntityAllocator, Entity}, index_storage::ComponentStorage};
 
 use self::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent, name_component::NameComponent, icon_component::IconComponent};
 
@@ -36,5 +36,17 @@ impl Components {
             trajectory_components: ComponentStorage::new(),
             velocity_components: ComponentStorage::new(),
         }
+    }
+
+    pub fn deallocate(&mut self, entity: Entity) {
+        self.entity_allocator.deallocate(entity);
+        self.celestial_body_components.remove(entity);
+        self.icon_components.remove(entity);
+        self.mass_components.remove(entity);
+        self.name_components.remove(entity);
+        self.parent_components.remove(entity);
+        self.position_components.remove(entity);
+        self.trajectory_components.remove(entity);
+        self.velocity_components.remove(entity);
     }
 }

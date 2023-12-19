@@ -139,12 +139,6 @@ fn on_new_click_point_exists(state: &mut State, input: &InputState, click_point:
     }
 }
 
-fn on_new_click_point_no_exists(state: &mut State, input: &InputState) {
-    if input.pointer.primary_clicked() {
-        state.orbit_click_point = None;
-    }
-}
-
 fn invalidate_click_point(state: &mut State) {
     if let Some(click_point) = &state.orbit_click_point {
         if click_point.orbit.borrow().is_finished() || !click_point.orbit.borrow().is_time_within_orbit(click_point.get_time()) {
@@ -161,8 +155,6 @@ pub fn orbit_click_system(state: &mut State, context: &Context) {
             if let Some(position) = input.pointer.latest_pos() {
                 if let Some(click_point) = get_click_point(state, screen_size, position) {
                     on_new_click_point_exists(state, input, &click_point);
-                } else {
-                    on_new_click_point_no_exists(state, input);
                 }
             }
         }

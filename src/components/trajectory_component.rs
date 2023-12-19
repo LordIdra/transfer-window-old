@@ -40,8 +40,14 @@ impl TrajectoryComponent {
     pub fn remove_segments_after(&mut self, time: f64) {
         loop {
             match self.segments.back_mut().unwrap() {
-                Segment::Burn(_) => {
-                    panic!("Attempt to splice a burn")
+                Segment::Burn(burn) => {
+                    if burn.borrow().get_start_time() > time {
+                        self.segments.pop_back();
+                    } else if burn.borrow().is_time_within_burn(time) {
+                        panic!("Attempt to splice a burn")
+                    } else {
+                        return;
+                    }
                 },
                 Segment::Orbit(orbit) => {
                     if orbit.borrow().get_start_time() > time {

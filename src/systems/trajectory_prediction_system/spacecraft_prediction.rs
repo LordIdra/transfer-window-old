@@ -23,7 +23,6 @@ fn make_soi_function(time: f64) -> SoiFunction {
 fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
     let trajectory_component = state.components.trajectory_components.get_mut(&entity).unwrap();
     trajectory_component.predict(SIMULATION_TIME_STEP);
-    let x;
     match trajectory_component.get_final_segment() {
         Segment::Burn(_) => {
             todo!()
@@ -34,10 +33,9 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
             let new_position = orbit.borrow().get_end_position();
             let new_velocity = orbit.borrow().get_end_velocity();
             update_position_and_velocity(state, &entity, new_position, new_velocity);
-            x = orbit.borrow().get_end_position();
         }
     }
-    update_parent_for_prediction(state, make_soi_function(time + SIMULATION_TIME_STEP), entity, time + SIMULATION_TIME_STEP, Some(x));
+    update_parent_for_prediction(state, make_soi_function(time + SIMULATION_TIME_STEP), entity, time + SIMULATION_TIME_STEP);
 }
 
 pub fn predict_spacecraft(state: &mut State, entity: Entity, start_time: f64, end_time: f64) {

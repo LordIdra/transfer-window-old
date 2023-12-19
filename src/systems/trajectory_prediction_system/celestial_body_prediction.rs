@@ -47,7 +47,7 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
             update_position_and_velocity(state, &entity, new_position, new_velocity);
         }
     }
-    update_parent_for_prediction(state, Box::new(get_sphere_of_influence), entity, time, None);
+    update_parent_for_prediction(state, Box::new(get_sphere_of_influence), entity, time);
 }
 
 pub fn predict_celestial_bodies(state: &mut State, end_time: f64) {

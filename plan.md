@@ -26,13 +26,24 @@ Fetaure tracker
 [x] API to add and execute burns using simple integrator
 [x] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [x] Fix tail thing
-[ ] Icon to indicate burn position
-[ ] Snap to burn icon instead of orbit point
-[ ] Possibility to select burn (more enums :D)
+[x] Selected icon takes precedence
+[x] Allow overwriting burns
+[x] Icon to indicate burn position
+[x] Snap to burn icon instead of orbit point
+[x] Possibility to select burn (more enums :D)
+[x] Fix deallocation (lol)
+[x] Fix icon overlap for icons on same body
+[ ] Fix not being able to select orbit points on sections of hyperbola?
+[ ] Deselect burn by clicking elsewhere as with orbit points
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
+[ ] Animate symbol dragging
 [ ] When symbol clicked, adjust parameters of the burn
+[ ] Show info about the burn in top left
+[ ] Allow burns to be deleted via top left button
+[ ] Allow pausing
+[ ] Paused text
 
 I am going to quit coding and go live in a hut in the woods tracker
 [x] Wtf is up with being able to flip the zoom negative how the hell is that shit possible (it seems to have just gone away???)
@@ -48,6 +59,7 @@ Bugs + technical debt tracker
 [ ] Spacecraft can't change SOI while performing burn
 [ ] Spacecraft burns aren't included in predictions
 [x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+[ ] Fix the weird desync that happens when creating a burn while another burn is happening
 
 ECS
 - Each component is a representation of state of one part of an entity

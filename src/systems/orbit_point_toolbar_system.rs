@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{egui::{Context, Window, Image, ImageButton, Ui, Layout, Label}, emath::{Align2, Align}, epaint::{self, Color32, Rounding, Shadow, Stroke}};
 
-use crate::{state::State, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::util::get_segment_at_time};
+use crate::{state::State, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::util::get_segment_at_time, storage::entity_builder::build_burn_icon};
 
 use super::{warp_update_system::WarpDescription, util::format_time, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft};
 
@@ -18,14 +18,17 @@ fn create_burn(state: &mut State) {
     let orbit_containing_burn = segment_containing_burn.as_orbit();
     let parent = orbit_containing_burn.borrow().get_parent();
     let velocity_direction = orbit_containing_burn.borrow().get_end_velocity().normalize();
+
     state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(time);
     let burn = Burn::new(&state, entity, parent, velocity_direction, time);
     let orbit_start_time = burn.get_end_time();
     let orbit = Orbit::new(&state.components, parent, burn.get_end_position(), burn.get_end_velocity(), orbit_start_time);
+    let burn = Rc::new(RefCell::new(burn));
 
-    state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Burn(Rc::new(RefCell::new(burn))));
+    state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Burn(burn.clone()));
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));
 
+    build_burn_icon(&mut state.components, burn, parent);
     predict_spacecraft(state, entity, orbit_start_time, 10000000.0)
 }
 

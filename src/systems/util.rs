@@ -43,8 +43,8 @@ pub fn sync_to_trajectory(state: &mut State, entity: Entity) {
 
 pub fn get_segment_at_time(state: &State, entity: &Entity, time: f64) -> Segment {
     for segment in state.components.trajectory_components.get(entity).unwrap().get_segments() {
-        let start_time = segment.as_orbit().borrow().get_start_time();
-        let end_time = segment.as_orbit().borrow().get_end_time();
+        let start_time = segment.get_start_time();
+        let end_time = segment.get_end_time();
         if time >= start_time && time <= end_time {
             return segment.clone();
         }

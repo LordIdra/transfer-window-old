@@ -11,16 +11,20 @@ pub enum TimeStepDescription {
 }
 
 fn update_time_step_level(state: &mut State, context: &Context) {
-    if let TimeStepDescription::Level(level) = &mut state.time_step_description {
-        context.input(|input| {
+    context.input(|input| {
+        if input.key_pressed(Key::F11) {
+            state.paused = !state.paused;
+        }
+
+        if let TimeStepDescription::Level(level) = &mut state.time_step_description {
             if input.key_pressed(Key::ArrowLeft) && *level > MIN_TIME_STEP_LEVELS {
                 *level -= 1;
             }
             if input.key_pressed(Key::ArrowRight) && *level < MAX_TIME_STEP_LEVELS {
                 *level += 1;
             }
-        });
-    }
+        }
+    });
 }
 
 fn update_time_step(state: &mut State) {

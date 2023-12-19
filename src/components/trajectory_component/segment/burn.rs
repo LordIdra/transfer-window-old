@@ -79,6 +79,10 @@ impl Burn {
         10000.0 //f64::sqrt(self.tangent_dv.powi(2) + self.normal_dv.powi(2))
     }
 
+    pub fn is_time_within_burn(&self, time: f64) -> bool {
+        time > self.get_start_time() && time < self.get_end_time()
+    }
+
     pub fn get_duration(&self) -> f64 {
         let acceleration = 2.0; // this will eventually depend on the spacecraft - ie rocket equation time :)
         self.get_total_dv() / acceleration

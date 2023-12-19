@@ -1,70 +1,107 @@
-use eframe::egui::{PointerButton, Context};
+use std::{rc::Rc, cell::RefCell};
+
+use eframe::egui::{PointerButton, Context, InputState};
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, storage::entity_allocator::Entity, util::get_root_entities, components::icon_component::IconState};
+use crate::{state::State, storage::entity_allocator::Entity, components::{icon_component::{IconState, IconType}, trajectory_component::segment::burn::Burn}};
 
-use super::util::get_all_entity_children;
-
-fn get_closest_entity_to_point(state: &State, position: DVec2, entities: &Vec<Entity>) -> (Option<Entity>, f64) {
+fn get_closest_icon_to_point(state: &State, position: DVec2) -> (Option<Entity>, f64) {
     let mut closest_distance_squared = f64::MAX;
     let mut closest_object = None;
-    for child in entities {
-        let icon_visible = state.components.icon_components.get(&child).unwrap().is_visible();
-        if !icon_visible {
-            continue;
-        }
-        let child_position = state.components.position_components.get(child).unwrap().get_absolute_position();
-        let distance_squared = (child_position - position).magnitude_squared();
-        if closest_distance_squared > distance_squared {
-            closest_distance_squared = distance_squared;
-            closest_object = Some(*child)
+    for child in state.components.entity_allocator.get_entities() {
+        if let Some(icon_component) = state.components.icon_components.get(&child) {
+            if !icon_component.is_visible() {
+                continue;
+            }
+            let child_position = state.components.position_components.get(&child).unwrap().get_absolute_position();
+            let distance_squared = (child_position - position).magnitude_squared();
+            if closest_distance_squared > distance_squared {
+                closest_distance_squared = distance_squared;
+                closest_object = Some(child)
+            }
         }
     }
     (closest_object, closest_distance_squared)
 }
 
-/// Search all entities to find if any are close enough to the clicked position to be selected
-/// This is done in a breadth-first way - ie, we first check all root objects, then all their children, etc
-/// This is so we don't end up, for example, selecting the moon when we double click what looks like the Earth at a distance
-fn breadth_first_radius_search(state: &State, position: DVec2, max_distance_to_select_squared: f64) -> Option<Entity> {
-    let mut entities = get_root_entities(state);
-    loop {
-        if entities.is_empty() {
-            // We've reached the final layer, since it contains no more entities, so no selected entity has been found
-            return None;
+fn find_closest_icon_to_mouse(state: &State, position: DVec2, max_distance_to_select_squared: f64) -> Option<Entity> {
+    let (closest_entity, closest_distance_squared) = get_closest_icon_to_point(state, position);
+    if let Some(closest_entity) = closest_entity {
+        if closest_distance_squared < max_distance_to_select_squared {
+            return Some(closest_entity);
         }
+    }
+    None
+}
 
-        let (closest_entity, closest_distance_squared) = get_closest_entity_to_point(state, position, &entities);
-        if let Some(closest_entity) = closest_entity {
-            if closest_distance_squared < max_distance_to_select_squared {
-                return Some(closest_entity);
+fn update_object_icon(state: &mut State, mouse_over: &Option<Entity>, entity: &Entity) {
+    let icon_component = state.components.icon_components.get_mut(entity).unwrap();
+
+    // If object is being hovered
+    if let Some(mouse_over) = mouse_over {
+        if *entity == *mouse_over {
+            icon_component.set_state(IconState::Hovered);
+            return;
+        }
+    }
+
+    // If object is actively selected
+    let parent = state.components.parent_components.get(entity).unwrap().get_parent();
+    if parent == state.selected_object {
+        icon_component.set_state(IconState::Selected);
+        return;
+    }
+
+    // If object is not being hovered and is not actively selected
+    icon_component.set_state(IconState::None)
+}
+
+fn update_burn_icon(state: &mut State, mouse_over: &Option<Entity>, burn: Rc<RefCell<Burn>>, entity: &Entity) {
+    let icon_component = state.components.icon_components.get_mut(entity).unwrap();
+
+    // If burn is being hovered
+    if let Some(mouse_over) = mouse_over {
+        if *entity == *mouse_over {
+            icon_component.set_state(IconState::Hovered);
+            return;
+        }
+    }
+
+    // If burn is actively selected
+    if let Some(selected_burn) = &state.selected_burn {
+        if burn.as_ptr() == selected_burn.as_ptr() {
+            icon_component.set_state(IconState::Selected);
+            return;
+        }
+    }
+
+    // If burn is not being hovered and is not actively selected
+    icon_component.set_state(IconState::None)
+}
+
+fn update_icons(state: &mut State, mouse_over: &Option<Entity>) {
+    for entity in &state.components.entity_allocator.get_entities() {
+        if let Some(icon_component) = state.components.icon_components.get(entity) {
+            match icon_component.get_type() {
+                IconType::ObjectIcon => update_object_icon(state, mouse_over, entity),
+                IconType::BurnIcon(burn) => update_burn_icon(state, mouse_over, burn, entity),
             }
         }
-
-        entities = get_all_entity_children(state, &entities);
     }
 }
 
-fn update_icons(state: &mut State, selected: &Option<Entity>) {
-    for entity in &state.components.entity_allocator.get_entities() {
-        if let Some(icon_component) = state.components.icon_components.get_mut(entity) {
-            // If entity is being hovered
-            if let Some(selected) = selected {
-                if *entity == *selected {
-                    icon_component.set_state(IconState::Hovered);
-                    continue;
-                }
-            }
+fn select_object(state: &mut State, input: &InputState, selected_icon: Entity) {
+    let new_selected_object = state.components.parent_components.get(&selected_icon).unwrap().get_parent();
+    // If we're changing the selected object, recenter the camera to focus on that object
+    if input.pointer.button_double_clicked(PointerButton::Primary) && new_selected_object != state.selected_object {
+        state.selected_object = new_selected_object;
+        state.camera.lock().unwrap().recenter();
+    }
+}
 
-            // If entity is actively selected
-            if *entity == state.selected_entity {
-                icon_component.set_state(IconState::Selected);
-                continue;
-            }
-
-            // If entity is not being hovered and is not actively selected
-            icon_component.set_state(IconState::None)
-        }
+fn select_burn(state: &mut State, input: &InputState, new_selected_burn: Rc<RefCell<Burn>>) {
+    if input.pointer.button_double_clicked(PointerButton::Primary) {
+        state.selected_burn = Some(new_selected_burn);
     }
 }
 
@@ -81,15 +118,14 @@ pub fn icon_click_system(state: &mut State, context: &Context) {
         let world_position = state.camera.lock().unwrap().window_space_to_world_space(screen_position, screen_rect);
         // This is necessary because we're about to compute distances in world spaces, and the maximum distance in world space to select depends on zoom
         let max_distance_to_select = state.camera.lock().unwrap().get_max_distance_to_select();
-        let selected = breadth_first_radius_search(state, world_position, max_distance_to_select.powi(2));
+        let mouse_over = find_closest_icon_to_mouse(state, world_position, max_distance_to_select.powi(2));
 
-        update_icons(state, &selected);
+        update_icons(state, &mouse_over);
 
-        if let Some(selected) = selected {
-            // If we're changing the selected object, recenter the camera to focus on that object
-            if input.pointer.button_double_clicked(PointerButton::Primary) && selected != state.selected_entity {
-                state.selected_entity = selected;
-                state.camera.lock().unwrap().recenter();
+        if let Some(selected_icon) = mouse_over {
+            match state.components.icon_components.get(&selected_icon).unwrap().get_type() {
+                IconType::ObjectIcon => select_object(state, input, selected_icon),
+                IconType::BurnIcon(burn) => select_burn(state, input, burn),
             }
         };        
     });

@@ -71,14 +71,10 @@ fn compute_new_parent_lower(state: &State, soi_function: &SoiFunction, entity: &
     entity_causing_highest_acceleration(state, entity, potential_children)
 }
 
-pub fn update_parent_for_prediction(state: &mut State, soi_function: SoiFunction, entity: Entity, time: f64, x: Option<DVec2>) {
+pub fn update_parent_for_prediction(state: &mut State, soi_function: SoiFunction, entity: Entity, time: f64) {
     let parent_component = state.components.parent_components.get(&entity).unwrap();
     let parent = parent_component.get_parent();
     if let Some(new_parent) = compute_new_parent_lower(state, &soi_function, &entity, &parent) {
-        if let Some(y) = x {
-            println!("switching from {} to {}", state.components.name_components.get(&parent).unwrap().get_name(), state.components.name_components.get(&new_parent).unwrap().get_name());
-            println!("end {:.3e}", y);
-        }
         change_parent(state, &entity, new_parent, time);
         update_parent(state, entity, &new_parent);
     } else if let Some(new_parent) = compute_new_parent_upper(state, &soi_function, &entity, &parent) {

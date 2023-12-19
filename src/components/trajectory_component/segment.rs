@@ -78,6 +78,13 @@ impl Segment {
         }
     }
 
+    pub fn get_end_time(&self) -> f64 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_end_time(),
+            Segment::Orbit(orbit) => orbit.borrow().get_end_time(),
+        }
+    }
+
     pub fn get_position_at_time(&self, time: f64) -> DVec2 {
         match self {
             Segment::Burn(burn) => burn.borrow().get_point_at_time(time).get_position(),
