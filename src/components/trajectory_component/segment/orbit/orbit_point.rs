@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use nalgebra_glm::DVec2;
 
 use super::conic::Conic;

@@ -8,7 +8,7 @@ use self::{conic::{Conic, new_conic}, orbit_point::OrbitPoint, orbit_direction::
 
 mod conic;
 pub mod orbit_direction;
-mod orbit_point;
+pub mod orbit_point;
 
 pub struct Orbit {
     parent: Entity,
@@ -28,44 +28,16 @@ impl Orbit {
         Self { parent, conic, start_point, end_point, current_point }
     }
 
-    pub fn get_start_time(&self) -> f64 {
-        self.start_point.get_time()
+    pub fn get_start_point(&self) -> &OrbitPoint {
+        &self.start_point
     }
 
-    pub fn get_start_position(&self) -> DVec2 {
-        self.start_point.get_position()
-    }
-    
-    pub fn get_start_velocity(&self) -> DVec2 {
-        self.start_point.get_velocity()
+    pub fn get_current_point(&self) -> &OrbitPoint {
+        &self.current_point
     }
 
-    pub fn get_current_time(&self) -> f64 {
-        self.current_point.get_time()
-    }
-
-    pub fn get_current_position(&self) -> DVec2 {
-        self.current_point.get_position()
-    }
-
-    pub fn get_current_velocity(&self) -> DVec2 {
-        self.current_point.get_velocity()
-    }
-
-    pub fn get_current_true_anomaly(&self) -> f64 {
-        self.current_point.get_theta()
-    }
-
-    pub fn get_end_time(&self) -> f64 {
-        self.end_point.get_time()
-    }
-
-    pub fn get_end_position(&self) -> DVec2 {
-        self.end_point.get_position()
-    }
-    
-    pub fn get_end_velocity(&self) -> DVec2 {
-        self.end_point.get_velocity()
+    pub fn get_end_point(&self) -> &OrbitPoint {
+        &self.end_point
     }
 
     pub fn get_remaining_angle(&self) -> f64 {
@@ -74,7 +46,18 @@ impl Orbit {
             return 2.0 * PI;
         }
 
-        let mut remaining_angle = self.end_point.get_theta() - self.current_point.get_theta();
+        let mut adjusted_end_theta = self.end_point.get_theta() % (2.0 * PI);
+        if adjusted_end_theta < 0.0 {
+            adjusted_end_theta += 2.0 * PI;
+        }
+        let mut adjusted_current_theta = self.current_point.get_theta() % (2.0 * PI);
+        if adjusted_current_theta < 0.0 {
+            adjusted_current_theta += 2.0 * PI;
+        }
+
+        println!("{} {}", adjusted_end_theta, adjusted_current_theta);
+
+        let mut remaining_angle = adjusted_end_theta - adjusted_current_theta;
         if let OrbitDirection::Clockwise = self.conic.get_direction() {
             if remaining_angle > 0.0 {
                 remaining_angle -= 2.0 * PI

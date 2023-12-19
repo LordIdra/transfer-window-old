@@ -92,11 +92,11 @@ fn get_visual_orbit_points(state: &State, orbit: &Orbit) -> Vec<VisualOrbitPoint
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position() * SCALE_FACTOR;
     let mut visual_orbit_points = vec![];
     let angle_to_rotate_through = orbit.get_remaining_angle();
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly()));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 0.25 * angle_to_rotate_through));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 0.5 * angle_to_rotate_through));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 0.75 * angle_to_rotate_through));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 1.0 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta()));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 0.25 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 0.5 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 0.75 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 1.0 * angle_to_rotate_through));
     let camera_position = state.camera.lock().unwrap().get_translation();
     let camera_zoom = state.camera.lock().unwrap().get_zoom();
     do_orbit_tessellation(visual_orbit_points, orbit, absolute_parent_position, camera_position, camera_zoom)

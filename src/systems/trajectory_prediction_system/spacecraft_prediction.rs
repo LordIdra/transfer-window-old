@@ -30,8 +30,8 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
         Segment::Orbit(orbit) => {
             let new_parent = orbit.borrow().get_parent();
             update_parent(state, entity, &new_parent);
-            let new_position = orbit.borrow().get_end_position();
-            let new_velocity = orbit.borrow().get_end_velocity();
+            let new_position = orbit.borrow().get_end_point().get_position();
+            let new_velocity = orbit.borrow().get_end_point().get_velocity();
             update_position_and_velocity(state, &entity, new_position, new_velocity);
         }
     }

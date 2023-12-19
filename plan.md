@@ -33,8 +33,8 @@ Fetaure tracker
 [x] Possibility to select burn (more enums :D)
 [x] Fix deallocation (lol)
 [x] Fix icon overlap for icons on same body
-[ ] Fix not being able to select orbit points on sections of hyperbola?
-[ ] Deselect burn by clicking elsewhere as with orbit points
+[x] Fix not being able to select orbit points on sections of hyperbola?
+[x] Deselect burn by clicking elsewhere as with orbit points
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
@@ -59,7 +59,9 @@ Bugs + technical debt tracker
 [ ] Spacecraft can't change SOI while performing burn
 [ ] Spacecraft burns aren't included in predictions
 [x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-[ ] Fix the weird desync that happens when creating a burn while another burn is happening
+[x] L A R G E hyperbola when creating burn on an existing hyperbola?????????????????? (it was the modulus thing lol)
+[ ] Use velocity perpendicular instead of displacement unit for trajectory visualisation to prevent different thicknesses
+[ ] Weird desync that happens when creating a burn while another burn is happening
 
 ECS
 - Each component is a representation of state of one part of an entity

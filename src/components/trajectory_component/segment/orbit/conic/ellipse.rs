@@ -66,7 +66,12 @@ impl Conic for Ellipse {
             true_anomaly = -true_anomaly;
         }
         let theta = true_anomaly + self.argument_of_periapsis;
-        theta % (2.0 * PI)
+        let theta = theta % (2.0 * PI);
+        if theta < 0.0 {
+            theta + 2.0 * PI
+        } else {
+            theta
+        }
     }
 
     fn get_time_since_periapsis(&self, theta: f64) -> f64 {

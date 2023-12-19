@@ -4,7 +4,7 @@ use crate::{storage::entity_allocator::Entity, state::State};
 
 use self::burn_point::BurnPoint;
 
-mod burn_point;
+pub mod burn_point;
 
 const TIME_STEP: f64 = 0.1;
 
@@ -39,40 +39,16 @@ impl Burn {
         Self { parent, tangent_direction, tangent_dv, normal_dv, current_point: start_point, points }
     }
 
-    pub fn get_start_time(&self) -> f64 {
-        self.points.first().unwrap().get_time()
+    pub fn get_start_point(&self) -> &BurnPoint {
+        self.points.first().unwrap()
     }
 
-    pub fn get_start_position(&self) -> DVec2 {
-        self.points.first().unwrap().get_position()
+    pub fn get_current_point(&self) -> &BurnPoint {
+        &self.current_point
     }
-
-    pub fn get_start_velocity(&self) -> DVec2 {
-        self.points.first().unwrap().get_velocity()
-    }
-
-    pub fn get_current_time(&self) -> f64 {
-        self.current_point.get_time()
-    }
-
-    pub fn get_current_position(&self) -> DVec2 {
-        self.current_point.get_position()
-    }
-
-    pub fn get_current_velocity(&self) -> DVec2 {
-        self.current_point.get_velocity()
-    }
-
-    pub fn get_end_time(&self) -> f64 {
-        self.points.last().unwrap().get_time()
-    }
-
-    pub fn get_end_position(&self) -> DVec2 {
-        self.points.last().unwrap().get_position()
-    }
-
-    pub fn get_end_velocity(&self) -> DVec2 {
-        self.points.last().unwrap().get_velocity()
+    
+    pub fn get_end_point(&self) -> &BurnPoint {
+        self.points.last().unwrap()
     }
 
     pub fn get_total_dv(&self) -> f64 {
@@ -80,7 +56,7 @@ impl Burn {
     }
 
     pub fn is_time_within_burn(&self, time: f64) -> bool {
-        time > self.get_start_time() && time < self.get_end_time()
+        time > self.get_start_point().get_time() && time < self.get_end_point().get_time()
     }
 
     pub fn get_duration(&self) -> f64 {
@@ -93,7 +69,7 @@ impl Burn {
     }
 
     pub fn get_point_at_time(&self, time: f64) -> BurnPoint {
-        let time_after_start = time - self.get_start_time();
+        let time_after_start = time - self.get_start_point().get_time();
         if let Some(closest_previous_point) = self.points.get((time_after_start / TIME_STEP) as usize) {
             let delta_time = time_after_start % TIME_STEP;
             closest_previous_point.next(delta_time)

@@ -17,12 +17,12 @@ fn create_burn(state: &mut State) {
     let segment_containing_burn = get_segment_at_time(state, &entity, time);
     let orbit_containing_burn = segment_containing_burn.as_orbit();
     let parent = orbit_containing_burn.borrow().get_parent();
-    let velocity_direction = orbit_containing_burn.borrow().get_end_velocity().normalize();
+    let velocity_direction = orbit_containing_burn.borrow().get_end_point().get_velocity().normalize();
 
     state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(time);
     let burn = Burn::new(&state, entity, parent, velocity_direction, time);
-    let orbit_start_time = burn.get_end_time();
-    let orbit = Orbit::new(&state.components, parent, burn.get_end_position(), burn.get_end_velocity(), orbit_start_time);
+    let orbit_start_time = burn.get_end_point().get_time();
+    let orbit = Orbit::new(&state.components, parent, burn.get_end_point().get_position(), burn.get_end_point().get_velocity(), orbit_start_time);
     let burn = Rc::new(RefCell::new(burn));
 
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Burn(burn.clone()));

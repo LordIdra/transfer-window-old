@@ -1,6 +1,6 @@
 use eframe::epaint::ahash::{HashSet, HashSetExt};
 
-use crate::{components::trajectory_component::segment::Segment, state::State, storage::entity_allocator::Entity, systems::util::{update_position_and_velocity, sync_to_trajectory, is_celestial_body_with_trajectory, sync_celestial_bodies_to_time}, util::get_root_entities};
+use crate::{components::trajectory_component::segment::Segment, state::State, storage::entity_allocator::Entity, systems::util::{update_position_and_velocity, is_celestial_body_with_trajectory, sync_celestial_bodies_to_time}, util::get_root_entities};
 
 use super::util::update_parent_for_prediction;
 
@@ -42,8 +42,8 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
             panic!("Attempt to update a burn segment for celestial body prediction")
         }
         Segment::Orbit(orbit) => {
-            let new_position = orbit.borrow().get_end_position();
-            let new_velocity = orbit.borrow().get_end_velocity();
+            let new_position = orbit.borrow().get_end_point().get_position();
+            let new_velocity = orbit.borrow().get_end_point().get_velocity();
             update_position_and_velocity(state, &entity, new_position, new_velocity);
         }
     }

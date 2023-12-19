@@ -18,8 +18,8 @@ fn get_visual_burn_points(state: &State, burn: &Burn) -> Vec<VisualBurnPoint> {
     let parent = burn.get_parent();
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position() * SCALE_FACTOR;
     let mut visual_points = vec![];
-    let start_time = f64::max(burn.get_start_time(), state.time);
-    let points = ((burn.get_end_time() - start_time) * POINTS_PER_SECOND) as i32 + 1;
+    let start_time = f64::max(burn.get_start_point().get_time(), state.time);
+    let points = ((burn.get_end_point().get_time() - start_time) * POINTS_PER_SECOND) as i32 + 1;
     for i in 0..points {
         let time = start_time + (i as f64 / points as f64) * burn.get_duration();
         visual_points.push(create_visual_orbit_point(burn, absolute_parent_position, time));

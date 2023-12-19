@@ -54,7 +54,12 @@ impl Conic for Hyperbola {
         let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
         let true_anomaly = 2.0 * f64::atan(f64::sqrt((self.eccentricity + 1.0) / (self.eccentricity - 1.0)) * f64::tanh(eccentric_anomaly / 2.0));
         let theta = true_anomaly + self.argument_of_periapsis;
-        theta % (2.0 * PI)
+        let theta = theta % (2.0 * PI);
+        if theta < 0.0 {
+            theta + 2.0 * PI
+        } else {
+            theta
+        }
     }
 
     fn get_time_since_periapsis(&self, theta: f64) -> f64 {
@@ -144,7 +149,6 @@ impl Conic for Hyperbola {
     
             t += delta_t;
         }
-        println!("{}", t);
     
         vec2(copysign(a * f64::cosh(t), p[0]), copysign(b * f64::sinh(t), p[1]))
     }

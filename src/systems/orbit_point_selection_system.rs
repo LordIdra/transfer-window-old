@@ -34,7 +34,7 @@ impl OrbitClickPoint {
 fn create_new_click_point(entity: &Entity, orbit: &Rc<RefCell<Orbit>>, click_distance: f64, max_distance_to_select: f64, mut time_since_periapsis: f64) -> Option<OrbitClickPoint> {
     let mut click_point = OrbitClickPoint { entity: entity.clone(), click_distance, orbit: orbit.clone(), time_since_periapsis };
     if let Some(period) = orbit.borrow().get_period() {
-        while !orbit.borrow().is_time_within_orbit(click_point.get_time()) && click_point.get_time() < orbit.borrow().get_end_time() {
+        while !orbit.borrow().is_time_within_orbit(click_point.get_time()) && click_point.get_time() < orbit.borrow().get_end_point().get_time() {
             time_since_periapsis += period;
             click_point = OrbitClickPoint { entity: entity.clone(), click_distance, orbit: orbit.clone(), time_since_periapsis }
         }

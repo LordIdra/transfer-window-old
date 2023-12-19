@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{state::State, storage::entity_allocator::Entity, components::{icon_component::IconType, trajectory_component::segment::burn::Burn}};
 
 pub fn cleanup_burn_icon(state: &mut State, burn: Rc<RefCell<Burn>>, entity: Entity) {
-    if burn.borrow().get_start_time() < state.time {
+    if burn.borrow().get_start_point().get_time() < state.time {
         state.components.deallocate(entity);
         state.selected_burn = None;
     }
