@@ -8,7 +8,7 @@ pub fn deselect_system(state: &mut State, context: &Context) {
     }
     context.input(|input| {
         if input.pointer.button_clicked(PointerButton::Primary) {
-            state.selected_burn = None;
+            state.selected_burn_icon = None;
             state.orbit_click_point = None;
         }
     })

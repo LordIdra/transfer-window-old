@@ -35,15 +35,17 @@ Fetaure tracker
 [x] Fix icon overlap for icons on same body
 [x] Fix not being able to select orbit points on sections of hyperbola?
 [x] Deselect burn by clicking elsewhere as with orbit points
+[x] Allow burns to be deleted via top left button
+[x] Show info about the burn in top left
+[ ] Select burn immediately after creation
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
-[ ] Draw symbols prograde, retrograde, radial in and radial out
+[ ] Draw symbols prograde, retrograde, radial in and radial out 
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
 [ ] Animate symbol dragging
 [ ] When symbol clicked, adjust parameters of the burn
-[ ] Show info about the burn in top left
-[ ] Allow burns to be deleted via top left button
-[ ] Allow pausing
+[x] Allow pausing
 [ ] Paused text
+[ ] Add a few seconds to warp time
 
 I am going to quit coding and go live in a hut in the woods tracker
 [x] Wtf is up with being able to flip the zoom negative how the hell is that shit possible (it seems to have just gone away???)
@@ -56,12 +58,12 @@ Bugs + technical debt tracker
 [x] Kepler solver failing to converge
 [x] Janky method to find how many orbits completed in elliptical orbit (just floordiv or smth instead - can be method)
 [x] Would be better for Segment to store rc-refcell-xyz
-[ ] Spacecraft can't change SOI while performing burn
-[ ] Spacecraft burns aren't included in predictions
 [x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 [x] L A R G E hyperbola when creating burn on an existing hyperbola?????????????????? (it was the modulus thing lol)
-[ ] Use velocity perpendicular instead of displacement unit for trajectory visualisation to prevent different thicknesses
-[ ] Weird desync that happens when creating a burn while another burn is happening
+[ ] Spacecraft can't change SOI while performing burn
+[ ] Spacecraft burns aren't included in predictions
+[x] Use velocity perpendicular instead of displacement unit for trajectory visualisation to prevent different thicknesses
+[x] Weird desync that happens when creating a burn while another burn is happening
 
 ECS
 - Each component is a representation of state of one part of an entity
@@ -83,3 +85,5 @@ Systems
 - TrajectoryRenderSystem
 - CelestialBodyRenderSystem
 - ObjectIconSystem
+
+Untermairhof01

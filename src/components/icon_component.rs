@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Weak};
 
 use eframe::epaint::Rgba;
 
@@ -7,7 +7,7 @@ use super::trajectory_component::segment::burn::Burn;
 #[derive(Clone)]
 pub enum IconType {
     ObjectIcon,
-    BurnIcon(Rc<RefCell<Burn>>),
+    BurnIcon(Weak<RefCell<Burn>>),
 }
 
 impl IconType {
@@ -22,6 +22,13 @@ impl IconType {
                 IconType::BurnIcon(_) => true,
             },
         }
+    }
+
+    pub fn as_burn_icon(&self) -> Weak<RefCell<Burn>> {
+        let IconType::BurnIcon(burn) = self else {
+            panic!("Attempt to get non-burn-icon as burn icon")
+        };
+        burn.clone()
     }
 }
 

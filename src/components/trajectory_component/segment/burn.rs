@@ -19,6 +19,7 @@ fn compute_burn_points(start_point: &BurnPoint, start_time: f64, duration: f64) 
 }
 
 pub struct Burn {
+    entity: Entity,
     parent: Entity,
     tangent_direction: DVec2,
     tangent_dv: f64,
@@ -36,7 +37,7 @@ impl Burn {
         let duration = total_dv / acceleration;
         let start_point = BurnPoint::new(state, entity, parent, start_time);
         let points = compute_burn_points(&start_point, start_time, duration);
-        Self { parent, tangent_direction, tangent_dv, normal_dv, current_point: start_point, points }
+        Self { entity, parent, tangent_direction, tangent_dv, normal_dv, current_point: start_point, points }
     }
 
     pub fn get_start_point(&self) -> &BurnPoint {
@@ -49,6 +50,10 @@ impl Burn {
     
     pub fn get_end_point(&self) -> &BurnPoint {
         self.points.last().unwrap()
+    }
+
+    pub fn get_entity(&self) -> Entity {
+        self.entity
     }
 
     pub fn get_total_dv(&self) -> f64 {

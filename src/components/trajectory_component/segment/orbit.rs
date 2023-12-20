@@ -55,8 +55,6 @@ impl Orbit {
             adjusted_current_theta += 2.0 * PI;
         }
 
-        println!("{} {}", adjusted_end_theta, adjusted_current_theta);
-
         let mut remaining_angle = adjusted_end_theta - adjusted_current_theta;
         if let OrbitDirection::Clockwise = self.conic.get_direction() {
             if remaining_angle > 0.0 {

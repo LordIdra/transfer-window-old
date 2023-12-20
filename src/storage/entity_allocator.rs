@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use crate::components::Components;
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Entity {
     index: usize,
@@ -15,10 +13,6 @@ impl Entity {
 
     pub fn get_generation(&self) -> usize {
         self.generation
-    }
-
-    pub fn deallocate(self, components: &mut Components) {
-        components.entity_allocator.deallocate(self);
     }
 }
 

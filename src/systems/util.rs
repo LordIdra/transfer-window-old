@@ -52,17 +52,6 @@ pub fn get_segment_at_time(state: &State, entity: &Entity, time: f64) -> Segment
     panic!("Failed to move to time; no trajectory segment contains the requested time")
 }
 
-
-pub fn get_all_entity_children(state: &State, entities: &Vec<Entity>) -> Vec<Entity> {
-    let mut new_entities = vec![];
-    for entity in entities {
-        if let Some(celestial_body_component) = state.components.celestial_body_components.get(entity) {
-            new_entities.extend(celestial_body_component.get_children());
-        }
-    }
-    new_entities
-}
-
 pub fn format_time(time: f64) -> String {
     let years_quotient = f64::floor(time / (360.0 * 24.0 * 60.0 * 60.0));
     let years_remainder = time % (360.0 * 24.0 * 60.0 * 60.0);

@@ -1,4 +1,4 @@
-use nalgebra_glm::DVec2;
+use nalgebra_glm::{DVec2, vec2};
 
 use crate::{components::trajectory_component::segment::burn::Burn, state::State, camera::SCALE_FACTOR, storage::entity_allocator::Entity};
 
@@ -10,8 +10,9 @@ const POINTS_PER_SECOND: f64 = 0.5;
 fn create_visual_orbit_point(burn: &Burn, absolute_parent_position: DVec2, time: f64) -> VisualBurnPoint {
     let relative_point_position = burn.get_point_at_time(time).get_position() * SCALE_FACTOR;
     let absolute_position = absolute_parent_position + relative_point_position;
-    let displacement_direction = relative_point_position.normalize();
-    VisualBurnPoint { absolute_position, displacement_direction }
+    let velocity_perpendicular = burn.get_point_at_time(time).get_velocity().normalize();
+    let velocity_perpendicular = vec2(-velocity_perpendicular.y, velocity_perpendicular.x);
+    VisualBurnPoint { absolute_position, velocity_perpendicular }
 }
 
 fn get_visual_burn_points(state: &State, burn: &Burn) -> Vec<VisualBurnPoint> {

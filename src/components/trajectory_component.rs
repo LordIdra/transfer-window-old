@@ -41,11 +41,16 @@ impl TrajectoryComponent {
         loop {
             match self.segments.back_mut().unwrap() {
                 Segment::Burn(burn) => {
-                    if burn.borrow().get_start_point().get_time() > time {
+                    println!("1 {} {}", burn.borrow().get_start_point().get_time(), time);
+                    // The >= is important, because we might try and remove segments after exactly the start time of a burn (ie when deleting a burn)
+                    if burn.borrow().get_start_point().get_time() >= time {
+                        println!("2");
                         self.segments.pop_back();
                     } else if burn.borrow().is_time_within_burn(time) {
+                        println!("3");
                         panic!("Attempt to splice a burn")
                     } else {
+                        println!("4");
                         return;
                     }
                 },

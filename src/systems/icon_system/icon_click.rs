@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell};
+use std::{rc::Weak, cell::RefCell};
 
 use eframe::egui::{PointerButton, Context, InputState};
 use nalgebra_glm::DVec2;
@@ -56,27 +56,27 @@ fn update_object_icon(state: &mut State, mouse_over: &Option<Entity>, entity: &E
     icon_component.set_state(IconState::None)
 }
 
-fn update_burn_icon(state: &mut State, mouse_over: &Option<Entity>, burn: Rc<RefCell<Burn>>, entity: &Entity) {
-    let icon_component = state.components.icon_components.get_mut(entity).unwrap();
+fn update_burn_icon(state: &mut State, mouse_over: &Option<Entity>, burn: Weak<RefCell<Burn>>, entity: &Entity) {
 
     // If burn is being hovered
     if let Some(mouse_over) = mouse_over {
         if *entity == *mouse_over {
-            icon_component.set_state(IconState::Hovered);
+            state.components.icon_components.get_mut(entity).unwrap().set_state(IconState::Hovered);
             return;
         }
     }
 
     // If burn is actively selected
-    if let Some(selected_burn) = &state.selected_burn {
+    if let Some(selected_burn_icon) = state.selected_burn_icon.clone() {
+        let selected_burn = state.components.icon_components.get(&selected_burn_icon).unwrap().get_type().as_burn_icon();
         if burn.as_ptr() == selected_burn.as_ptr() {
-            icon_component.set_state(IconState::Selected);
+            state.components.icon_components.get_mut(entity).unwrap().set_state(IconState::Selected);
             return;
         }
     }
 
     // If burn is not being hovered and is not actively selected
-    icon_component.set_state(IconState::None)
+    state.components.icon_components.get_mut(entity).unwrap().set_state(IconState::None)
 }
 
 fn update_icons(state: &mut State, mouse_over: &Option<Entity>) {
@@ -99,9 +99,9 @@ fn select_object(state: &mut State, input: &InputState, selected_icon: Entity) {
     }
 }
 
-fn select_burn(state: &mut State, input: &InputState, new_selected_burn: Rc<RefCell<Burn>>) {
+fn select_burn(state: &mut State, input: &InputState, new_selected_burn_icon: Entity) {
     if input.pointer.button_double_clicked(PointerButton::Primary) {
-        state.selected_burn = Some(new_selected_burn);
+        state.selected_burn_icon = Some(new_selected_burn_icon);
     }
 }
 
@@ -125,7 +125,7 @@ pub fn icon_click_system(state: &mut State, context: &Context) {
         if let Some(selected_icon) = mouse_over {
             match state.components.icon_components.get(&selected_icon).unwrap().get_type() {
                 IconType::ObjectIcon => select_object(state, input, selected_icon),
-                IconType::BurnIcon(burn) => select_burn(state, input, burn),
+                IconType::BurnIcon(_) => select_burn(state, input, selected_icon),
             }
         };        
     });

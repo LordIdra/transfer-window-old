@@ -98,7 +98,7 @@ impl EntityBuilder {
 pub fn build_burn_icon(components: &mut Components, burn: Rc<RefCell<Burn>>, parent: Entity) -> Entity {
     let icon_size = 0.0065;
     EntityBuilder::new()
-        .with_icon_component(IconComponent::new(IconType::BurnIcon(burn), Rgba::from_rgb(1.0, 0.7, 0.0), "burn".to_string(), icon_size))
+        .with_icon_component(IconComponent::new(IconType::BurnIcon(Rc::downgrade(&burn)), Rgba::from_rgb(1.0, 0.7, 0.0), "burn".to_string(), icon_size))
         .with_position_component(PositionComponent::new(DVec2::new(0.0, 0.0))) // will be updated next frame
         .with_parent_component(ParentComponent::new(parent))
         .build(components)

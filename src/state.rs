@@ -1,9 +1,9 @@
-use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::PI, cmp::Ordering, cell::RefCell, rc::Rc};
+use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::PI, cmp::Ordering};
 
 use eframe::{egui::{Context, Ui}, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, icon_click_system::icon_click_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_bodies, spacecraft_prediction::predict_all_spacecraft}, debug_system::debug_system, icon_position_update_system::icon_position_update_system, selected_burn_cleanup_system::selected_burn_cleanup_system, deselect_system::deselect_system}, components::{Components, trajectory_component::segment::burn::Burn}, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_bodies, spacecraft_prediction::predict_all_spacecraft}, debug_system::debug_system, deselect_system::deselect_system, icon_system::icon_system, toolbar_system::toolbar_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 pub struct State {
     pub resources: Resources,
@@ -17,7 +17,7 @@ pub struct State {
     pub delta_time: f64,
     pub last_frame: Instant,
     pub selected_object: Entity,
-    pub selected_burn: Option<Rc<RefCell<Burn>>>,
+    pub selected_burn_icon: Option<Entity>,
     pub orbit_click_point: Option<OrbitClickPoint>,
     pub current_warp: Option<WarpDescription>,
     pub camera: Arc<Mutex<Camera>>,
@@ -48,7 +48,7 @@ impl State {
             delta_time: 0.0,
             last_frame: Instant::now(),
             selected_object: sun,
-            selected_burn: None,
+            selected_burn_icon: None,
             orbit_click_point: None,
             current_warp: None,
             camera: Arc::new(Mutex::new(Camera::new())),
@@ -130,14 +130,11 @@ impl eframe::App for State {
         time_step_update_system(self, context);
         trajectory_update_system(self);
         deselect_system(self, context);
-        selected_burn_cleanup_system(self);
-        icon_position_update_system(self);
-        icon_precedence_system(self);
-        icon_click_system(self, context);
+        icon_system(self, context);
         camera_update_system(self, context);
         orbit_click_system(self, context);
         debug_system(self, context);
-        orbit_point_toolbar_system(self, context);
+        toolbar_system(self, context);
         underlay_render_system(self, context);
         was_mouse_over_any_element_last_frame_system(self);
         context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes
