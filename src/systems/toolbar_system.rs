@@ -25,6 +25,6 @@ fn apply_toolbar_style(context: &Context) {
 }
 
 pub fn toolbar_system(state: &mut State, context: &Context) {
-    orbit_click_point_toolbar(state, context);
     burn_toolbar(state, context);
+    orbit_click_point_toolbar(state, context);
 }

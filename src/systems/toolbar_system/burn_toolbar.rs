@@ -1,14 +1,14 @@
 use std::{rc::Rc, cell::RefCell};
 
-use eframe::{egui::{Context, Window, Layout, Image, ImageButton, Ui}, emath::{Align2, Align}, epaint::{self, Color32}};
+use eframe::{egui::{Context, Window, Layout, Image, ImageButton, Ui, Style}, emath::{Align2, Align}, epaint::{self, Color32}};
 
-use crate::{state::State, systems::{warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft}, components::trajectory_component::segment::burn::Burn, storage::entity_allocator::Entity};
+use crate::{state::State, systems::{warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, util::format_time}, components::trajectory_component::segment::burn::Burn, storage::entity_allocator::Entity};
 
 use super::apply_toolbar_style;
 
 fn warp_to_burn(state: &mut State, burn: Rc<RefCell<Burn>>) {
     let end_time = burn.borrow().get_start_point().get_time();
-    state.current_warp = Some(WarpDescription { start_time: state.time, end_time });
+    state.current_warp = Some(WarpDescription::new(state.time, end_time));
 }
 
 fn delete_burn(state: &mut State, burn_icon: Entity, burn: Rc<RefCell<Burn>>) {
@@ -30,15 +30,16 @@ fn draw(state: &mut State, ui: &mut Ui, burn_icon: Entity, burn: Rc<RefCell<Burn
             warp_to_burn(state, burn.clone());
         }
 
-        let burn_image = Image::new(state.resources.get_texture_image("close"))
+        let delete_image = Image::new(state.resources.get_texture_image("close"))
             .bg_fill(Color32::TRANSPARENT)
             .fit_to_exact_size(epaint::vec2(15.0, 15.0));
-        let burn_button = ImageButton::new(burn_image);
-        if ui.add(burn_button).clicked() {
+        let delete_button = ImageButton::new(delete_image);
+        if ui.add(delete_button).clicked() {
             delete_burn(state, burn_icon, burn.clone());
         }
     });
 
+    ui.label(format!("T- {}", format_time(burn.borrow().get_start_point().get_time() - state.time)));
     ui.label(format!("Delta-V: {:.0}", burn.borrow().get_total_dv()));
 
     state.register_ui(ui);
@@ -53,9 +54,11 @@ pub fn burn_toolbar(state: &mut State, context: &Context) {
     apply_toolbar_style(context);
 
     let burn = state.components.icon_components.get(&burn_icon).unwrap().get_type().as_burn_icon().upgrade().unwrap();
-    let window = Window::new("")
+    let window = Window::new("Burn Toolbar")
         .title_bar(false)
         .resizable(false)
         .anchor(Align2::LEFT_TOP, epaint::vec2(0.0, 0.0));
     window.show(context, |ui| draw(state, ui, burn_icon, burn));
+
+    context.set_style(Style::default());
 }

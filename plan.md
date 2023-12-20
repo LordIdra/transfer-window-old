@@ -37,15 +37,15 @@ Fetaure tracker
 [x] Deselect burn by clicking elsewhere as with orbit points
 [x] Allow burns to be deleted via top left button
 [x] Show info about the burn in top left
-[ ] Select burn immediately after creation
+[x] Select burn immediately after creation
+[x] Allow pausing
+[x] Paused text
+[x] Add a few seconds to warp time
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out 
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
 [ ] Animate symbol dragging
 [ ] When symbol clicked, adjust parameters of the burn
-[x] Allow pausing
-[ ] Paused text
-[ ] Add a few seconds to warp time
 
 I am going to quit coding and go live in a hut in the woods tracker
 [x] Wtf is up with being able to flip the zoom negative how the hell is that shit possible (it seems to have just gone away???)
