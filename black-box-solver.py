@@ -58,3 +58,6 @@ while abs(delta) > max_delta and i < max_iterations:
 
 print("Expected", expected_t)
 print("Found", t)
+
+# to investigate:
+# https://www.youtube.com/shorts/2SlUYj89ERI

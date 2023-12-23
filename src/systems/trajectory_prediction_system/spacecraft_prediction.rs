@@ -1,4 +1,4 @@
-use crate::{state::State, systems::util::{update_position_and_velocity, get_segment_at_time, is_spacecraft_with_trajectory, sync_celestial_bodies_to_time, sync_entity_to_time, update_parent}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
+use crate::{state::State, systems::{util::{update_position_and_velocity, get_segment_at_time, is_spacecraft_with_trajectory, sync_celestial_bodies_to_time, sync_entity_to_time, update_parent}, trajectory_prediction_system::intersection_solver::get_next_intersection, debug_system::debug_utils::get_entity_by_name}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
 use super::util::{SoiFunction, update_parent_for_prediction};
 
@@ -54,9 +54,16 @@ pub fn predict_spacecraft(state: &mut State, entity: Entity, start_time: f64, en
     sync_celestial_bodies_to_time(state, state.time);
 }
 
+
+
 pub fn predict_all_spacecraft(state: &mut State, end_time: f64) {
     let mut time = state.time;
     let time_steps = ((end_time - time) / SIMULATION_TIME_STEP) as usize;
+
+    let spacecraft = get_entity_by_name(state, "spacecraft".to_string());
+    let moon = get_entity_by_name(state, "moon".to_string());
+
+    println!("{},", get_next_intersection(state, spacecraft, moon, time));
 
     for entity in state.components.entity_allocator.get_entities() {
         if is_spacecraft_with_trajectory(state, entity) {

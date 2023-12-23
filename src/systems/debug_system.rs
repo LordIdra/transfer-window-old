@@ -4,6 +4,7 @@ use crate::state::State;
 
 use self::{general::general, selected::selected};
 
+pub mod debug_utils;
 mod general;
 mod selected;
 

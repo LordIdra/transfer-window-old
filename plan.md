@@ -41,8 +41,11 @@ Fetaure tracker
 [x] Allow pausing
 [x] Paused text
 [x] Add a few seconds to warp time
+[x] Implement and write tests for black-box solver
+[ ] System to compute trajectories for one object at a time (ie spacecraft)
+[ ] Cache system to compute trajectories for the entire system
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
-[ ] Draw symbols prograde, retrograde, radial in and radial out 
+[ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
 [ ] Animate symbol dragging
 [ ] When symbol clicked, adjust parameters of the burn
