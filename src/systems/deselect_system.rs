@@ -1,15 +1,18 @@
 use eframe::egui::{Context, PointerButton};
 
-use crate::state::State;
+use crate::state::{State, Selected};
+
+use super::util::delete_burn_arrow_icons;
 
 pub fn deselect_system(state: &mut State, context: &Context) {
-    if state.mouse_over_any_element {
-        return;
-    }
     context.input(|input| {
         if input.pointer.button_clicked(PointerButton::Primary) {
-            state.selected_burn_icon = None;
-            state.orbit_click_point = None;
+            if !state.mouse_over_any_element && !state.mouse_over_any_icon {
+                if let Selected::BurnIcon(selected) = state.selected {
+                    delete_burn_arrow_icons(state, selected);
+                }
+                state.selected = Selected::None;
+            }
         }
     })
 }

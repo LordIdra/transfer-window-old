@@ -8,7 +8,7 @@ use crate::components::trajectory_component::segment::orbit::{orbit_direction::O
 use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
 fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
-    let max_delta_squared = (1.0e-7_f64).powi(2);
+    let max_delta_squared = (1.0e-5_f64).powi(2);
     let max_attempts = 500;
     let mut eccentric_anomaly = mean_anomaly + start_offset;
     let mut attempts = 0;

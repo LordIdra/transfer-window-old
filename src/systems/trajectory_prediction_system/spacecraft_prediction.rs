@@ -25,7 +25,7 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
     trajectory_component.predict(SIMULATION_TIME_STEP);
     match trajectory_component.get_final_segment() {
         Segment::Burn(_) => {
-            todo!()
+            panic!("Attempt to update burn for prediction")
         }
         Segment::Orbit(orbit) => {
             let new_parent = orbit.borrow().get_parent();

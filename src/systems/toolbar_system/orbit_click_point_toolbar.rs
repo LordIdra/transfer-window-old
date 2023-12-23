@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{egui::{Context, Window, Image, ImageButton, Ui, Layout, Label, Style}, emath::{Align2, Align}, epaint::{self, Color32}};
 
-use crate::{state::State, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::{util::{get_segment_at_time, format_time}, warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, orbit_point_selection_system::OrbitClickPoint}, storage::entity_builder::build_burn_icon};
+use crate::{state::{State, Selected}, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::{util::{get_segment_at_time, format_time}, warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, orbit_point_selection_system::OrbitClickPoint}, storage::entity_builder::build_burn_icon};
 
 use super::apply_toolbar_style;
 
@@ -16,9 +16,9 @@ fn create_burn(state: &mut State, orbit_click_point: OrbitClickPoint) {
     let segment_containing_burn = get_segment_at_time(state, &entity, time);
     let orbit_containing_burn = segment_containing_burn.as_orbit();
     let parent = orbit_containing_burn.borrow().get_parent();
-    let velocity_direction = orbit_containing_burn.borrow().get_end_point().get_velocity().normalize();
-
+    
     state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(time);
+    let velocity_direction = state.components.trajectory_components.get_mut(&entity).unwrap().get_final_segment().as_orbit().borrow().get_end_point().get_velocity().normalize();
     let burn = Burn::new(&state, entity, parent, velocity_direction, time);
     let orbit_start_time = burn.get_end_point().get_time();
     let orbit = Orbit::new(&state.components, parent, burn.get_end_point().get_position(), burn.get_end_point().get_velocity(), orbit_start_time);
@@ -27,8 +27,8 @@ fn create_burn(state: &mut State, orbit_click_point: OrbitClickPoint) {
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Burn(burn.clone()));
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));
 
-    state.selected_burn_icon = Some(build_burn_icon(&mut state.components, burn, parent));
-    predict_spacecraft(state, entity, orbit_start_time, 10000000.0)
+    state.selected = Selected::BurnIcon(build_burn_icon(&mut state.components, burn, parent));
+    predict_spacecraft(state, entity, orbit_start_time, 2000000.0)
 }
 
 fn draw(state: &mut State, ui: &mut Ui, orbit_click_point: OrbitClickPoint) {
@@ -60,7 +60,7 @@ fn draw(state: &mut State, ui: &mut Ui, orbit_click_point: OrbitClickPoint) {
 }
 
 pub fn orbit_click_point_toolbar(state: &mut State, context: &Context) {
-    let Some(orbit_click_point) = state.orbit_click_point.clone() else {
+    let Selected::OrbitClickPoint(orbit_click_point) = state.selected.clone() else {
         return;
     };
 

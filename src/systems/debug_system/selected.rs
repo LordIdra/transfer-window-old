@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use eframe::egui::Ui;
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, components::trajectory_component::segment::{Segment, orbit::{Orbit, orbit_point::OrbitPoint}, burn::{Burn, burn_point::BurnPoint}}, systems::util::{format_time, get_segment_at_time}, storage::entity_allocator::Entity};
+use crate::{state::State, components::trajectory_component::{segment::{Segment, orbit::{Orbit, orbit_point::OrbitPoint}, burn::{Burn, burn_point::BurnPoint}}, TrajectoryComponent}, systems::util::{format_time, get_segment_at_time}, storage::entity_allocator::Entity};
 
 fn get_absolute_parent_position(state: &State, entity: Entity, time: f64) -> DVec2 {
     match state.components.parent_components.get(&entity) {
@@ -82,7 +82,7 @@ fn draw_orbit(state: &mut State, ui: &mut Ui, orbit: &Orbit) {
     }
     ui.label(format!("Semi-major axis: {:.5e}", orbit.get_semi_major_axis()));
     ui.label(format!("Semi-minor axis: {:.5e}", orbit.get_semi_minor_axis()));
-    ui.label(format!("Semi-minor axis: {:.5}", orbit.get_eccentricity()));
+    ui.label(format!("Eccentricity: {:.5}", orbit.get_eccentricity()));
     ui.label(format!("Argument of periapsis: {:.5e}", orbit.get_arugment_of_periapsis()));
     ui.label(format!("Remaining angle: {:.5e}", orbit.get_remaining_angle()));
     ui.collapsing("Start", |ui| draw_orbit_point(state, ui, orbit.get_parent(), orbit.get_start_point()));
@@ -102,6 +102,16 @@ fn draw_trajectory(state: &mut State, ui: &mut Ui, segments: VecDeque<Segment>) 
             },
         }
     }
+}
+
+fn compute_sphere_of_influence(state: &State, trajectory_component: &TrajectoryComponent, entity: Entity) -> f64 {
+    let segment = trajectory_component.get_current_segment();
+    let orbit = segment.as_orbit();
+    let orbit_parent = orbit.borrow().get_parent();
+    let semi_major_axis = orbit.borrow().get_semi_major_axis();
+    let mass = state.components.mass_components.get(&entity).unwrap().get_mass();
+    let parent_mass = state.components.mass_components.get(&orbit_parent).unwrap().get_mass();
+    semi_major_axis * (mass / parent_mass).powf(2.0 / 5.0)
 }
 
 pub fn selected(state: &mut State, ui: &mut Ui) {
@@ -124,6 +134,9 @@ pub fn selected(state: &mut State, ui: &mut Ui) {
     }
     if let Some(trajectory_component) = state.components.trajectory_components.get(&entity) {
         let segments = trajectory_component.get_segments().clone();
+        if state.components.celestial_body_components.get(&entity).is_some() {
+            ui.label(format!("Sphere of influence: {:.3e}", compute_sphere_of_influence(state, trajectory_component, entity)));
+        }
         ui.collapsing("Trajectory", |ui| draw_trajectory(state, ui, segments));
     }
 }

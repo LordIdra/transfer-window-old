@@ -22,10 +22,12 @@ fn do_icon_precedence(state: &mut State, entity: Entity, other_entity: Entity) {
     if parent == other_parent {
         let icon_type = state.components.icon_components.get(&entity).unwrap().get_type();
         let other_icon_type = state.components.icon_components.get(&other_entity).unwrap().get_type();
-        if icon_type.takes_precedence_over(other_icon_type) {
-            state.components.icon_components.get_mut(&other_entity).unwrap().set_visible(false);
-        } else {
-            state.components.icon_components.get_mut(&entity).unwrap().set_visible(false);
+        if let Some(takes_precedence) = icon_type.takes_precedence_over(other_icon_type) {
+            if takes_precedence {
+                state.components.icon_components.get_mut(&other_entity).unwrap().set_visible(false);
+            } else {
+                state.components.icon_components.get_mut(&entity).unwrap().set_visible(false);
+            }
         }
         return;
     }
@@ -48,7 +50,7 @@ fn do_icon_precedence(state: &mut State, entity: Entity, other_entity: Entity) {
 /// entities that have icons
 /// If there are any overlaps, we hide the icon belonging to the entity with lower mass
 /// Not the most efficient algorithm by a long shot, but the most simple one I could come up with
-pub fn icon_precedence_system(state: &mut State) {
+pub fn icon_precedence(state: &mut State) {
     for entity in state.components.entity_allocator.get_entities() {
         if let Some(icon_component) = state.components.icon_components.get_mut(&entity) {
             icon_component.set_visible(true);

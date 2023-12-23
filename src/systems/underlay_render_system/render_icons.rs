@@ -1,4 +1,4 @@
-use crate::{components::icon_component::IconState, camera::SCALE_FACTOR, state::State, util::add_textured_square, storage::entity_allocator::Entity};
+use crate::{components::icon_component::IconState, camera::SCALE_FACTOR, state::State, util::{add_textured_square, add_textured_square_facing}, storage::entity_allocator::Entity};
 
 
 fn get_icon_vertices(state: &mut State, entity: Entity, zoom: f64, vertices: &mut Vec<f32>) {
@@ -10,7 +10,11 @@ fn get_icon_vertices(state: &mut State, entity: Entity, zoom: f64, vertices: &mu
     };
     let absolute_scaled_position = state.components.position_components.get(&entity).unwrap().get_absolute_position() * SCALE_FACTOR;
     let radius = icon_component.get_size(zoom);
-    add_textured_square(vertices, absolute_scaled_position, radius, color);
+    if let Some(facing) = icon_component.get_facing() {
+        add_textured_square_facing(vertices, absolute_scaled_position, radius, color, facing);
+    } else {
+        add_textured_square(vertices, absolute_scaled_position, radius, color);
+    }
 }
 
 fn render_icon(state: &mut State, entity: Entity, icon_name: &String, zoom: f64, vertices: &mut Vec<f32>) {

@@ -3,7 +3,7 @@ use std::{rc::Rc, cell::RefCell};
 use eframe::{egui::{Context, InputState}, epaint::{Pos2, Rect, Rgba}};
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::{state::State, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity, components::trajectory_component::segment::{orbit::Orbit, Segment}};
+use crate::{state::{State, Selected}, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity, components::trajectory_component::segment::{orbit::Orbit, Segment}};
 
 const SELECTION_CIRCLE_SIZE: f64 = 5.0;
 
@@ -131,18 +131,18 @@ fn render_click_point(state: &State, click_point: &OrbitClickPoint, opacity: f32
 
 fn on_new_click_point_exists(state: &mut State, input: &InputState, click_point: &OrbitClickPoint) {
     if input.pointer.primary_clicked() {
-        state.orbit_click_point = Some(click_point.clone());
+        state.selected = Selected::OrbitClickPoint(click_point.clone());
     } else {
-        if state.orbit_click_point.is_none() {
+        if let Selected::None = state.selected {
             render_click_point(state, &click_point, 0.6);
         }
     }
 }
 
 fn invalidate_click_point(state: &mut State) {
-    if let Some(click_point) = &state.orbit_click_point {
+    if let Selected::OrbitClickPoint(click_point) = &state.selected {
         if click_point.orbit.borrow().is_finished() || !click_point.orbit.borrow().is_time_within_orbit(click_point.get_time()) {
-            state.orbit_click_point = None;
+            state.selected = Selected::None;
         }
     }
 }
@@ -160,7 +160,7 @@ pub fn orbit_click_system(state: &mut State, context: &Context) {
         }
 
         invalidate_click_point(state);
-        if let Some(click_point) = &state.orbit_click_point {
+        if let Selected::OrbitClickPoint(click_point) = &state.selected {
             render_click_point(state, click_point, 1.0);
         }
     });

@@ -1,9 +1,9 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::{Rc, Weak}};
 
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
-use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::{TrajectoryComponent, segment::burn::Burn}, velocity_component::VelocityComponent, name_component::NameComponent, Components, icon_component::{IconType, IconComponent}}, storage::entity_allocator::Entity};
+use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::{TrajectoryComponent, segment::burn::Burn}, velocity_component::VelocityComponent, name_component::NameComponent, Components, icon_component::{IconType, IconComponent, BurnArrowIconType}}, storage::entity_allocator::Entity};
 
 struct EntityBuilder {
     celestial_body_component: Option<CelestialBodyComponent>,
@@ -96,9 +96,18 @@ impl EntityBuilder {
 }
 
 pub fn build_burn_icon(components: &mut Components, burn: Rc<RefCell<Burn>>, parent: Entity) -> Entity {
-    let icon_size = 0.0065;
+    let icon_size = 0.008;
     EntityBuilder::new()
-        .with_icon_component(IconComponent::new(IconType::BurnIcon(Rc::downgrade(&burn)), Rgba::from_rgb(1.0, 0.7, 0.0), "burn".to_string(), icon_size))
+        .with_icon_component(IconComponent::new(IconType::BurnIcon(Rc::downgrade(&burn)), Rgba::from_rgb(1.0, 0.7, 0.0), "burn".to_string(), icon_size, None))
+        .with_position_component(PositionComponent::new(DVec2::new(0.0, 0.0))) // will be updated next frame
+        .with_parent_component(ParentComponent::new(parent))
+        .build(components)
+}
+
+pub fn build_burn_arrow_icon(components: &mut Components, burn: Weak<RefCell<Burn>>, burn_arrow_icon_type: BurnArrowIconType, parent: Entity) -> Entity {
+    let icon_size = 0.01;
+    EntityBuilder::new()
+        .with_icon_component(IconComponent::new(IconType::BurnArrowIcon(burn, burn_arrow_icon_type), Rgba::from_rgb(0.0, 1.0, 0.0), "burn-adjustment-arrow".to_string(), icon_size, None))
         .with_position_component(PositionComponent::new(DVec2::new(0.0, 0.0))) // will be updated next frame
         .with_parent_component(ParentComponent::new(parent))
         .build(components)
@@ -107,7 +116,7 @@ pub fn build_burn_icon(components: &mut Components, burn: Rc<RefCell<Burn>>, par
 fn build_object_icon(components: &mut Components, type_name: String, absolute_position: DVec2, parent: Entity) {
     let icon_size = 0.01;
     EntityBuilder::new()
-        .with_icon_component(IconComponent::new(IconType::ObjectIcon, Rgba::from_rgb(1.0, 1.0, 1.0), type_name, icon_size))
+        .with_icon_component(IconComponent::new(IconType::ObjectIcon, Rgba::from_rgb(1.0, 1.0, 1.0), type_name, icon_size, None))
         .with_position_component(PositionComponent::new(absolute_position))
         .with_parent_component(ParentComponent::new(parent))
         .build(components);

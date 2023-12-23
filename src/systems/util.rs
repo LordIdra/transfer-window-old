@@ -1,6 +1,6 @@
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
+use crate::{state::{State, Selected}, storage::entity_allocator::Entity, components::{trajectory_component::segment::Segment, icon_component::IconType}};
 
 /// So... why is this an entire function? Surely we can just find the parent component and use that to set the new parent?
 /// Well, the problem with that is that the old parent will still have the entity in its children
@@ -131,6 +131,33 @@ pub fn sync_celestial_bodies_to_time(state: &mut State, time: f64) {
     for entity in state.get_entities_sorted_by_mass() {
         if is_celestial_body_with_trajectory(state, entity) {
             sync_entity_to_time(state, entity, time);
+        }
+    }
+}
+
+pub fn delete_burn_arrow_icons(state: &mut State, icon: Entity) {
+    let burn = state.components.icon_components.get(&icon).unwrap().get_type().as_burn_icon();
+    let mut to_deallocate = vec![];
+    for entity in state.components.entity_allocator.get_entities() {
+        if let Some(icon_component) = state.components.icon_components.get(&entity) {
+            if let IconType::BurnArrowIcon(other_burn, _) = icon_component.get_type() {
+                if burn.as_ptr() == other_burn.as_ptr() {
+                    to_deallocate.push(entity);
+                }
+            }
+        }
+    }
+    for entity in to_deallocate {
+        state.components.entity_allocator.deallocate(entity);
+    }
+}
+
+pub fn delete_burn_icon(state: &mut State, icon: Entity) {
+    delete_burn_arrow_icons(state, icon);
+    state.components.deallocate(icon);
+    if let Selected::BurnIcon(other_icon) = state.selected {
+        if icon == other_icon {
+            state.selected = Selected::None;
         }
     }
 }

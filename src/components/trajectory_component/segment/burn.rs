@@ -32,8 +32,8 @@ impl Burn {
     pub fn new(state: &State, entity: Entity, parent: Entity, tangent_direction: DVec2, start_time: f64) -> Self {
         let tangent_dv = 0.0;
         let normal_dv = 0.0;
-        let acceleration = 2.0; // this will eventually depend on the spacecraft - ie rocket equation time :)
-        let total_dv = 10000.0; // todo
+        let acceleration = 2.0; // This will eventually depend on the spacecraft - ie rocket equation time :)
+        let total_dv = 0.0000001; // Must be nonzero
         let duration = total_dv / acceleration;
         let start_point = BurnPoint::new(state, entity, parent, start_time);
         let points = compute_burn_points(&start_point, start_time, duration);
@@ -57,11 +57,15 @@ impl Burn {
     }
 
     pub fn get_total_dv(&self) -> f64 {
-        10000.0 //f64::sqrt(self.tangent_dv.powi(2) + self.normal_dv.powi(2))
+        f64::sqrt(self.tangent_dv.powi(2) + self.normal_dv.powi(2))
     }
 
     pub fn is_time_within_burn(&self, time: f64) -> bool {
         time > self.get_start_point().get_time() && time < self.get_end_point().get_time()
+    }
+
+    pub fn get_tangent_direction(&self) -> DVec2 {
+        self.tangent_direction
     }
 
     pub fn get_duration(&self) -> f64 {
