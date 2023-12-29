@@ -67,6 +67,11 @@ Bugs + technical debt tracker
 [ ] Spacecraft burns aren't included in predictions
 [x] Use velocity perpendicular instead of displacement unit for trajectory visualisation to prevent different thicknesses
 [x] Weird desync that happens when creating a burn while another burn is happening
+[ ] Move get segment at time because it's used everywhere
+[ ] Ergonomics for components :)
+[ ] Question marks!!!! Inc. get segment at time
+[ ] cfg debug
+[ ] Tidy up resources?
 
 ECS
 - Each component is a representation of state of one part of an entity

@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use eframe::{egui::{Context, Window, Image, ImageButton, Ui, Layout, Label, Style}, emath::{Align2, Align}, epaint::{self, Color32}};
 
-use crate::{state::{State, Selected}, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::{util::{get_segment_at_time, format_time}, warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, orbit_point_selection_system::OrbitClickPoint}, storage::entity_builder::build_burn_icon};
+use crate::{state::{State, Selected}, components::trajectory_component::segment::{Segment, burn::Burn, orbit::Orbit}, systems::{util::get_segment_at_time, warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, orbit_point_selection_system::OrbitClickPoint, debug_system::debug_utils::format_time}, storage::entity_builder::build_burn_icon};
 
 use super::apply_toolbar_style;
 
@@ -28,7 +28,7 @@ fn create_burn(state: &mut State, orbit_click_point: OrbitClickPoint) {
     state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));
 
     state.selected = Selected::BurnIcon(build_burn_icon(&mut state.components, burn, parent));
-    predict_spacecraft(state, entity, orbit_start_time, 2000000.0)
+    predict_spacecraft(state, entity, orbit_start_time)
 }
 
 fn draw(state: &mut State, ui: &mut Ui, orbit_click_point: OrbitClickPoint) {

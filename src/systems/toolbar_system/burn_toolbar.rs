@@ -2,7 +2,7 @@ use std::{rc::Rc, cell::RefCell};
 
 use eframe::{egui::{Context, Window, Layout, Image, ImageButton, Ui, Style}, emath::{Align2, Align}, epaint::{self, Color32}};
 
-use crate::{state::{State, Selected}, systems::{warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, util::{format_time, delete_burn_icon}}, components::trajectory_component::segment::burn::Burn, storage::entity_allocator::Entity};
+use crate::{state::{State, Selected}, systems::{warp_update_system::WarpDescription, trajectory_prediction_system::spacecraft_prediction::predict_spacecraft, util::delete_burn_icon, debug_system::debug_utils::format_time}, components::trajectory_component::segment::burn::Burn, storage::entity_allocator::Entity};
 
 use super::apply_toolbar_style;
 
@@ -16,7 +16,7 @@ fn delete_burn(state: &mut State, icon: Entity, burn: Rc<RefCell<Burn>>) {
     let burn_start_time = burn.borrow().get_start_point().get_time();
     state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(burn_start_time);
     delete_burn_icon(state, icon);
-    predict_spacecraft(state, entity, burn_start_time, 2000000.0);
+    predict_spacecraft(state, entity, burn_start_time);
 }
 
 fn draw(state: &mut State, ui: &mut Ui, burn_icon: Entity, burn: Rc<RefCell<Burn>>) {

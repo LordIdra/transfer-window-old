@@ -11,6 +11,7 @@ fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
     2.0 * PI * f64::sqrt(semi_major_axis.powi(3) / standard_gravitational_parameter)
 }
 fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
+    // println!("{} {}", eccentricity, mean_anomaly);
     let max_delta_squared = (1.0e-5_f64).powi(2);
     let max_attempts = 500;
     // Choosing an initial seed: https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html#S5

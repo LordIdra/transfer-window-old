@@ -3,7 +3,9 @@ use std::collections::VecDeque;
 use eframe::egui::Ui;
 use nalgebra_glm::DVec2;
 
-use crate::{state::State, components::trajectory_component::{segment::{Segment, orbit::{Orbit, orbit_point::OrbitPoint}, burn::{Burn, burn_point::BurnPoint}}, TrajectoryComponent}, systems::util::{format_time, get_segment_at_time}, storage::entity_allocator::Entity};
+use crate::{state::State, components::trajectory_component::{segment::{Segment, orbit::{Orbit, orbit_point::OrbitPoint}, burn::{Burn, burn_point::BurnPoint}}, TrajectoryComponent}, systems::util::get_segment_at_time, storage::entity_allocator::Entity};
+
+use super::debug_utils::format_time;
 
 fn get_absolute_parent_position(state: &State, entity: Entity, time: f64) -> DVec2 {
     match state.components.parent_components.get(&entity) {

@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::DVec2;
 
-use crate::{storage::entity_allocator::Entity, components::Components};
+use crate::{storage::entity_allocator::Entity, components::Components, systems::debug_system::debug_utils::format_time};
 
 use self::{conic::{Conic, new_conic}, orbit_point::OrbitPoint, orbit_direction::OrbitDirection};
 
@@ -118,8 +118,8 @@ impl Orbit {
     }
 
     pub fn get_periapsis_time(&self) -> f64 {
-        let time_since_last_periapsis = self.conic.get_time_since_last_periapsis(&self.current_point);
-        self.current_point.get_time() - time_since_last_periapsis
+        let time_since_last_periapsis = self.conic.get_time_since_last_periapsis(&self.start_point);
+        self.start_point.get_time() - time_since_last_periapsis
     }
 
     pub fn get_position_from_time_since_periapsis(&self, time_since_periapsis: f64) -> DVec2 {
@@ -137,11 +137,18 @@ impl Orbit {
 
     pub fn get_theta_from_time(&self, time: f64) -> f64 {
         let time_since_periapsis = time - self.get_periapsis_time();
+        // println!("{} {}", time, format_time(time_since_periapsis));
         self.conic.get_theta_from_time_since_periapsis(time_since_periapsis)
     }
 
     pub fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
         self.conic.solve_for_closest_point(p)
+    }
+
+    pub fn end_at(&mut self, time: f64) {
+        let theta = self.get_theta_from_time(time);
+        let position = self.conic.get_position(theta);
+        self.end_point = OrbitPoint::new(&*self.conic, position, time);
     }
 
     pub fn reset(&mut self) {
