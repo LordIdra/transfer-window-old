@@ -117,10 +117,6 @@ impl Orbit {
         self.conic.get_period()
     }
 
-    pub fn get_min_max_theta(&self) -> (f64, f64) {
-        self.conic.get_min_max_theta()
-    }
-
     pub fn get_periapsis_time(&self) -> f64 {
         let time_since_last_periapsis = self.conic.get_time_since_last_periapsis(&self.start_point);
         self.start_point.get_time() - time_since_last_periapsis
@@ -141,6 +137,7 @@ impl Orbit {
 
     pub fn get_theta_from_time(&self, time: f64) -> f64 {
         let time_since_periapsis = time - self.get_periapsis_time();
+        // println!("{} {}", time, format_time(time_since_periapsis));
         self.conic.get_theta_from_time_since_periapsis(time_since_periapsis)
     }
 

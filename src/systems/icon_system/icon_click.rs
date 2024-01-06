@@ -72,7 +72,7 @@ pub fn icon_click(state: &mut State, context: &Context) {
             match state.components.icon_components.get(&selected_icon).unwrap().get_type() {
                 IconType::ObjectIcon => select_object_icon(state, input, selected_icon),
                 IconType::BurnIcon(_) => select_burn_icon(state, input, selected_icon),
-                IconType::BurnArrowIcon(burn, _type) => select_burn_arrow_icon(state, input, burn, _type),
+                IconType::BurnArrowIcon(burn, _type) => select_burn_arrow_icon(state, input, selected_icon, burn, _type),
             }
         };        
     });

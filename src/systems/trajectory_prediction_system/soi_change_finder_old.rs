@@ -19,10 +19,10 @@ fn solve_black_box(function: impl Fn(f64) -> f64, start_time: f64) -> Option<f64
         let distance_t_prime = (distance_t_plus_h - distance_t_minus_h) / (2.0 * TIME_DELTA);
         let mut delta = LEARNING_RATE * -distance_t / (distance_t_prime + 0.01);
 
-        // println!("delta {}", delta);
+        println!("delta {}", delta);
 
         if delta > 0.0 {
-            // println!("Going downhill");
+            println!("Going downhill");
             going_downhill = true;
         }
         // if !going_downhill {
@@ -32,7 +32,7 @@ fn solve_black_box(function: impl Fn(f64) -> f64, start_time: f64) -> Option<f64
         time += delta;
         iterations += 1;
 
-        // println!("{} {}", format_time(time), delta);
+        println!("{} {}", format_time(time), delta);
 
         if iterations > MAX_ITERATIONS {
             return None;
@@ -150,11 +150,14 @@ pub fn find_next_soi_change(state: &State, entity: Entity, ) -> Option<(Entity, 
     let time = orbit.borrow().get_end_point().get_time();
     let parent = orbit.borrow().get_parent();
     println!("Finding changes starting at {} from parent {}", format_time(time), state.components.name_components.get(&parent).unwrap().get_name());
+    println!("1");
     if let Some(soi_change_time) = find_next_soi_exit_time(state, entity, parent, time) {
         let new_parent = find_parent(state, parent, time);
         println!("Found exit change at {} to {}", format_time(soi_change_time), state.components.name_components.get(&new_parent).unwrap().get_name());
         soi_changes.push((new_parent, soi_change_time));
     }
+
+    println!("2");
 
     let children = find_children(state, parent, time);
     for child in children {
@@ -165,6 +168,8 @@ pub fn find_next_soi_change(state: &State, entity: Entity, ) -> Option<(Entity, 
             }
         }
     }
+
+    println!("3");
 
     soi_changes.sort_by(|a, b| a.1.total_cmp(&b.1));
     soi_changes.first().cloned()

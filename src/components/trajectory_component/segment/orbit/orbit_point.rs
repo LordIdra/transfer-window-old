@@ -15,19 +15,13 @@ impl OrbitPoint {
     pub fn new(conic: &dyn Conic, position: DVec2, time: f64) -> Self {
         let theta = f64::atan2(position.y, position.x);
         let time_since_periapsis = conic.get_time_since_periapsis(theta);
-        println!("new {} {}", time, time_since_periapsis);
         let velocity = conic.get_velocity(position, theta);
         Self { theta, time, time_since_periapsis, position, velocity }
     }
 
     pub fn next(&self, conic: &dyn Conic, delta_time: f64) -> Self {
         let time = self.time + delta_time;
-        let mut time_since_periapsis = self.time_since_periapsis + delta_time;
-        if let Some(period) = conic.get_period() {
-            if time_since_periapsis > period {
-                time_since_periapsis -= period;
-            }
-        }
+        let time_since_periapsis = self.time_since_periapsis + delta_time;
         let theta = conic.get_theta_from_time_since_periapsis(time_since_periapsis);
         let position = conic.get_position(theta);
         let velocity = conic.get_velocity(position, theta);

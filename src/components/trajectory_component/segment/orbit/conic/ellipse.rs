@@ -7,17 +7,12 @@ use crate::components::trajectory_component::segment::orbit::{orbit_direction::O
 
 use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
-const MAX_RECURSIONS: usize = 5;
-
 fn period(standard_gravitational_parameter: f64, semi_major_axis: f64) -> f64 {
     2.0 * PI * f64::sqrt(semi_major_axis.powi(3) / standard_gravitational_parameter)
 }
-fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64, recursions: usize) -> f64 {
-    if recursions > MAX_RECURSIONS {
-        panic!("Exceeded max recursions solving hyperbolic Kepler equation with e:{}, mean_anomaly:{}", eccentricity, mean_anomaly);
-    }
+fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
     // println!("{} {}", eccentricity, mean_anomaly);
-    let max_delta = 1.0e-9_f64;
+    let max_delta_squared = (1.0e-5_f64).powi(2);
     let max_attempts = 500;
     // Choosing an initial seed: https://www.aanda.org/articles/aa/full_html/2022/02/aa41423-21/aa41423-21.html#S5
     // Yes, they're actually serious about that 0.999999 thing (lmao)
@@ -27,14 +22,14 @@ fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64
     let mut attempts = 0;
     loop {
         let delta = -(eccentric_anomaly - eccentricity * f64::sin(eccentric_anomaly) - mean_anomaly) / (1.0 - eccentricity * f64::cos(eccentric_anomaly));
-        if delta < max_delta {
+        if delta.powi(2) < max_delta_squared {
             break;
         }
         if attempts > max_attempts {
             // Try with different start value
             let mut rng = rand::thread_rng();
             let start_offset = (rng.gen::<f64>() - 0.5) * 5.0;
-            return solve_kepler_equation(eccentricity, mean_anomaly, start_offset, recursions + 1)
+            return solve_kepler_equation(eccentricity, mean_anomaly, start_offset)
         }
         eccentric_anomaly += delta;
         attempts += 1;
@@ -56,7 +51,6 @@ impl Ellipse {
     pub(in super) fn new(position: DVec2, velocity: DVec2, standard_gravitational_parameter: f64, semi_major_axis: f64, eccentricity: f64, direction: OrbitDirection) -> Self {
         let period = period(standard_gravitational_parameter, semi_major_axis);
         let argument_of_periapsis = argument_of_periapsis(position, velocity, standard_gravitational_parameter);
-        println!("aop init {}", argument_of_periapsis);
         let specific_angular_momentum = specific_angular_momentum(position, velocity);
         Ellipse { semi_major_axis, eccentricity, period, argument_of_periapsis, direction, specific_angular_momentum }
     }
@@ -64,9 +58,8 @@ impl Ellipse {
 
 impl Conic for Ellipse {
     fn get_theta_from_time_since_periapsis(&self, time_since_periapsis: f64) -> f64 {
-        let mean_anomaly = 2.0 * PI * time_since_periapsis / self.period;
-        // println!("fuck this fucking bullshit {}", mean_anomaly);
-        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0, 0);
+        let mean_anomaly = (2.0 * PI * time_since_periapsis) / self.period;
+        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
         let mut true_anomaly = 2.0 * f64::atan(f64::sqrt((1.0 + self.eccentricity) / (1.0 - self.eccentricity)) * f64::tan(eccentric_anomaly / 2.0));
         // The sign of atan flips halfway through the orbit
         // So we need to add 2pi halfway through the orbit to keep things consistent
@@ -193,10 +186,6 @@ impl Conic for Ellipse {
 
     fn get_period(&self) -> Option<f64> {
         Some(self.period)
-    }
-
-    fn get_min_max_theta(&self) -> (f64, f64) {
-        (-PI, PI)
     }
 }
 

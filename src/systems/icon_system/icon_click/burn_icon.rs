@@ -2,20 +2,7 @@ use std::{rc::Weak, cell::RefCell};
 
 use eframe::egui::{InputState, PointerButton};
 
-use crate::{state::{State, Selected}, storage::{entity_allocator::Entity, entity_builder::build_burn_arrow_icon}, components::{trajectory_component::segment::burn::Burn, icon_component::{IconState, BurnArrowIconType, IconType}}};
-
-fn burn_has_arrows(state: &State, burn: Weak<RefCell<Burn>>) -> bool {
-    for entity in state.components.entity_allocator.get_entities() {
-        if let Some(icon_component) = state.components.icon_components.get(&entity) {
-            if let IconType::BurnArrowIcon(other_burn, _) = icon_component.get_type() {
-                if burn.as_ptr() == other_burn.as_ptr() {
-                    return true;
-                }
-            }
-        }
-    }
-    false
-}
+use crate::{state::{State, Selected}, storage::{entity_allocator::Entity, entity_builder::build_burn_arrow_icon}, components::{trajectory_component::segment::burn::Burn, icon_component::{IconState, BurnArrowIconType}}};
 
 pub fn select_burn_icon(state: &mut State, input: &InputState, new_selected_burn_icon: Entity) {
     if !input.pointer.button_clicked(PointerButton::Primary) {
@@ -25,14 +12,11 @@ pub fn select_burn_icon(state: &mut State, input: &InputState, new_selected_burn
     if let Selected::BurnIcon(selected_icon) = state.selected {
         if new_selected_burn_icon == selected_icon {
             let burn = state.components.icon_components.get(&selected_icon).unwrap().get_type().as_burn_icon();
-            if !burn_has_arrows(state, burn.clone()) {
-                let parent = state.components.parent_components.get(&selected_icon).unwrap().get_parent();
-                build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::FRONT, parent);
-                build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::RIGHT, parent);
-                build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::BACK, parent);
-                build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::LEFT, parent);
-            }
-            
+            let parent = state.components.parent_components.get(&selected_icon).unwrap().get_parent();
+            build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::FRONT, parent);
+            build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::RIGHT, parent);
+            build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::BACK, parent);
+            build_burn_arrow_icon(&mut state.components, burn.clone(), BurnArrowIconType::LEFT, parent);
             return;
         }
     }

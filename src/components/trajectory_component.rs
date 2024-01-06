@@ -63,25 +63,6 @@ impl TrajectoryComponent {
         }
     }
 
-    pub fn remove_segments_starting_after_segment(&mut self, segment: Segment) {
-        let mut index = 0;
-        loop {
-            if self.segments.get(index).expect("Failed to find requested segment").equals(&segment) {
-                break;
-            }
-            index += 1;
-        }
-        index += 1;
-        println!("{}", index);
-        while self.segments.len() > index {
-            self.segments.remove(index);
-        }
-        for segment in &self.segments {
-            println!("yeeto {}", segment.get_start_time());
-        }
-        println!("yeeting done");
-    }
-
     pub fn predict(&mut self, delta_time: f64) {
         if let Some(segment) = self.segments.back_mut() {
             segment.predict(delta_time);

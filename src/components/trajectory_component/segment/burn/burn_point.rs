@@ -22,10 +22,9 @@ impl BurnPoint {
         Self { parent_mass, time, position, velocity }
     }
 
-    pub fn next(&self, delta_time: f64, artificial_acceleration: DVec2) -> Self {
+    pub fn next(&self, delta_time: f64) -> Self {
         let distance = self.position.magnitude();
-        let gravity_acceleration = -self.position.normalize() * (GRAVITATIONAL_CONSTANT * self.parent_mass) / distance.powi(2);
-        let acceleration = gravity_acceleration + artificial_acceleration;
+        let acceleration = -self.position.normalize() * (GRAVITATIONAL_CONSTANT * self.parent_mass) / distance.powi(2);
         let parent_mass = self.parent_mass;
         let time = self.time + delta_time;
         let velocity = self.velocity + acceleration * delta_time;

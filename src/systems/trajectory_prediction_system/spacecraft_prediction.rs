@@ -1,8 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
+use nalgebra_glm::DVec2;
 
-use crate::{state::State, systems::{util::{update_position_and_velocity, get_segment_at_time, is_spacecraft_with_trajectory, sync_celestial_bodies_to_time, sync_entity_to_time, update_parent}, trajectory_prediction_system::soi_change_finder::SoiChangeType, debug_system::debug_utils::format_time}, storage::entity_allocator::Entity, components::trajectory_component::segment::{Segment, orbit::Orbit}};
+use crate::{state::State, systems::util::{update_position_and_velocity, get_segment_at_time, is_spacecraft_with_trajectory, sync_celestial_bodies_to_time, sync_entity_to_time, update_parent}, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
-use super::{util::{SoiFunction, update_parent_for_prediction}, soi_change_finder::find_next_soi_change};
+use super::{util::{SoiFunction, update_parent_for_prediction}, soi_change_finder::find_next_soi_entrance};
 
 const SIMILARITY_THRESHOLD: f64 = 1.0e-4;
 const SIMULATION_TIME_STEP: f64 = 40.0;
@@ -141,43 +141,8 @@ fn update_for_prediction(state: &mut State, entity: Entity, time: f64) {
 
 pub fn predict_spacecraft(state: &mut State, entity: Entity, start_time: f64) {
     state.components.trajectory_components.get_mut(&entity).unwrap().remove_segments_after(start_time);
-    let mut time = start_time;
-    let end_time = 10000000.0;
-    loop {
-        let Some(soi_change) = find_next_soi_change(state, entity, time, end_time) else {
-            break;
-        };
-        time = soi_change.get_time();
-        if time > end_time {
-            break;
-        }
-        let trajectory_component = state.components.trajectory_components.get(&entity).unwrap();
-        trajectory_component.get_final_segment().as_orbit().borrow_mut().end_at(time);
-        let new_parent = soi_change.get_other_entity();
-
-        match soi_change {
-            SoiChangeType::Entrance(_) => {
-                let parent_position = get_segment_at_time(state, &new_parent, time).get_position_at_time(time);
-                let position = trajectory_component.get_final_segment().get_end_position() - parent_position;
-                let parent_velocity = get_segment_at_time(state, &new_parent, time).get_velocity_at_time(time);
-                let velocity = trajectory_component.get_final_segment().get_end_velocity() - parent_velocity;
-                println!("soi entrance to {} {:?} {:?} {}", state.components.name_components.get(&new_parent).unwrap().get_name(), position, velocity, format_time(time));
-                let orbit = Orbit::new(&state.components, new_parent, position, velocity, time);
-                state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));
-            }
-            SoiChangeType::Exit(_) => {
-                let parent = trajectory_component.get_final_segment().get_parent();
-                let parent_position = get_segment_at_time(state, &parent, time).get_position_at_time(time);
-                let position = trajectory_component.get_final_segment().get_end_position() + parent_position;
-                let parent_velocity = get_segment_at_time(state, &parent, time).get_velocity_at_time(time);
-                let velocity = trajectory_component.get_final_segment().get_end_velocity() + parent_velocity;
-                println!("soi exit to {} {:?} {:?} {}", state.components.name_components.get(&new_parent).unwrap().get_name(), position, velocity, format_time(time));
-                let orbit = Orbit::new(&state.components, new_parent, position, velocity, time);
-                state.components.trajectory_components.get_mut(&entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(orbit))));
-            }
-        }
-    }
-    state.components.trajectory_components.get(&entity).unwrap().get_final_segment().as_orbit().borrow_mut().end_at(end_time);
+    //let Some((new_parent, soi_change_time)) = 
+    find_next_soi_entrance(state, entity, start_time);
 
     // state.components.trajectory_components.get(&entity).unwrap().get_final_segment().as_orbit().borrow_mut().end_at(soi_change_time);
 
