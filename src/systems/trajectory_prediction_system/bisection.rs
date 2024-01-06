@@ -1,9 +1,9 @@
-const ITERATIONS: usize = 20;
+const ITERATIONS: usize = 12;
 
-pub fn bisection_to_find_minimum(function: &impl Fn(f64) -> f64, min: f64, max: f64) -> f64 {
+pub fn bisection(function: &impl Fn(f64) -> f64, min: f64, max: f64) -> f64 {
     let mut low = min;
     let mut high = max;
-    let mut mid = min + max / 2.0;
+    let mut mid = (min + max) / 2.0;
     for _ in 0..ITERATIONS {
         if function(mid).is_sign_positive() && function(low).is_sign_positive() || function(mid).is_sign_negative() && function(low).is_sign_negative() {
             low = mid;
@@ -11,6 +11,7 @@ pub fn bisection_to_find_minimum(function: &impl Fn(f64) -> f64, min: f64, max: 
             high = mid;
         }
         mid = (low + high) / 2.0;
+        // println!("bisection {} {} {} {} {} {}", low, mid, high, function(low), function(mid), function(high));
     }
     mid
 }
@@ -19,18 +20,18 @@ pub fn bisection_to_find_minimum(function: &impl Fn(f64) -> f64, min: f64, max: 
 mod tests {
     use std::f64::consts::PI;
 
-    use crate::systems::trajectory_prediction_system::bisection::bisection_to_find_minimum;
+    use crate::systems::trajectory_prediction_system::bisection::bisection;
 
     #[test]
-    fn test_bisection_to_find_minimum_1() {
+    fn test_bisection_1() {
         let function = |x: f64| f64::sin(x);
-        assert!(bisection_to_find_minimum(&function, -PI/2.0, PI/2.0).abs() < 1.0e-2);
+        assert!(bisection(&function, -PI/2.0, PI/2.0).abs() < 1.0e-2);
     }
 
     #[test]
-    fn test_bisection_to_find_minimum_2() {
+    fn test_bisection_2() {
         let function = |x: f64| x.powi(2) - 4.0;
-        assert!(bisection_to_find_minimum(&function, 0.0,  10.0).abs() - 2.0 < 1.0e-2);
-        assert!(bisection_to_find_minimum(&function, -10.0, 0.0).abs() - 2.0 < 1.0e-2);
+        assert!(bisection(&function, 0.0,  10.0).abs() - 2.0 < 1.0e-2);
+        assert!(bisection(&function, -10.0, 0.0).abs() - 2.0 < 1.0e-2);
     }
 }

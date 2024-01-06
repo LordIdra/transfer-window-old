@@ -17,6 +17,7 @@ fn velocity_relative_to_parent(state: &State, entity: &Entity, parent: &Entity) 
 pub fn change_parent(state: &mut State, entity: &Entity, new_parent: Entity, time: f64) {
     let new_position = position_relative_to_parent(state, entity, &new_parent);
     let new_velocity = velocity_relative_to_parent(state, entity, &new_parent);
+    println!("{:?} {:?} {:?} {}", new_parent, new_position, new_velocity, time);
     let new_orbit = Orbit::new(&state.components, new_parent, new_position, new_velocity, time);
     state.components.trajectory_components.get_mut(entity).unwrap().add_segment(Segment::Orbit(Rc::new(RefCell::new(new_orbit))));
 }

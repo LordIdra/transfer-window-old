@@ -87,11 +87,25 @@ impl State {
 
     fn init_objects(&mut self, sun: Entity) {
         let earth = add_child_celestial_object(&mut self.components, 0.0, "planet".to_string(), "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.729e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
+
+        // hyperbola-hyperbola
+        // add_child_celestial_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
+        //     vec2(0.4055e9 * f64::cos(4.5), 0.4055e9 * f64::sin(4.5)), vec2(1.270e3 * f64::cos(4.5 + PI / 2.0), 1.270e3 * f64::sin(4.5 + PI / 2.0)), 
+        //     7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        // let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(1.000e4, 0.0), 1.0e3);
+
+        // ellipse-hyperbola
+        // add_child_celestial_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
+        //     vec2(0.4055e9 * f64::cos(4.5), 0.4055e9 * f64::sin(4.5)), vec2(0.970e3 * f64::cos(4.5 + PI / 2.0), 0.970e3 * f64::sin(4.5 + PI / 2.0)), 
+        //     7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
+        // let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(1.000e4, 0.0), 1.0e3);
+
+        // ellipse-ellipse
         add_child_celestial_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
-            vec2(0.4055e9 * f64::cos(4.5), 0.4055e9 * f64::sin(4.5)), vec2(0.970e3 * f64::cos(4.5 + PI / 2.0), 0.970e3 * f64::sin(4.5 + PI / 2.0)), 
-            //vec2(0.4055e9 * f64::cos(30.0), 0.4055e9 * f64::sin(30.0)), vec2(-1.303e3 * f64::cos(30.0 + PI / 2.0), -1.303e3 * f64::sin(30.0 + PI / 2.0)), 
+            vec2(0.4055e9 * f64::cos(1.0), 0.4055e9 * f64::sin(1.0)), vec2(0.970e3 * f64::cos(1.0 + PI / 2.0), 0.970e3 * f64::sin(1.0 + PI / 2.0)), 
             7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(1.000e4, 0.0), 1.0e3);
+        let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(0.989e4, 0.0), 1.0e3);
+
         self.selected_object = spacecraft;
     }
 

@@ -25,6 +25,15 @@ impl BurnArrowIconType {
         };
         unadjusted / zoom
     }
+
+    pub fn get_adjustment(&self) -> DVec2 {
+        match self {
+            BurnArrowIconType::FRONT => vec2(1.0, 0.0),
+            BurnArrowIconType::RIGHT => vec2(0.0, -1.0),
+            BurnArrowIconType::BACK => vec2(-1.0, 0.0),
+            BurnArrowIconType::LEFT => vec2(0.0, 1.0),
+        }
+    }
 }
 
 #[derive(Clone)]

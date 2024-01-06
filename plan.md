@@ -42,13 +42,20 @@ Fetaure tracker
 [x] Paused text
 [x] Add a few seconds to warp time
 [x] Implement and write tests for black-box solver
-[ ] System to compute trajectories for one object at a time (ie spacecraft)
-[ ] Cache system to compute trajectories for the entire system
-[ ] Figure out how to draw orbit direction symbols for adjusting burn
-[ ] Draw symbols prograde, retrograde, radial in and radial out
+[ ] Compute trajectories for one object at a time (ie spacecraft)
+[ ] Compute trajectories for the entire system
+[x] Figure out how to draw orbit direction symbols for adjusting burn
+[x] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
 [ ] Animate symbol dragging
-[ ] When symbol clicked, adjust parameters of the burn
+[x] When symbol clicked, adjust parameters of the burn
+[ ] Solutions for celestial body on hyperbolic trajectory
+[ ] Laguerre algorithm for solving kepler equation (we already wrote it lol)
+[x] Account for possibility of an entity entering/exiting the system (we are only considering entities in the system at the very beginning)
+[ ] Update trajectory whenever symbols adjusted
+[ ] Abstraction of constants in solver
+[ ] Actual proper logging
+[ ] Fix the god damn point selection
 
 I am going to quit coding and go live in a hut in the woods tracker
 [x] Wtf is up with being able to flip the zoom negative how the hell is that shit possible (it seems to have just gone away???)
@@ -67,11 +74,14 @@ Bugs + technical debt tracker
 [ ] Spacecraft burns aren't included in predictions
 [x] Use velocity perpendicular instead of displacement unit for trajectory visualisation to prevent different thicknesses
 [x] Weird desync that happens when creating a burn while another burn is happening
+[x] Multiple arrow icons being created
 [ ] Move get segment at time because it's used everywhere
 [ ] Ergonomics for components :)
 [ ] Question marks!!!! Inc. get segment at time
 [ ] cfg debug
 [ ] Tidy up resources?
+[ ] Make conic an enum
+
 
 ECS
 - Each component is a representation of state of one part of an entity

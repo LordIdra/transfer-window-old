@@ -65,6 +65,20 @@ impl Segment {
         }
     }
 
+    pub fn get_end_position(&self) -> DVec2 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_end_point().get_position(),
+            Segment::Orbit(orbit) => orbit.borrow().get_end_point().get_position(),
+        }
+    }
+
+    pub fn get_end_velocity(&self) -> DVec2 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_end_point().get_velocity(),
+            Segment::Orbit(orbit) => orbit.borrow().get_end_point().get_velocity(),
+        }
+    }
+
     pub fn get_end_time(&self) -> f64 {
         match self {
             Segment::Burn(burn) => burn.borrow().get_end_point().get_time(),
@@ -110,6 +124,19 @@ impl Segment {
         match self {
             Segment::Burn(burn) => burn.borrow_mut().reset(),
             Segment::Orbit(orbit) => orbit.borrow_mut().reset(),
+        }
+    }
+
+    pub fn equals(&self, other: &Self) -> bool {
+        match self {
+            Segment::Burn(burn) => match other {
+                Segment::Burn(other_burn) => burn.as_ptr() == other_burn.as_ptr(),
+                Segment::Orbit(_) => false,
+            },
+            Segment::Orbit(orbit) => match other {
+                Segment::Burn(_) => false,
+                Segment::Orbit(other_orbit) => orbit.as_ptr() == other_orbit.as_ptr(),
+            },
         }
     }
 }

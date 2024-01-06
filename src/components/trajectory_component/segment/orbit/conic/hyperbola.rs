@@ -7,22 +7,28 @@ use crate::components::trajectory_component::segment::orbit::{orbit_direction::O
 
 use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
-fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
-    // println!("{} {}", eccentricity, mean_anomaly);
-    let max_delta_squared = (1.0e-5_f64).powi(2);
+const MAX_RECURSIONS: usize = 5;
+
+fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64, recursions: usize) -> f64 {
+    // println!("{}", mean_anomaly);
+    if recursions > MAX_RECURSIONS {
+        panic!("Exceeded max recursions solving hyperbolic Kepler equation with e:{}, mean_anomaly:{}", eccentricity, mean_anomaly);
+    }
+    // println!("{}", mean_anomaly);
+    let max_delta = 1.0e-9_f64;
     let max_attempts = 500;
     let mut eccentric_anomaly = mean_anomaly + start_offset;
     let mut attempts = 0;
     for _ in 0..1000 {
         let delta = -(eccentricity * f64::sinh(eccentric_anomaly) - eccentric_anomaly - mean_anomaly) / (eccentricity * f64::cosh(eccentric_anomaly) - 1.0);
-        if delta.powi(2) < max_delta_squared {
+        if delta.abs() < max_delta {
             break;
         }
         if attempts > max_attempts {
             // Try with different start value
             let mut rng = rand::thread_rng();
             let start_offset = (rng.gen::<f64>() - 0.5) * 5.0;
-            return solve_kepler_equation(eccentricity, mean_anomaly, start_offset)
+            return solve_kepler_equation(eccentricity, mean_anomaly, start_offset, recursions + 1)
         }
         eccentric_anomaly += delta;
         attempts += 1;
@@ -52,7 +58,7 @@ impl Conic for Hyperbola {
     fn get_theta_from_time_since_periapsis(&self, time_since_periapsis: f64) -> f64 {
         let x = self.standard_gravitational_parameter.powi(2) / self.specific_angular_momentum.powi(3);
         let mean_anomaly = x * time_since_periapsis * (self.eccentricity.powi(2) - 1.0).powf(3.0 / 2.0);
-        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
+        let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0, 0);
         let true_anomaly = 2.0 * f64::atan(f64::sqrt((self.eccentricity + 1.0) / (self.eccentricity - 1.0)) * f64::tanh(eccentric_anomaly / 2.0));
         let theta = true_anomaly + self.argument_of_periapsis;
         let theta = theta % (2.0 * PI);
@@ -160,6 +166,14 @@ impl Conic for Hyperbola {
 
     fn get_period(&self) -> Option<f64> {
         None
+    }
+
+    fn get_min_max_theta(&self) -> (f64, f64) {
+        let true_anomaly_of_asymptote = f64::acos(-1.0 / self.eccentricity);
+        // Offset by 0.01 because at the exact min/max, the radius is infinity, which is kinda useless for most calculations
+        (
+            self.argument_of_periapsis + f64::min(true_anomaly_of_asymptote, -true_anomaly_of_asymptote) + 0.01,
+            self.argument_of_periapsis + f64::max(true_anomaly_of_asymptote, -true_anomaly_of_asymptote) - 0.01)
     }
 }
 
