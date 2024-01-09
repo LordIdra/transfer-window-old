@@ -2,17 +2,14 @@ use eframe::egui::{Ui, Context, Window, Key};
 
 use crate::state::State;
 
-use self::{general::general, selected::selected, trajectory_prediction::trajectory_prediction};
+use self::{general::general, selected::selected};
 
-pub mod debug_utils;
 mod general;
 mod selected;
-mod trajectory_prediction;
 
 fn draw(state: &mut State, ui: &mut Ui) {
     ui.collapsing("General", |ui| general(state, ui));
     ui.collapsing("Selected", |ui| selected(state, ui));
-    ui.collapsing("Trajectory Prediction", |ui| trajectory_prediction(state, ui));
 }
 
 pub fn debug_system(state: &mut State, context: &Context) {

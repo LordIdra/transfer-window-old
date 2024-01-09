@@ -1,4 +1,4 @@
-use nalgebra_glm::{DVec2, vec2};
+use nalgebra_glm::DVec2;
 
 use crate::{components::trajectory_component::segment::burn::Burn, state::State, camera::SCALE_FACTOR, storage::entity_allocator::Entity};
 
@@ -10,17 +10,16 @@ const POINTS_PER_SECOND: f64 = 0.5;
 fn create_visual_orbit_point(burn: &Burn, absolute_parent_position: DVec2, time: f64) -> VisualBurnPoint {
     let relative_point_position = burn.get_point_at_time(time).get_position() * SCALE_FACTOR;
     let absolute_position = absolute_parent_position + relative_point_position;
-    let velocity_perpendicular = burn.get_point_at_time(time).get_velocity().normalize();
-    let velocity_perpendicular = vec2(-velocity_perpendicular.y, velocity_perpendicular.x);
-    VisualBurnPoint { absolute_position, velocity_perpendicular }
+    let displacement_direction = relative_point_position.normalize();
+    VisualBurnPoint { absolute_position, displacement_direction }
 }
 
 fn get_visual_burn_points(state: &State, burn: &Burn) -> Vec<VisualBurnPoint> {
     let parent = burn.get_parent();
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position() * SCALE_FACTOR;
     let mut visual_points = vec![];
-    let start_time = f64::max(burn.get_start_point().get_time(), state.time);
-    let points = ((burn.get_end_point().get_time() - start_time) * POINTS_PER_SECOND) as i32 + 1;
+    let start_time = f64::max(burn.get_start_time(), state.time);
+    let points = ((burn.get_end_time() - start_time) * POINTS_PER_SECOND) as i32 + 1;
     for i in 0..points {
         let time = start_time + (i as f64 / points as f64) * burn.get_duration();
         visual_points.push(create_visual_orbit_point(burn, absolute_parent_position, time));

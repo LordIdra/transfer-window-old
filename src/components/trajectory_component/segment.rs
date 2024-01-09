@@ -44,34 +44,19 @@ impl Segment {
         }
     }
 
-    pub fn get_start_time(&self) -> f64 {
-        match self {
-            Segment::Burn(burn) => burn.borrow().get_start_point().get_time(),
-            Segment::Orbit(orbit) => orbit.borrow().get_start_point().get_time(),
-        }
-    }
-
     pub fn get_current_position(&self) -> DVec2 {
         match self {
-            Segment::Burn(burn) => burn.borrow().get_current_point().get_position(),
-            Segment::Orbit(orbit) => orbit.borrow().get_current_point().get_position(),
+            Segment::Burn(burn) => burn.borrow().get_current_position(),
+            Segment::Orbit(orbit) => orbit.borrow().get_current_position(),
         }
     }
 
     pub fn get_current_velocity(&self) -> DVec2 {
         match self {
-            Segment::Burn(burn) => burn.borrow().get_current_point().get_velocity(),
-            Segment::Orbit(orbit) => orbit.borrow().get_current_point().get_velocity(),
+            Segment::Burn(burn) => burn.borrow().get_current_velocity(),
+            Segment::Orbit(orbit) => orbit.borrow().get_current_velocity(),
         }
     }
-
-    pub fn get_end_time(&self) -> f64 {
-        match self {
-            Segment::Burn(burn) => burn.borrow().get_end_point().get_time(),
-            Segment::Orbit(orbit) => orbit.borrow().get_end_point().get_time(),
-        }
-    }
-
     pub fn get_parent(&self) -> Entity {
         match self {
             Segment::Burn(burn) => burn.borrow().get_parent(),
@@ -83,6 +68,13 @@ impl Segment {
         match self {
             Segment::Burn(_) => panic!("Attempted to get non-orbit segment as orbit"),
             Segment::Orbit(orbit) => orbit,
+        }
+    }
+
+    pub fn get_start_time(&self) -> f64 {
+        match self {
+            Segment::Burn(burn) => burn.borrow().get_start_time(),
+            Segment::Orbit(orbit) => orbit.borrow().get_start_time(),
         }
     }
 

@@ -1,38 +1,27 @@
 use std::{sync::{Arc, Mutex}, time::Instant, collections::HashMap, f64::consts::PI, cmp::Ordering};
 
-use eframe::{CreationContext, epaint::Rgba, egui::{Ui, Context}, Frame};
+use eframe::{egui::{Context, Ui}, epaint::Rgba, Frame, CreationContext};
 use nalgebra_glm::vec2;
 
-use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_bodies, spacecraft_prediction::predict_all_spacecraft}, debug_system::debug_system, deselect_system::deselect_system, icon_system::icon_system, toolbar_system::toolbar_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
-
-#[derive(Clone)]
-pub enum Selected {
-    None,
-    OrbitClickPoint(OrbitClickPoint),
-    BurnIcon(Entity),
-}
+use crate::{camera::Camera, storage::{entity_allocator::Entity, entity_builder::{add_root_object, add_child_celestial_object, add_child_object}}, systems::{camera_update_system::camera_update_system, time_step_update_system::{time_step_update_system, TimeStepDescription}, icon_click_system::icon_click_system, trajectory_update_system::trajectory_update_system, underlay_render_system::underlay_render_system, icon_precedence_system::icon_precedence_system, orbit_point_selection_system::{orbit_click_system, OrbitClickPoint}, orbit_point_toolbar_system::orbit_point_toolbar_system, mouse_over_any_element_system::was_mouse_over_any_element_last_frame_system, warp_update_system::{warp_update_system, WarpDescription}, delta_time_update_system::delta_time_update_system, trajectory_prediction_system::{celestial_body_prediction::predict_celestial_bodies, spacecraft_prediction::predict_all_spacecraft}, debug_system::debug_system, icon_position_update_system::icon_position_update_system}, components::Components, resources::Resources, rendering::{geometry_renderer::GeometryRenderer, texture_renderer::TextureRenderer}};
 
 pub struct State {
     pub resources: Resources,
     pub components: Components,
     pub mouse_over_any_element_cache: bool,
     pub mouse_over_any_element: bool,
-    pub mouse_over_any_icon: bool,
     pub time_step_description: TimeStepDescription,
-    pub paused: bool,
     pub debug_mode: bool,
     pub time: f64,
     pub delta_time: f64,
     pub last_frame: Instant,
-    pub selected_object: Entity,
-    pub selected: Selected,
+    pub selected_entity: Entity,
+    pub orbit_click_point: Option<OrbitClickPoint>,
     pub current_warp: Option<WarpDescription>,
     pub camera: Arc<Mutex<Camera>>,
     pub orbit_renderer: Arc<Mutex<GeometryRenderer>>,
     pub object_renderer: Arc<Mutex<GeometryRenderer>>,
     pub texture_renderers: Arc<Mutex<HashMap<String, TextureRenderer>>>,
-    pub debug_conic_distances_from_theta: Vec<[f64; 2]>,
-    pub debug_conic_distances_from_time: Vec<[f64; 2]>,
 }
 
 impl State {
@@ -50,26 +39,22 @@ impl State {
             components,
             mouse_over_any_element_cache: false,
             mouse_over_any_element: false,
-            mouse_over_any_icon: false,
             time_step_description: TimeStepDescription::Level(1),
-            paused: false,
             debug_mode: false,
             time: 0.0,
             delta_time: 0.0,
             last_frame: Instant::now(),
-            selected_object: sun,
-            selected: Selected::None,
+            selected_entity: sun,
+            orbit_click_point: None,
             current_warp: None,
             camera: Arc::new(Mutex::new(Camera::new())),
             orbit_renderer,
             object_renderer,
             texture_renderers: icon_renderers,
-            debug_conic_distances_from_theta: vec![],
-            debug_conic_distances_from_time: vec![],
         };
         state.init_objects(sun);
-        predict_celestial_bodies(&mut state, 2000000.0);
-        predict_all_spacecraft(&mut state, 2000000.0);
+        predict_celestial_bodies(&mut state, 10000000.0);
+        predict_all_spacecraft(&mut state, 10000000.0);
         state
     }
 
@@ -88,17 +73,14 @@ impl State {
     fn init_objects(&mut self, sun: Entity) {
         let earth = add_child_celestial_object(&mut self.components, 0.0, "planet".to_string(), "earth".to_string(), sun, vec2(1.521e11, 0.0), vec2(0.0, -2.729e4), 5.9722e24, 6.378e6, Rgba::from_rgba_unmultiplied(0.1, 0.4, 1.0, 1.0));
         add_child_celestial_object(&mut self.components, 0.0, "moon".to_string(), "moon".to_string(), earth, 
-            vec2(0.4055e9 * f64::cos(4.5), 0.4055e9 * f64::sin(4.5)), vec2(0.970e3 * f64::cos(4.5 + PI / 2.0), 0.970e3 * f64::sin(4.5 + PI / 2.0)), 
+            vec2(0.4055e9 * f64::cos(2.0), 0.4055e9 * f64::sin(2.0)), vec2(0.970e3 * f64::cos(2.0 + PI / 2.0), 0.970e3 * f64::sin(2.0 + PI / 2.0)), 
             //vec2(0.4055e9 * f64::cos(30.0), 0.4055e9 * f64::sin(30.0)), vec2(-1.303e3 * f64::cos(30.0 + PI / 2.0), -1.303e3 * f64::sin(30.0 + PI / 2.0)), 
             7.346e22, 1.738e6, Rgba::from_rgba_unmultiplied(0.3, 0.3, 0.3, 1.0));
-        let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(1.000e4, 0.0), 1.0e3);
-        self.selected_object = spacecraft;
+        let spacecraft = add_child_object(&mut self.components, 0.0, "spacecraft".to_string(), "spacecraft".to_string(), earth, vec2(0.0, 8.0e6), vec2(-0.987e4, 0.0), 1.0e3);
+        self.selected_entity = spacecraft;
     }
 
     pub fn get_time_step(&self) -> f64 {
-        if self.paused {
-            return 0.0;
-        }
         match self.time_step_description {
             TimeStepDescription::Level(level) => 5.0_f64.powi(level-1),
             TimeStepDescription::Raw(raw) => raw,
@@ -112,13 +94,8 @@ impl State {
     }
 
     /// Sorted from highest to lowest mass
-    /// Only contains entities with mass
     pub fn get_entities_sorted_by_mass(&self) -> Vec<Entity> {
-        let mut entities: Vec<Entity> = self.components.entity_allocator
-            .get_entities()
-            .into_iter()
-            .filter(|entity| self.components.mass_components.get(entity).is_some())
-            .collect();
+        let mut entities: Vec<Entity> = self.components.entity_allocator.get_entities().into_iter().collect();
         entities.sort_by(|a, b| {
             let mass_a = self.components.mass_components.get(a).unwrap().get_mass();
             let mass_b = self.components.mass_components.get(b).unwrap().get_mass();
@@ -141,11 +118,12 @@ impl eframe::App for State {
         time_step_update_system(self, context);
         trajectory_update_system(self);
         camera_update_system(self, context);
-        icon_system(self, context);
-        deselect_system(self, context);
         orbit_click_system(self, context);
         debug_system(self, context);
-        toolbar_system(self, context);
+        icon_position_update_system(self);
+        icon_precedence_system(self);
+        icon_click_system(self, context);
+        orbit_point_toolbar_system(self, context);
         underlay_render_system(self, context);
         was_mouse_over_any_element_last_frame_system(self);
         context.request_repaint(); // Update as soon as possible, otherwise it'll only update when some input changes

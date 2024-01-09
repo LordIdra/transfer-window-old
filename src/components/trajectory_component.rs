@@ -40,18 +40,11 @@ impl TrajectoryComponent {
     pub fn remove_segments_after(&mut self, time: f64) {
         loop {
             match self.segments.back_mut().unwrap() {
-                Segment::Burn(burn) => {
-                    // The >= is important, because we might try and remove segments after exactly the start time of a burn (ie when deleting a burn)
-                    if burn.borrow().get_start_point().get_time() >= time {
-                        self.segments.pop_back();
-                    } else if burn.borrow().is_time_within_burn(time) {
-                        panic!("Attempt to splice a burn")
-                    } else {
-                        return;
-                    }
+                Segment::Burn(_) => {
+                    panic!("Attempt to splice a burn")
                 },
                 Segment::Orbit(orbit) => {
-                    if orbit.borrow().get_start_point().get_time() > time {
+                    if orbit.borrow().get_start_time() > time {
                         self.segments.pop_back();
                     } else if orbit.borrow().is_time_within_orbit(time) {
                         orbit.borrow_mut().trim_to_end_at(time);

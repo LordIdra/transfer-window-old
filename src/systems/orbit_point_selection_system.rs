@@ -3,7 +3,7 @@ use std::{rc::Rc, cell::RefCell};
 use eframe::{egui::{Context, InputState}, epaint::{Pos2, Rect, Rgba}};
 use nalgebra_glm::{vec2, DVec2};
 
-use crate::{state::{State, Selected}, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity, components::trajectory_component::segment::{orbit::Orbit, Segment}};
+use crate::{state::State, util::add_textured_square, camera::SCALE_FACTOR, storage::entity_allocator::Entity, components::trajectory_component::segment::{orbit::Orbit, Segment}};
 
 const SELECTION_CIRCLE_SIZE: f64 = 5.0;
 
@@ -34,7 +34,7 @@ impl OrbitClickPoint {
 fn create_new_click_point(entity: &Entity, orbit: &Rc<RefCell<Orbit>>, click_distance: f64, max_distance_to_select: f64, mut time_since_periapsis: f64) -> Option<OrbitClickPoint> {
     let mut click_point = OrbitClickPoint { entity: entity.clone(), click_distance, orbit: orbit.clone(), time_since_periapsis };
     if let Some(period) = orbit.borrow().get_period() {
-        while !orbit.borrow().is_time_within_orbit(click_point.get_time()) && click_point.get_time() < orbit.borrow().get_end_point().get_time() {
+        while !orbit.borrow().is_time_within_orbit(click_point.get_time()) && click_point.get_time() < orbit.borrow().get_end_time() {
             time_since_periapsis += period;
             click_point = OrbitClickPoint { entity: entity.clone(), click_distance, orbit: orbit.clone(), time_since_periapsis }
         }
@@ -131,18 +131,24 @@ fn render_click_point(state: &State, click_point: &OrbitClickPoint, opacity: f32
 
 fn on_new_click_point_exists(state: &mut State, input: &InputState, click_point: &OrbitClickPoint) {
     if input.pointer.primary_clicked() {
-        state.selected = Selected::OrbitClickPoint(click_point.clone());
+        state.orbit_click_point = Some(click_point.clone());
     } else {
-        if let Selected::None = state.selected {
+        if state.orbit_click_point.is_none() {
             render_click_point(state, &click_point, 0.6);
         }
     }
 }
 
+fn on_new_click_point_no_exists(state: &mut State, input: &InputState) {
+    if input.pointer.primary_clicked() {
+        state.orbit_click_point = None;
+    }
+}
+
 fn invalidate_click_point(state: &mut State) {
-    if let Selected::OrbitClickPoint(click_point) = &state.selected {
+    if let Some(click_point) = &state.orbit_click_point {
         if click_point.orbit.borrow().is_finished() || !click_point.orbit.borrow().is_time_within_orbit(click_point.get_time()) {
-            state.selected = Selected::None;
+            state.orbit_click_point = None;
         }
     }
 }
@@ -155,12 +161,14 @@ pub fn orbit_click_system(state: &mut State, context: &Context) {
             if let Some(position) = input.pointer.latest_pos() {
                 if let Some(click_point) = get_click_point(state, screen_size, position) {
                     on_new_click_point_exists(state, input, &click_point);
+                } else {
+                    on_new_click_point_no_exists(state, input);
                 }
             }
         }
 
         invalidate_click_point(state);
-        if let Selected::OrbitClickPoint(click_point) = &state.selected {
+        if let Some(click_point) = &state.orbit_click_point {
             render_click_point(state, click_point, 1.0);
         }
     });

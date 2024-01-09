@@ -1,4 +1,4 @@
-use nalgebra_glm::{DVec2, vec2};
+use nalgebra_glm::DVec2;
 
 use crate::{state::State, components::trajectory_component::segment::orbit::Orbit, camera::SCALE_FACTOR, storage::entity_allocator::Entity};
 
@@ -40,9 +40,8 @@ const TESSELLATION_THRESHOLD: f64 = 5000.0;
 fn create_visual_orbit_point(orbit: &Orbit, absolute_parent_position: DVec2, theta: f64) -> VisualOrbitPoint {
     let relative_point_position = orbit.get_position_from_theta(theta) * SCALE_FACTOR;
     let absolute_position = absolute_parent_position + relative_point_position;
-    let velocity_perpendicular = orbit.get_velocity_from_theta(theta).normalize();
-    let velocity_perpendicular = vec2(-velocity_perpendicular.y, velocity_perpendicular.x);
-    VisualOrbitPoint { absolute_position, velocity_perpendicular, theta }
+    let displacement_direction = relative_point_position.normalize();
+    VisualOrbitPoint { absolute_position, displacement_direction, theta }
 }
 
 // https://www.omnicalculator.com/math/3-sides-triangle-area#calculating-the-area-of-a-triangle-with-3-sides-herons-formula
@@ -93,11 +92,11 @@ fn get_visual_orbit_points(state: &State, orbit: &Orbit) -> Vec<VisualOrbitPoint
     let absolute_parent_position = state.components.position_components.get(&parent).unwrap().get_absolute_position() * SCALE_FACTOR;
     let mut visual_orbit_points = vec![];
     let angle_to_rotate_through = orbit.get_remaining_angle();
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta()));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 0.25 * angle_to_rotate_through));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 0.5 * angle_to_rotate_through));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 0.75 * angle_to_rotate_through));
-    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_point().get_theta() + 1.0 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly()));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 0.25 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 0.5 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 0.75 * angle_to_rotate_through));
+    visual_orbit_points.push(create_visual_orbit_point(orbit, absolute_parent_position, orbit.get_current_true_anomaly() + 1.0 * angle_to_rotate_through));
     let camera_position = state.camera.lock().unwrap().get_translation();
     let camera_zoom = state.camera.lock().unwrap().get_zoom();
     do_orbit_tessellation(visual_orbit_points, orbit, absolute_parent_position, camera_position, camera_zoom)

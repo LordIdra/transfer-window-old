@@ -1,26 +1,22 @@
-use crate::{components::icon_component::IconState, camera::SCALE_FACTOR, state::State, util::{add_textured_square, add_textured_square_facing}, storage::entity_allocator::Entity};
+use eframe::epaint::Rgba;
+
+use crate::{components::icon_component::{IconState, IconComponent, IconType}, camera::SCALE_FACTOR, state::State, util::add_textured_square};
 
 
-fn get_icon_vertices(state: &mut State, entity: Entity, zoom: f64, vertices: &mut Vec<f32>) {
-    let icon_component = state.components.icon_components.get(&entity).unwrap();
+fn get_icon_vertices(icon_component: &IconComponent, zoom: f64, vertices: &mut Vec<f32>) {
     let color = match icon_component.get_state() {
-        IconState::None => icon_component.get_color() * 0.75,
-        IconState::Hovered => icon_component.get_color(),
-        IconState::Selected => icon_component.get_color(),
+        IconState::None => Rgba::from_rgba_premultiplied(1.0, 1.0, 1.0, 0.5),
+        IconState::Hovered => Rgba::from_rgba_premultiplied(1.0, 1.0, 1.0, 1.0),
+        IconState::Selected => Rgba::from_rgba_premultiplied(1.0, 1.0, 1.0, 1.0),
     };
-    let absolute_scaled_position = state.components.position_components.get(&entity).unwrap().get_absolute_position() * SCALE_FACTOR;
-    let radius = icon_component.get_size(zoom);
-    if let Some(facing) = icon_component.get_facing() {
-        add_textured_square_facing(vertices, absolute_scaled_position, radius, color, facing);
-    } else {
-        add_textured_square(vertices, absolute_scaled_position, radius, color);
-    }
+    let absolute_scaled_position = icon_component.get_position() * SCALE_FACTOR;
+    let radius = icon_component.get_icon_size(zoom);
+    add_textured_square(vertices, absolute_scaled_position, radius, color);
 }
 
-fn render_icon(state: &mut State, entity: Entity, icon_name: &String, zoom: f64, vertices: &mut Vec<f32>) {
-    let icon_component = state.components.icon_components.get(&entity).unwrap();
-    if *icon_component.get_name() == *icon_name && icon_component.is_visible() {
-        get_icon_vertices(state, entity, zoom, vertices);
+fn render_object_icon(icon_component: &IconComponent, icon_name: &String, zoom: f64, vertices: &mut Vec<f32>) {
+    if *icon_component.get_icon_name() == *icon_name && icon_component.is_visible() {
+        get_icon_vertices(icon_component, zoom, vertices);
     }
 }
 
@@ -28,8 +24,11 @@ pub fn get_all_icon_vertices(state: &mut State, icon_name: String) -> Vec<f32> {
     let zoom = state.camera.lock().unwrap().get_zoom() * SCALE_FACTOR;
     let mut vertices = vec![];
     for entity in state.components.entity_allocator.get_entities() {
-        if state.components.icon_components.get(&entity).is_some() {
-            render_icon(state, entity, &icon_name, zoom, &mut vertices)
+        if let Some(icon_component) = state.components.icon_components.get(&entity) {
+            match icon_component.get_icon_type() {
+                IconType::ObjectIcon => render_object_icon(icon_component, &icon_name, zoom, &mut vertices),
+                IconType::BurnIcon => todo!(),
+            }
         }
     }
     vertices

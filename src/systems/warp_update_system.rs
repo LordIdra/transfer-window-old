@@ -2,18 +2,12 @@ use crate::state::State;
 
 use super::time_step_update_system::TimeStepDescription;
 
-const EXTRA_SECONDS_BEFORE_END: f64 = 5.0;
-
 pub struct WarpDescription {
-    start_time: f64,
-    end_time: f64,
+    pub start_time: f64,
+    pub end_time: f64,
 }
 
 impl WarpDescription {
-    pub fn new(start_time: f64, end_time: f64) -> Self {
-        Self { start_time, end_time: end_time - EXTRA_SECONDS_BEFORE_END }
-    }
-
     fn max_warp_speed(&self) -> f64 {
         1.0 * (self.end_time - self.start_time)
     }

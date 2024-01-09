@@ -8,8 +8,7 @@ use crate::components::trajectory_component::segment::orbit::{orbit_direction::O
 use super::{argument_of_periapsis, Conic, specific_angular_momentum, copysign};
 
 fn solve_kepler_equation(eccentricity: f64, mean_anomaly: f64, start_offset: f64) -> f64 {
-    // println!("{} {}", eccentricity, mean_anomaly);
-    let max_delta_squared = (1.0e-5_f64).powi(2);
+    let max_delta_squared = (1.0e-7_f64).powi(2);
     let max_attempts = 500;
     let mut eccentric_anomaly = mean_anomaly + start_offset;
     let mut attempts = 0;
@@ -55,12 +54,7 @@ impl Conic for Hyperbola {
         let eccentric_anomaly = solve_kepler_equation(self.eccentricity, mean_anomaly, 0.0);
         let true_anomaly = 2.0 * f64::atan(f64::sqrt((self.eccentricity + 1.0) / (self.eccentricity - 1.0)) * f64::tanh(eccentric_anomaly / 2.0));
         let theta = true_anomaly + self.argument_of_periapsis;
-        let theta = theta % (2.0 * PI);
-        if theta < 0.0 {
-            theta + 2.0 * PI
-        } else {
-            theta
-        }
+        theta % (2.0 * PI)
     }
 
     fn get_time_since_periapsis(&self, theta: f64) -> f64 {
@@ -129,7 +123,7 @@ impl Conic for Hyperbola {
     
         let mut t = -0.05;
     
-        for _ in 0..80 {
+        for _ in 0..8 {
             let x = -a * f64::cosh(t);
             let y = -b * f64::sinh(t);
     
@@ -149,6 +143,7 @@ impl Conic for Hyperbola {
             let delta_t = delta_c / f64::sqrt(a.powi(2) * f64::sinh(t).powi(2) + b.powi(2) * f64::cosh(t).powi(2));
     
             t += delta_t;
+            t = f64::min(PI / 2.0, f64::max(0.0, t))
         }
     
         vec2(copysign(a * f64::cosh(t), p[0]), copysign(b * f64::sinh(t), p[1]))

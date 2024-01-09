@@ -17,10 +17,10 @@ pub fn add_orbit_line(vertices: &mut Vec<f32>, previous_point: &dyn VisualSegmen
 
     let rgba = Rgba::from_rgba_unmultiplied(color.r(), color.g(), color.b(), alpha);
 
-    let v1 = previous_point.get_absolute_position() + (previous_point.get_velocity_perpendicular() * radius / zoom);
-    let v2 = previous_point.get_absolute_position() - (previous_point.get_velocity_perpendicular() * radius / zoom);
-    let v3 = new_point.get_absolute_position() + (new_point.get_velocity_perpendicular() * radius / zoom);
-    let v4 = new_point.get_absolute_position() - (new_point.get_velocity_perpendicular() * radius / zoom);
+    let v1 = previous_point.get_absolute_position() + (previous_point.get_displacement_direction() * radius / zoom);
+    let v2 = previous_point.get_absolute_position() - (previous_point.get_displacement_direction() * radius / zoom);
+    let v3 = new_point.get_absolute_position() + (new_point.get_displacement_direction() * radius / zoom);
+    let v4 = new_point.get_absolute_position() - (new_point.get_displacement_direction() * radius / zoom);
 
     add_triangle(vertices, v1, v2, v3, rgba);
     add_triangle(vertices, v2, v3, v4, rgba);

@@ -10,7 +10,7 @@ mod render_icons;
 mod render_object;
 mod render_segment;
 
-const ICON_NAMES: [&str; 6] = ["star", "planet", "moon", "spacecraft", "burn", "burn-adjustment-arrow"];
+const ICON_NAMES: [&str; 5] = ["star", "planet", "moon", "spacecraft", "burn"];
 
 fn add_painter_callback(state: &mut State, context: &Context, ui: &Ui) {
     let screen_rect = context.screen_rect();

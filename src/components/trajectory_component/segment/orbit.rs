@@ -2,13 +2,13 @@ use std::f64::consts::PI;
 
 use nalgebra_glm::DVec2;
 
-use crate::{storage::entity_allocator::Entity, components::Components, systems::debug_system::debug_utils::format_time};
+use crate::{storage::entity_allocator::Entity, components::Components};
 
 use self::{conic::{Conic, new_conic}, orbit_point::OrbitPoint, orbit_direction::OrbitDirection};
 
 mod conic;
 pub mod orbit_direction;
-pub mod orbit_point;
+mod orbit_point;
 
 pub struct Orbit {
     parent: Entity,
@@ -28,16 +28,44 @@ impl Orbit {
         Self { parent, conic, start_point, end_point, current_point }
     }
 
-    pub fn get_start_point(&self) -> &OrbitPoint {
-        &self.start_point
+    pub fn get_start_time(&self) -> f64 {
+        self.start_point.get_time()
     }
 
-    pub fn get_current_point(&self) -> &OrbitPoint {
-        &self.current_point
+    pub fn get_start_position(&self) -> DVec2 {
+        self.start_point.get_position()
+    }
+    
+    pub fn get_start_velocity(&self) -> DVec2 {
+        self.start_point.get_velocity()
     }
 
-    pub fn get_end_point(&self) -> &OrbitPoint {
-        &self.end_point
+    pub fn get_current_time(&self) -> f64 {
+        self.current_point.get_time()
+    }
+
+    pub fn get_current_position(&self) -> DVec2 {
+        self.current_point.get_position()
+    }
+
+    pub fn get_current_velocity(&self) -> DVec2 {
+        self.current_point.get_velocity()
+    }
+
+    pub fn get_current_true_anomaly(&self) -> f64 {
+        self.current_point.get_theta()
+    }
+
+    pub fn get_end_time(&self) -> f64 {
+        self.end_point.get_time()
+    }
+
+    pub fn get_end_position(&self) -> DVec2 {
+        self.end_point.get_position()
+    }
+    
+    pub fn get_end_velocity(&self) -> DVec2 {
+        self.end_point.get_velocity()
     }
 
     pub fn get_remaining_angle(&self) -> f64 {
@@ -46,16 +74,7 @@ impl Orbit {
             return 2.0 * PI;
         }
 
-        let mut adjusted_end_theta = self.end_point.get_theta() % (2.0 * PI);
-        if adjusted_end_theta < 0.0 {
-            adjusted_end_theta += 2.0 * PI;
-        }
-        let mut adjusted_current_theta = self.current_point.get_theta() % (2.0 * PI);
-        if adjusted_current_theta < 0.0 {
-            adjusted_current_theta += 2.0 * PI;
-        }
-
-        let mut remaining_angle = adjusted_end_theta - adjusted_current_theta;
+        let mut remaining_angle = self.end_point.get_theta() - self.current_point.get_theta();
         if let OrbitDirection::Clockwise = self.conic.get_direction() {
             if remaining_angle > 0.0 {
                 remaining_angle -= 2.0 * PI
@@ -118,8 +137,8 @@ impl Orbit {
     }
 
     pub fn get_periapsis_time(&self) -> f64 {
-        let time_since_last_periapsis = self.conic.get_time_since_last_periapsis(&self.start_point);
-        self.start_point.get_time() - time_since_last_periapsis
+        let time_since_last_periapsis = self.conic.get_time_since_last_periapsis(&self.current_point);
+        self.current_point.get_time() - time_since_last_periapsis
     }
 
     pub fn get_position_from_time_since_periapsis(&self, time_since_periapsis: f64) -> DVec2 {
@@ -137,18 +156,11 @@ impl Orbit {
 
     pub fn get_theta_from_time(&self, time: f64) -> f64 {
         let time_since_periapsis = time - self.get_periapsis_time();
-        // println!("{} {}", time, format_time(time_since_periapsis));
         self.conic.get_theta_from_time_since_periapsis(time_since_periapsis)
     }
 
     pub fn solve_for_closest_point(&self, p: DVec2) -> DVec2 {
         self.conic.solve_for_closest_point(p)
-    }
-
-    pub fn end_at(&mut self, time: f64) {
-        let theta = self.get_theta_from_time(time);
-        let position = self.conic.get_position(theta);
-        self.end_point = OrbitPoint::new(&*self.conic, position, time);
     }
 
     pub fn reset(&mut self) {

@@ -1,9 +1,7 @@
-use std::{cell::RefCell, rc::{Rc, Weak}};
-
 use eframe::epaint::Rgba;
 use nalgebra_glm::DVec2;
 
-use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::{TrajectoryComponent, segment::burn::Burn}, velocity_component::VelocityComponent, name_component::NameComponent, Components, icon_component::{IconType, IconComponent, BurnArrowIconType}}, storage::entity_allocator::Entity};
+use crate::{components::{celestial_body_component::CelestialBodyComponent, mass_component::MassComponent, parent_component::ParentComponent, position_component::PositionComponent, trajectory_component::TrajectoryComponent, velocity_component::VelocityComponent, name_component::NameComponent, Components, icon_component::{IconComponent, IconType}}, storage::entity_allocator::Entity};
 
 struct EntityBuilder {
     celestial_body_component: Option<CelestialBodyComponent>,
@@ -95,52 +93,25 @@ impl EntityBuilder {
     }
 }
 
-pub fn build_burn_icon(components: &mut Components, burn: Rc<RefCell<Burn>>, parent: Entity) -> Entity {
-    let icon_size = 0.008;
-    EntityBuilder::new()
-        .with_icon_component(IconComponent::new(IconType::BurnIcon(Rc::downgrade(&burn)), Rgba::from_rgb(1.0, 0.7, 0.0), "burn".to_string(), icon_size, None))
-        .with_position_component(PositionComponent::new(DVec2::new(0.0, 0.0))) // will be updated next frame
-        .with_parent_component(ParentComponent::new(parent))
-        .build(components)
-}
-
-pub fn build_burn_arrow_icon(components: &mut Components, burn: Weak<RefCell<Burn>>, burn_arrow_icon_type: BurnArrowIconType, parent: Entity) -> Entity {
+fn base_object_builder(type_name: String, name: String, absolute_position: DVec2, velocity: DVec2, mass: f64) -> EntityBuilder {
     let icon_size = 0.01;
-    EntityBuilder::new()
-        .with_icon_component(IconComponent::new(IconType::BurnArrowIcon(burn, burn_arrow_icon_type), Rgba::from_rgb(0.0, 1.0, 0.0), "burn-adjustment-arrow".to_string(), icon_size, None))
-        .with_position_component(PositionComponent::new(DVec2::new(0.0, 0.0))) // will be updated next frame
-        .with_parent_component(ParentComponent::new(parent))
-        .build(components)
-}
-
-fn build_object_icon(components: &mut Components, type_name: String, absolute_position: DVec2, parent: Entity) {
-    let icon_size = 0.01;
-    EntityBuilder::new()
-        .with_icon_component(IconComponent::new(IconType::ObjectIcon, Rgba::from_rgb(1.0, 1.0, 1.0), type_name, icon_size, None))
-        .with_position_component(PositionComponent::new(absolute_position))
-        .with_parent_component(ParentComponent::new(parent))
-        .build(components);
-}
-
-fn base_object_builder(name: String, absolute_position: DVec2, velocity: DVec2, mass: f64) -> EntityBuilder {
     EntityBuilder::new()
         .with_name_component(NameComponent::new(name))
+        .with_icon_component(IconComponent::new(absolute_position, IconType::ObjectIcon, type_name, icon_size))
         .with_position_component(PositionComponent::new(absolute_position))
         .with_velocity_component(VelocityComponent::new(velocity))
         .with_mass_component(MassComponent::new(mass))
 }
 
 pub fn add_root_object(components: &mut Components, type_name: String, name: String, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
-    let entity = base_object_builder(name, position, velocity, mass)
+    base_object_builder(type_name, name, position, velocity, mass)
         .with_celestial_body_component(CelestialBodyComponent::new(radius, color))
-        .build(components);
-    build_object_icon(components, type_name, position, entity);
-    entity
+        .build(components)
 }
 
 pub fn add_child_celestial_object(components: &mut Components, time: f64, type_name: String, name: String, parent: Entity, position: DVec2, velocity: DVec2, mass: f64, radius: f64, color: Rgba) -> Entity {
     let absolute_position = components.position_components.get(&parent).unwrap().get_absolute_position() + position;
-    let entity = base_object_builder(name, absolute_position, velocity, mass)
+    let entity = base_object_builder(type_name, name, absolute_position, velocity, mass)
         .with_parent_component(ParentComponent::new(parent))
         .with_celestial_body_component(CelestialBodyComponent::new(radius, color))
         .with_trajectory_component(TrajectoryComponent::new(components, parent, position, velocity, time))
@@ -150,13 +121,12 @@ pub fn add_child_celestial_object(components: &mut Components, time: f64, type_n
         .get_mut(&parent)
         .expect("Object's parent must be a celestial body")
         .add_child(entity);
-    build_object_icon(components, type_name, position, entity);
     entity
 }
 
 pub fn add_child_object(components: &mut Components, time: f64, type_name: String, name: String, parent: Entity, position: DVec2, velocity: DVec2, mass: f64) -> Entity {
     let absolute_position = components.position_components.get(&parent).unwrap().get_absolute_position() + position;
-    let entity = base_object_builder(name, absolute_position, velocity, mass)
+    let entity = base_object_builder(type_name, name, absolute_position, velocity, mass)
         .with_parent_component(ParentComponent::new(parent))
         .with_trajectory_component(TrajectoryComponent::new(components, parent, position, velocity, time))
         .build(components);
@@ -165,6 +135,5 @@ pub fn add_child_object(components: &mut Components, time: f64, type_name: Strin
         .get_mut(&parent)
         .expect("Object's parent must be a celestial body")
         .add_child(entity);
-    build_object_icon(components, type_name, position, entity);
     entity
 }

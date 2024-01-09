@@ -26,28 +26,12 @@ Fetaure tracker
 [x] API to add and execute burns using simple integrator
 [x] Function to recalculate trajectory so we can redraw vessel trajectory as burn is created
 [x] Fix tail thing
-[x] Selected icon takes precedence
-[x] Allow overwriting burns
-[x] Icon to indicate burn position
-[x] Snap to burn icon instead of orbit point
-[x] Possibility to select burn (more enums :D)
-[x] Fix deallocation (lol)
-[x] Fix icon overlap for icons on same body
-[x] Fix not being able to select orbit points on sections of hyperbola?
-[x] Deselect burn by clicking elsewhere as with orbit points
-[x] Allow burns to be deleted via top left button
-[x] Show info about the burn in top left
-[x] Select burn immediately after creation
-[x] Allow pausing
-[x] Paused text
-[x] Add a few seconds to warp time
-[x] Implement and write tests for black-box solver
-[ ] System to compute trajectories for one object at a time (ie spacecraft)
-[ ] Cache system to compute trajectories for the entire system
+[ ] Icon to indicate burn position
+[ ] Snap to burn icon instead of orbit point
+[ ] Possibility to select burn (more enums :D)
 [ ] Figure out how to draw orbit direction symbols for adjusting burn
 [ ] Draw symbols prograde, retrograde, radial in and radial out
 [ ] Figure out how to detect if user is dragging a symbol (dot product?)
-[ ] Animate symbol dragging
 [ ] When symbol clicked, adjust parameters of the burn
 
 I am going to quit coding and go live in a hut in the woods tracker
@@ -61,17 +45,9 @@ Bugs + technical debt tracker
 [x] Kepler solver failing to converge
 [x] Janky method to find how many orbits completed in elliptical orbit (just floordiv or smth instead - can be method)
 [x] Would be better for Segment to store rc-refcell-xyz
-[x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-[x] L A R G E hyperbola when creating burn on an existing hyperbola?????????????????? (it was the modulus thing lol)
 [ ] Spacecraft can't change SOI while performing burn
 [ ] Spacecraft burns aren't included in predictions
-[x] Use velocity perpendicular instead of displacement unit for trajectory visualisation to prevent different thicknesses
-[x] Weird desync that happens when creating a burn while another burn is happening
-[ ] Move get segment at time because it's used everywhere
-[ ] Ergonomics for components :)
-[ ] Question marks!!!! Inc. get segment at time
-[ ] cfg debug
-[ ] Tidy up resources?
+[x] The 40 second delay between SOI changes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 ECS
 - Each component is a representation of state of one part of an entity
@@ -93,5 +69,3 @@ Systems
 - TrajectoryRenderSystem
 - CelestialBodyRenderSystem
 - ObjectIconSystem
-
-Untermairhof01

@@ -1,6 +1,6 @@
 use nalgebra_glm::DVec2;
 
-use crate::{state::{State, Selected}, storage::entity_allocator::Entity, components::{trajectory_component::segment::Segment, icon_component::IconType}};
+use crate::{state::State, storage::entity_allocator::Entity, components::trajectory_component::segment::Segment};
 
 /// So... why is this an entire function? Surely we can just find the parent component and use that to set the new parent?
 /// Well, the problem with that is that the old parent will still have the entity in its children
@@ -43,13 +43,61 @@ pub fn sync_to_trajectory(state: &mut State, entity: Entity) {
 
 pub fn get_segment_at_time(state: &State, entity: &Entity, time: f64) -> Segment {
     for segment in state.components.trajectory_components.get(entity).unwrap().get_segments() {
-        let start_time = segment.get_start_time();
-        let end_time = segment.get_end_time();
+        let start_time = segment.as_orbit().borrow().get_start_time();
+        let end_time = segment.as_orbit().borrow().get_end_time();
         if time >= start_time && time <= end_time {
             return segment.clone();
         }
     }
     panic!("Failed to move to time; no trajectory segment contains the requested time")
+}
+
+
+pub fn get_all_entity_children(state: &State, entities: &Vec<Entity>) -> Vec<Entity> {
+    let mut new_entities = vec![];
+    for entity in entities {
+        if let Some(celestial_body_component) = state.components.celestial_body_components.get(entity) {
+            new_entities.extend(celestial_body_component.get_children());
+        }
+    }
+    new_entities
+}
+
+pub fn format_time(time: f64) -> String {
+    let years_quotient = f64::floor(time / (360.0 * 24.0 * 60.0 * 60.0));
+    let years_remainder = time % (360.0 * 24.0 * 60.0 * 60.0);
+    let days_quotient = f64::floor(years_remainder / (24.0 * 60.0 * 60.0));
+    let days_remainder = years_remainder % (24.0 * 60.0 * 60.0);
+    let hours_quotient = f64::floor(days_remainder / (60.0 * 60.0));
+    let hours_remainder = days_remainder % (60.0 * 60.0);
+    let minutes_quotient = f64::floor(hours_remainder / 60.0);
+    let seconds = f64::round(hours_remainder % 60.0);
+    if years_quotient != 0.0 {
+        "".to_string()
+            + years_quotient.to_string().as_str() + "y"
+            + days_quotient.to_string().as_str() + "d"
+            + hours_quotient.to_string().as_str() + "h"
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else if days_quotient != 0.0 {
+        "".to_string()
+            + days_quotient.to_string().as_str() + "d"
+            + hours_quotient.to_string().as_str() + "h"
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else if hours_quotient != 0.0 {
+        "".to_string()
+            + hours_quotient.to_string().as_str() + "h"
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else if minutes_quotient != 0.0 {
+        "".to_string()
+            + minutes_quotient.to_string().as_str() + "m"
+            + seconds.to_string().as_str() + "s"
+    } else {
+        "".to_string()
+            + seconds.to_string().as_str() + "s"
+    }
 }
 
 pub fn is_celestial_body_with_trajectory(state: &State, entity: Entity) -> bool {
@@ -94,33 +142,6 @@ pub fn sync_celestial_bodies_to_time(state: &mut State, time: f64) {
     for entity in state.get_entities_sorted_by_mass() {
         if is_celestial_body_with_trajectory(state, entity) {
             sync_entity_to_time(state, entity, time);
-        }
-    }
-}
-
-pub fn delete_burn_arrow_icons(state: &mut State, icon: Entity) {
-    let burn = state.components.icon_components.get(&icon).unwrap().get_type().as_burn_icon();
-    let mut to_deallocate = vec![];
-    for entity in state.components.entity_allocator.get_entities() {
-        if let Some(icon_component) = state.components.icon_components.get(&entity) {
-            if let IconType::BurnArrowIcon(other_burn, _) = icon_component.get_type() {
-                if burn.as_ptr() == other_burn.as_ptr() {
-                    to_deallocate.push(entity);
-                }
-            }
-        }
-    }
-    for entity in to_deallocate {
-        state.components.entity_allocator.deallocate(entity);
-    }
-}
-
-pub fn delete_burn_icon(state: &mut State, icon: Entity) {
-    delete_burn_arrow_icons(state, icon);
-    state.components.deallocate(icon);
-    if let Selected::BurnIcon(other_icon) = state.selected {
-        if icon == other_icon {
-            state.selected = Selected::None;
         }
     }
 }

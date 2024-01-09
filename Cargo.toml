@@ -4,35 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-egui_plot = "0.23"
+eframe = "0.23.0"
 glow = "0.12"
 nalgebra-glm = "0.18.0"
 rand = "0.8.5"
-roots = "0.0.8"
-
-[dependencies.eframe]
-version = "0.23"
-features = ["glow"]
 
 [dependencies.image]
 version = "0.24"
 features = ["jpeg", "png"]
 
 [dependencies.egui_extras]
-version = "0.23"
+version = "0.23.0"
 features = ["all_loaders"]
 
 [profile.dev]
-opt-level=1
-debug=2
-incremental=true
-
-[profile.bench]
-opt-level=3
-debug=2
-incremental=true
-
-[profile.release]
-opt-level=3
-debug=0
-incremental=true
+opt-level = 3
+debug=true
